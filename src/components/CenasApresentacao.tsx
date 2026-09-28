@@ -829,21 +829,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 11 — histórico de peso e quantidade do estoque (gráfico) */}
-      {cena === 9 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Histórico de Estoque
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Evolução histórica do peso e quantidade do estoque ao longo dos meses. Cada ponto representa o saldo registrado no mês. Fonte: snapshots históricos do saldo de itens. Período: janeiro a setembro de 2026." />
-          </div>
-          <GraficoHistoricoEstoque tema="escuro" />
-        </div>
-      )}
-
-      {/* Cena 12 — itens reservados: cruzamento peso, quantidade e valor */}
-      {cena === 10 && reservados && (
+      {/* Cena 11 — itens reservados: cruzamento peso, quantidade e valor */}
+      {cena === 9 && reservados && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">

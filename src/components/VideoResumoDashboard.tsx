@@ -90,8 +90,8 @@ type Props = {
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 15;
-const DURACOES = [130000, 5000, 5000, 6500, 5000, 6500, 6500, 6500, 5500, 7000, 6500, 7000, 7000, 7000, 12000];
+const TOTAL_CENAS = 14;
+const DURACOES = [130000, 5000, 5000, 6500, 5000, 6500, 6500, 6500, 5500, 6500, 7000, 7000, 7000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
