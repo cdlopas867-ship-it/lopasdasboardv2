@@ -83,6 +83,7 @@ function dataKey(payload: unknown): string {
       ?.tipos?.map(({ tipo, total }) => [tipo, total]),
     me: (p["mensal"] as unknown[])?.length,
     sc: !!p["saidasCD"],
+    sy: (p["sincronizacao"] as { em?: string } | undefined)?.em,
   });
 }
 
