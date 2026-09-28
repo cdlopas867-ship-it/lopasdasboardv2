@@ -112,7 +112,7 @@ export default function CenasApresentacao({
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Resumo do CD · {new Date().getFullYear()}
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Indicadores principais do CD Lopas. Valor em estoque = custo médio × saldo de cada item. Peças e massa somadas de todos os itens ativos. Ocupação = posições ocupadas ÷ total de endereços (5.970). Fonte: planilha de saldo de itens do Google Drive. Atualizado em 24/09/2026." />
+            <InfoTooltip onOpen={onPausar} texto="Indicadores principais do CD Lopas. Valor em estoque = custo médio × saldo de cada item. Peças e massa somadas de todos os itens ativos. Ocupação = posições ocupadas ÷ total de endereços (5.970). Fonte: planilha de saldo de itens do Google Drive. Atualizado em 28/09/2026." />
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
             {kpis.map((k, i) => (
@@ -131,7 +131,7 @@ export default function CenasApresentacao({
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Valor por unidade
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Participação de cada unidade no valor total do estoque. Cálculo: (valor da unidade ÷ valor total) × 100. Guarda-Roupas = 53%, Salas = 22,7%, Complementos = 24,2%. Fonte: planilha de saldo de itens do Google Drive. Atualizado em 24/09/2026." />
+            <InfoTooltip onOpen={onPausar} texto="Participação de cada unidade no valor total do estoque. Cálculo: (valor da unidade ÷ valor total) × 100. Guarda-Roupas = 53%, Salas = 22,7%, Complementos = 24,2%. Fonte: planilha de saldo de itens do Google Drive. Atualizado em 28/09/2026." />
           </div>
           <div className="mt-8 space-y-7">
             {unidades.map((u, i) => (
@@ -165,7 +165,7 @@ export default function CenasApresentacao({
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Ocupação do CD
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Taxa de ocupação das posições de armazenagem. Cálculo: posições ocupadas ÷ total de posições (5.970). Capacidades: CD1 = 1.800 kg/posição, CD2 = 2.500 kg/posição, 20 volumes/posição. Área total: 18.300 m². Fonte: inventário físico do CD. Atualizado em 24/09/2026." />
+            <InfoTooltip onOpen={onPausar} texto="Taxa de ocupação das posições de armazenagem. Cálculo: posições ocupadas ÷ total de posições (5.970). Capacidades: CD1 = 1.800 kg/posição, CD2 = 2.500 kg/posição, 20 volumes/posição. Área total: 18.300 m². Fonte: inventário físico do CD. Atualizado em 28/09/2026." />
           </div>
           <div className="video-pop relative mt-2 flex items-center justify-center">
             <svg viewBox="0 0 200 200" className="size-28 sm:size-32">
@@ -835,7 +835,7 @@ export default function CenasApresentacao({
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Estoque Reservado
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Itens com reserva comercial. % do valor = valor reservado ÷ valor total do estoque × 100. Cálculo por item: qtd reservada × custo médio = valor reservado; qtd reservada × peso bruto = peso reservado. Fonte: planilha 'COMERCIAL 024 - SALDO DE ITENS COM RESERVA' do Drive. Atualizado em 24/09/2026." />
+            <InfoTooltip onOpen={onPausar} texto="Itens com reserva comercial. % do valor = valor reservado ÷ valor total do estoque × 100. Cálculo por item: qtd reservada × custo médio = valor reservado; qtd reservada × peso bruto = peso reservado. Fonte: planilha 'COMERCIAL 024 - SALDO DE ITENS COM RESERVA' do Drive. Atualizado em 28/09/2026." />
           </div>
 
           {/* Anel circular de progresso — % do valor reservado */}
@@ -932,7 +932,7 @@ export default function CenasApresentacao({
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Estoque Reservado
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Itens com reserva comercial. % do valor = valor reservado ÷ valor total do estoque × 100. Cálculo por item: qtd reservada × custo médio = valor reservado; qtd reservada × peso bruto = peso reservado. Fonte: planilha 'COMERCIAL 024 - SALDO DE ITENS COM RESERVA' do Drive. Atualizado em 24/09/2026." />
+            <InfoTooltip onOpen={onPausar} texto="Itens com reserva comercial. % do valor = valor reservado ÷ valor total do estoque × 100. Cálculo por item: qtd reservada × custo médio = valor reservado; qtd reservada × peso bruto = peso reservado. Fonte: planilha 'COMERCIAL 024 - SALDO DE ITENS COM RESERVA' do Drive. Atualizado em 28/09/2026." />
           </div>
           <p className="video-sobe font-serif text-3xl text-white/70">
             Sem dados de itens reservados.
@@ -950,7 +950,7 @@ export default function CenasApresentacao({
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Valor Previsto da Reserva
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 24/09/2026." />
+            <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
           </div>
           <p className="video-sobe mt-3 font-serif text-4xl text-primary sm:text-5xl" style={{ animationDelay: "0.15s" }}>
             {fmtMoeda(reservados.totalTon * valorFaturado)}
@@ -982,7 +982,7 @@ export default function CenasApresentacao({
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Valor Previsto da Reserva
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 24/09/2026." />
+            <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
           </div>
           <p className="video-sobe font-serif text-3xl text-white/70">
             Valor previsto indisponível.
