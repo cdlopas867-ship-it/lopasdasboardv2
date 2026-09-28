@@ -530,9 +530,11 @@ function recomputeKpis(
         "Ocupados": fmtInt(ocupacaoData.ocupados),
         "Livres": fmtInt(ocupacaoData.livres),
         "Total de endereços": fmtInt(ocupacaoData.total),
+        "POSIÇÕES": `${fmtInt(ocupacaoData.total)} qtd`,
       };
       const extra = prevExtra.map(([lbl, val]) => subs[lbl] ? [lbl, subs[lbl]] as [string, string] : [lbl, val]);
-      return { ...k, valor: pctStr, extra };
+      const detalhe = `${fmtInt(ocupacaoData.ocupados)} endereços ocupados de um total de ${fmtInt(ocupacaoData.total)}. Ainda há ${fmtInt(ocupacaoData.livres)} posições livres — fôlego para o pico de recebimento.`;
+      return { ...k, valor: pctStr, detalhe, extra };
     }
     if (id === "valor") {
       const extras = unidadesData?.map((u) => [u.nome.replace("UNIDADE ", "").replace("DE ", ""), fmtMi(u.valor)] as [string, string]) ?? [];
@@ -906,6 +908,13 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(unidadesRecomputed.length > 0 ? { unidades: unidadesRecomputed } : {}),
     ...(melhorForaDeLinha ? { foraDeLinha: melhorForaDeLinha } : {}),
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
+    ...(melhorOcupacao
+      ? {
+          ocupacaoDetalhes: (existingForKpis?.["ocupacaoDetalhes"] as Record<string, unknown>[] ?? []).map((d) =>
+            d["atributo"] === "POSIÇÕES" ? { ...d, total: melhorOcupacao!.total } : d,
+          ),
+        }
+      : {}),
   };
 
   /* Só grava um novo registro se os valores mudaram desde a última importação.
