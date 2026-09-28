@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 /* Hook que mantém os dados do painel sincronizados entre todos os dispositivos.
  *
