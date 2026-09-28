@@ -790,11 +790,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         melhorResumoMod = stat?.mtime;
       }
 
+      /* Cópias locais só servem de reserva — a pasta do Drive sempre vence. */
       const cargMap = lerCarregadoMensal(wb);
-      if (cargMap && cargMap.size > 0) carregadoDriveMap = cargMap;
+      if (cargMap && cargMap.size > 0 && !carregadoDriveMap) carregadoDriveMap = cargMap;
 
       const saidasCD = lerSaidasCD(wb);
-      if (saidasCD && saidasCD.meses.length > 0) melhorSaidasCD = saidasCD;
+      if (saidasCD && saidasCD.meses.length > 0 && !melhorSaidasCD) melhorSaidasCD = saidasCD;
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }

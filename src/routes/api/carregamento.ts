@@ -134,9 +134,16 @@ export const Route = createFileRoute("/api/carregamento")({
             dias.push({ data, recebido, carregado, cargas });
           }
 
-          const totalRecebido = dias.reduce((s, d) => s + d.recebido, 0);
-          const totalCarregado = dias.reduce((s, d) => s + d.carregado, 0);
+          let totalRecebido = dias.reduce((s, d) => s + d.recebido, 0);
+          let totalCarregado = dias.reduce((s, d) => s + d.carregado, 0);
           const totalCargas = dias.reduce((s, d) => s + d.cargas, 0);
+          /* Prioriza os totais mensais lidos da pasta do Drive (sempre atualizados). */
+          const { getLatestData } = await import("@/lib/sync-store");
+          const latest = (await getLatestData()) as { mensal?: { recebido: number; carregado: number }[] } | null;
+          if (latest?.mensal?.length) {
+            totalRecebido = +latest.mensal.reduce((s, m) => s + (m.recebido || 0), 0).toFixed(1);
+            totalCarregado = +latest.mensal.reduce((s, m) => s + (m.carregado || 0), 0).toFixed(1);
+          }
           const mediaPct = totalRecebido > 0 ? (totalCarregado / totalRecebido) * 100 : 0;
 
           return Response.json({
