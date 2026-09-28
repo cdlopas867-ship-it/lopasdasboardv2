@@ -858,7 +858,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       recebido: m.recebido,
       /* Meses sem dados no Drive (jan–abr) usam os valores da planilha
          "Toneladas Mensal" enviada pelo usuário. */
-      carregado: carregadoPorMes.get(m.mes) ?? CARREGADO_SEM_DRIVE[m.mes] ?? 0,
+      carregado: carregadoDriveMap?.get(m.mes) ?? carregadoPorMes.get(m.mes) ?? CARREGADO_SEM_DRIVE[m.mes] ?? 0,
     }));
   }
 
