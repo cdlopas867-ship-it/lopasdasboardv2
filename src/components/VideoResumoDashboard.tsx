@@ -229,8 +229,43 @@ export default function VideoResumoDashboard({
 
       {/* Conteúdo */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-        {/* Topo — controle de saída */}
+        {/* Topo — última sincronização + controle de saída */}
         <div className="flex items-center justify-end gap-3 px-5 pt-3 sm:px-8">
+          {syncEmTxt && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMostrarSync((v) => !v)}
+                aria-label="Ver planilhas sincronizadas"
+                className="flex cursor-pointer items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20"
+              >
+                <span className="size-1.5 animate-pulse rounded-full bg-primary" />
+                Sincronizado {syncEmTxt}
+              </button>
+              {mostrarSync && (
+                <div className="absolute top-full right-0 z-20 mt-2 w-72 rounded-xl border border-white/20 bg-[#1e2c10]/95 p-3 text-left shadow-xl backdrop-blur-md">
+                  <p className="mb-2 text-[9px] font-bold tracking-[0.2em] text-white/50 uppercase">
+                    Planilhas da pasta do Drive
+                  </p>
+                  <ul className="max-h-56 space-y-1.5 overflow-y-auto">
+                    {(sincronizacao?.planilhas ?? []).map((pl) => (
+                      <li key={pl.nome} className="text-[10px] leading-tight text-white/85">
+                        <span className="block truncate font-semibold">{pl.nome}</span>
+                        {pl.modificado && (
+                          <span className="text-white/45">
+                            alterada em {new Date(pl.modificado).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                    {!(sincronizacao?.planilhas ?? []).length && (
+                      <li className="text-[10px] text-white/45">Nenhuma planilha listada.</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           {onLogout && (
             <button
               type="button"
