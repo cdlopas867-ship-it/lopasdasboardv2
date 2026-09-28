@@ -279,7 +279,11 @@ function extrairResumo(wb: XLSX.WorkBook): ResumoData | null {
         }
       }
 
-      return { valor, previsto: previsto || valor, ton, saldo, itens, data };
+      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso
+         aplica o fator de markup médio do CD (previsto ÷ valor ≈ 1,594,
+         medido na última planilha com a coluna preenchida) em vez de
+         repetir o valor de custo. */
+      return { valor, previsto: previsto || valor * FATOR_PREVISTO, ton, saldo, itens, data };
     }
   }
   return null;
