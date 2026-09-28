@@ -910,7 +910,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
     ...(melhorOcupacao
       ? {
-          ocupacaoDetalhes: ((base as Record<string, unknown>)["ocupacaoDetalhes"] as Record<string, unknown>[] ?? []).map((d) =>
+          ocupacaoDetalhes: (existingForKpis?.["ocupacaoDetalhes"] as Record<string, unknown>[] ?? []).map((d) =>
             d["atributo"] === "POSIÇÕES" ? { ...d, total: melhorOcupacao!.total } : d,
           ),
         }
