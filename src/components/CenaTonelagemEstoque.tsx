@@ -1,0 +1,138 @@
+import { cn } from "@/lib/utils";
+import { fmtBrMax, fmtInt } from "@/lib/format";
+import { TONELAGEM_ESTOQUE_MENSAL } from "@/data/tonelagem-estoque";
+
+/* Cena — Tonelagem do estoque mês a mês com variação percentual.
+ * Barras por mês com o peso (PESO BRT) e a variação vs. mês anterior.
+ * Cabeçalho unificado (último mês + resumo do período) e rótulos dos meses
+ * em linha própria, para caber na tela sem sobrepor a marca d'água. */
+
+type Props = {
+  anim: boolean;
+};
+
+export default function CenaTonelagemEstoque({ anim }: Props) {
+  const dados = TONELAGEM_ESTOQUE_MENSAL;
+  const ultimo = dados[dados.length - 1]!;
+  const anterior = dados[dados.length - 2]!;
+  const deltaUltimo = ((ultimo.ton - anterior.ton) / anterior.ton) * 100;
+  const maxTon = Math.max(...dados.map((d) => d.ton), 1);
+  const minTon = Math.min(...dados.map((d) => d.ton));
+  const media = dados.reduce((s, d) => s + d.ton, 0) / dados.length;
+
+  const resumo = [
+    { rotulo: "Mín.", valor: minTon },
+    { rotulo: "Média", valor: media },
+    { rotulo: "Máx.", valor: maxTon },
+  ];
+
+  return (
+    <div className="w-full pb-6">
+      <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
+        Toneladas do Estoque · Mês a Mês
+      </p>
+
+      {/* Cabeçalho — último mês, variação e resumo do período */}
+      <div
+        className="video-sobe mt-2 flex flex-wrap items-end justify-between gap-x-6 gap-y-2"
+        style={{ animationDelay: "0.1s" }}
+      >
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <p className="font-serif text-4xl leading-none text-white sm:text-5xl">
+            {fmtInt(ultimo.ton)} <span className="text-base text-white/50 sm:text-lg">t</span>
+          </p>
+          <span
+            className={cn(
+              "font-mono text-base font-bold sm:text-xl",
+              deltaUltimo >= 0 ? "text-emerald-400" : "text-red-400",
+            )}
+          >
+            {deltaUltimo >= 0 ? "▲" : "▼"} {fmtBrMax(Math.abs(deltaUltimo), 1)}%
+          </span>
+          <span className="text-xs text-white/45 sm:text-sm">
+            {ultimo.mes} · vs. {anterior.mes}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {resumo.map((r) => (
+            <span
+              key={r.rotulo}
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[9px] font-bold tracking-widest text-white/45 uppercase"
+            >
+              {r.rotulo}{" "}
+              <span className="ml-0.5 font-mono text-[10px] tracking-normal text-white/80">
+                {fmtInt(r.valor)} t
+              </span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Gráfico — barras de tonelagem por mês */}
+      <div className="video-sobe mt-3" style={{ animationDelay: "0.2s" }}>
+        <div className="flex h-32 items-end gap-1.5 sm:gap-3">
+          {dados.map((d, i) => {
+            const destaque = i === dados.length - 1;
+            return (
+              <div key={d.mes} className="flex h-full flex-1 flex-col items-center justify-end">
+                <p
+                  className={cn(
+                    "video-valor-sequencia mb-1 text-center font-mono text-[10px] font-bold text-white/85 sm:text-[11px]",
+                    !anim && "video-pausada",
+                  )}
+                  style={{ animationDelay: `${i * 0.5}s` }}
+                >
+                  {fmtInt(d.ton)}
+                </p>
+                <div
+                  className={cn(
+                    "video-barra-y mx-auto w-full max-w-[3rem] rounded-t-md",
+                    destaque
+                      ? "bg-gradient-to-t from-amber-500/80 to-amber-400 shadow-[0_0_18px_rgba(241,196,15,0.35)]"
+                      : "bg-gradient-to-t from-white/45 to-white/80",
+                    !anim && "video-pausada",
+                  )}
+                  style={{
+                    height: `${Math.max((d.ton / maxTon) * 100, 6)}%`,
+                    animationDelay: `${0.2 + 0.06 * i}s`,
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Rótulos dos meses + variação vs. mês anterior */}
+        <div className="mt-2 flex gap-1.5 border-t border-white/10 pt-2 sm:gap-3">
+          {dados.map((d, i) => {
+            const prev = dados[i - 1];
+            const delta = prev ? ((d.ton - prev.ton) / prev.ton) * 100 : null;
+            const destaque = i === dados.length - 1;
+            return (
+              <div key={d.mes} className="flex-1 text-center">
+                <p
+                  className={cn(
+                    "text-[10px] font-bold uppercase",
+                    destaque ? "text-amber-400" : "text-white/70",
+                  )}
+                >
+                  {d.mes.slice(0, 3)}
+                </p>
+                <p
+                  className={cn(
+                    "mt-0.5 font-mono text-[9px] font-bold sm:text-[10px]",
+                    delta === null ? "text-white/30" : delta >= 0 ? "text-emerald-400" : "text-red-400",
+                  )}
+                >
+                  {delta === null ? "—" : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+      </div>
+    </div>
+  );
+}

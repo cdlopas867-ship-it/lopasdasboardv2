@@ -1,0 +1,15 @@
+/* Reduz custo de composição em imagens animadas e respeita acessibilidade. */
+img.video-kenburns,
+.login-bg-image {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video-kenburns,
+  .login-bg-image {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
