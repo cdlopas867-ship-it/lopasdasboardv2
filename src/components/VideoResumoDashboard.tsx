@@ -116,7 +116,14 @@ export default function VideoResumoDashboard({
   const [pausado, setPausado] = useState(false);
   const [anim, setAnim] = useState(false);
   const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
+  const [mostrarSync, setMostrarSync] = useState(false);
   const cenaAnteriorRef = useRef(0);
+
+  /* Data/hora da última sincronização com a pasta do Drive */
+  const syncEm = sincronizacao?.em ? new Date(sincronizacao.em) : null;
+  const syncEmTxt = syncEm
+    ? `${String(syncEm.getDate()).padStart(2, "0")}/${String(syncEm.getMonth() + 1).padStart(2, "0")}/${syncEm.getFullYear()} ${String(syncEm.getHours()).padStart(2, "0")}:${String(syncEm.getMinutes()).padStart(2, "0")}`
+    : null;
 
   /* Troca de cena: guarda a cena anterior para o fade de saída e dispara
      as animações da nova cena */
