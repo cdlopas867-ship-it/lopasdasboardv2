@@ -11,13 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ForaDeLinhaRouteImport } from './routes/fora-de-linha'
-import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ViagensRouteImport } from './routes/viagens'
 import { Route as ApiAutoImportRouteImport } from './routes/api/auto-import'
 import { Route as ApiCarregamentoRouteImport } from './routes/api/carregamento'
 import { Route as ApiCarregamentoMensalRouteImport } from './routes/api/carregamento-mensal'
-import { Route as ApiHistoricoRouteImport } from './routes/api/historico'
 import { Route as ApiImportarDriveRouteImport } from './routes/api/importar-drive'
 import { Route as ApiSyncDataRouteImport } from './routes/api/sync-data'
 import { Route as ApiSyncEventsRouteImport } from './routes/api/sync-events'
@@ -33,11 +31,6 @@ const IndexRoute = IndexRouteImport.update({
 const ForaDeLinhaRoute = ForaDeLinhaRouteImport.update({
   id: '/fora-de-linha',
   path: '/fora-de-linha',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HistoricoRoute = HistoricoRouteImport.update({
-  id: '/historico',
-  path: '/historico',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -63,11 +56,6 @@ const ApiCarregamentoRoute = ApiCarregamentoRouteImport.update({
 const ApiCarregamentoMensalRoute = ApiCarregamentoMensalRouteImport.update({
   id: '/api/carregamento-mensal',
   path: '/api/carregamento-mensal',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiHistoricoRoute = ApiHistoricoRouteImport.update({
-  id: '/api/historico',
-  path: '/api/historico',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiImportarDriveRoute = ApiImportarDriveRouteImport.update({
@@ -104,13 +92,11 @@ const ApiViagensRoute = ApiViagensRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
-  '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
-  '/api/historico': typeof ApiHistoricoRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
   '/api/sync-data': typeof ApiSyncDataRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
@@ -121,13 +107,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
-  '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
-  '/api/historico': typeof ApiHistoricoRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
   '/api/sync-data': typeof ApiSyncDataRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
@@ -139,13 +123,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
-  '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
-  '/api/historico': typeof ApiHistoricoRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
   '/api/sync-data': typeof ApiSyncDataRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
@@ -158,13 +140,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/fora-de-linha'
-    | '/historico'
     | '/login'
     | '/viagens'
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
-    | '/api/historico'
     | '/api/importar-drive'
     | '/api/sync-data'
     | '/api/sync-events'
@@ -175,13 +155,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/fora-de-linha'
-    | '/historico'
     | '/login'
     | '/viagens'
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
-    | '/api/historico'
     | '/api/importar-drive'
     | '/api/sync-data'
     | '/api/sync-events'
@@ -192,13 +170,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/fora-de-linha'
-    | '/historico'
     | '/login'
     | '/viagens'
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
-    | '/api/historico'
     | '/api/importar-drive'
     | '/api/sync-data'
     | '/api/sync-events'
@@ -210,13 +186,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ForaDeLinhaRoute: typeof ForaDeLinhaRoute
-  HistoricoRoute: typeof HistoricoRoute
   LoginRoute: typeof LoginRoute
   ViagensRoute: typeof ViagensRoute
   ApiAutoImportRoute: typeof ApiAutoImportRoute
   ApiCarregamentoRoute: typeof ApiCarregamentoRoute
   ApiCarregamentoMensalRoute: typeof ApiCarregamentoMensalRoute
-  ApiHistoricoRoute: typeof ApiHistoricoRoute
   ApiImportarDriveRoute: typeof ApiImportarDriveRoute
   ApiSyncDataRoute: typeof ApiSyncDataRoute
   ApiSyncEventsRoute: typeof ApiSyncEventsRoute
@@ -239,13 +213,6 @@ declare module '@tanstack/react-router' {
       path: '/fora-de-linha'
       fullPath: '/fora-de-linha'
       preLoaderRoute: typeof ForaDeLinhaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/historico': {
-      id: '/historico'
-      path: '/historico'
-      fullPath: '/historico'
-      preLoaderRoute: typeof HistoricoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -281,13 +248,6 @@ declare module '@tanstack/react-router' {
       path: '/api/carregamento-mensal'
       fullPath: '/api/carregamento-mensal'
       preLoaderRoute: typeof ApiCarregamentoMensalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/historico': {
-      id: '/api/historico'
-      path: '/api/historico'
-      fullPath: '/api/historico'
-      preLoaderRoute: typeof ApiHistoricoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/importar-drive': {
@@ -338,13 +298,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ForaDeLinhaRoute: ForaDeLinhaRoute,
-  HistoricoRoute: HistoricoRoute,
   LoginRoute: LoginRoute,
   ViagensRoute: ViagensRoute,
   ApiAutoImportRoute: ApiAutoImportRoute,
   ApiCarregamentoRoute: ApiCarregamentoRoute,
   ApiCarregamentoMensalRoute: ApiCarregamentoMensalRoute,
-  ApiHistoricoRoute: ApiHistoricoRoute,
   ApiImportarDriveRoute: ApiImportarDriveRoute,
   ApiSyncDataRoute: ApiSyncDataRoute,
   ApiSyncEventsRoute: ApiSyncEventsRoute,
