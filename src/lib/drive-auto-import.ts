@@ -960,11 +960,25 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         ...(existing2 ?? {}),
         ...(melhorResumo.data ? { atualizadoEm: melhorResumo.data } : {}),
         ...(reservadosResumo2 ? { reservadosResumo: reservadosResumo2 } : {}),
+        sincronizacao,
         ...extras,
       });
     }
     return false;
   }
+
+  /* Registro da sincronização: quando o painel leu a pasta e quais
+     planilhas foram consideradas (com a data de modificação de cada uma).
+     Exibido no painel para o usuário saber de quando são os dados. */
+  const sincronizacao = {
+    em: new Date().toISOString(),
+    planilhas: arquivos
+      .filter((a) => a.nome)
+      .map((a) => ({
+        nome: a.nome,
+        ...(a.modificado ? { modificado: a.modificado.toISOString() } : {}),
+      })),
+  };
 
   /* Salva no histórico apenas quando houve mudança real.
      Usa o horário de modificação do arquivo no Drive como timestamp
@@ -1020,6 +1034,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         previsto: melhorResumo.previsto,
       },
       reservadosResumo,
+      sincronizacao,
       ...extras,
     });
   } else {
@@ -1033,6 +1048,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         itens: melhorResumo.itens,
         previsto: melhorResumo.previsto,
       },
+      sincronizacao,
       ...extras,
     });
   }
