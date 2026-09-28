@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtTonDec, fmtMoeda, fmtMoeda2, fmtPct, fmtPeso } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { GraficoMotivoMensal } from "@/components/GraficoMotivoMensal";
-import { GraficoHistoricoEstoque } from "@/components/GraficoHistoricoEstoque";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import { imagemAvaria, temImagemAvaria } from "@/data/avarias-imagens";
@@ -829,21 +828,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 11 — histórico de peso e quantidade do estoque (gráfico) */}
-      {cena === 9 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Histórico de Estoque
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Evolução histórica do peso e quantidade do estoque ao longo dos meses. Cada ponto representa o saldo registrado no mês. Fonte: snapshots históricos do saldo de itens. Período: janeiro a setembro de 2026." />
-          </div>
-          <GraficoHistoricoEstoque tema="escuro" />
-        </div>
-      )}
-
-      {/* Cena 12 — itens reservados: cruzamento peso, quantidade e valor */}
-      {cena === 10 && reservados && (
+      {/* Cena 11 — itens reservados: cruzamento peso, quantidade e valor */}
+      {cena === 9 && reservados && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -940,7 +926,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 12 fallback — sem dados de reservados */}
-      {cena === 10 && !reservados && (
+      {cena === 9 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -958,7 +944,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 13 — valor previsto da reserva (faturado × toneladas) */}
-      {cena === 11 && reservados && valorFaturado ? (
+      {cena === 10 && reservados && valorFaturado ? (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -990,7 +976,7 @@ export default function CenasApresentacao({
       ) : null}
 
       {/* Cena 13 fallback — sem valor faturado ou reservados */}
-      {cena === 11 && (!reservados || !valorFaturado) && (
+      {cena === 10 && (!reservados || !valorFaturado) && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -1008,17 +994,17 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 14 — Fora de linha por categoria */}
-      {cena === 12 && (
+      {cena === 11 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
       {/* Cena 14 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 13 && (
+      {cena === 12 && (
         <CenaTonelagemEstoque anim={anim} />
       )}
 
       {/* Cena 15 — encerramento */}
-      {cena === 14 && (
+      {cena === 13 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
