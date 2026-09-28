@@ -32,6 +32,12 @@ const FOLDER_ID = "16WJaYavcR8B1QgpVsT51Kg0_ADJsSGtQ";
 const DRIVE_GATEWAY = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
 const PLANILHAS_HISTORICAS = ["1KJ7LbljnIPqa6caCtqyt6T418Q0-Xgpk"];
 
+/* Fator de markup médio do CD (valor previsto ÷ valor de custo), medido na
+   última planilha com a coluna "Valor Previsto" preenchida
+   (27.132.099,26 ÷ 17.019.363,35 ≈ 1,5942). Usado quando a exportação nova
+   deixa a coluna em branco. */
+const FATOR_PREVISTO = 1.5942;
+
 /* Planilhas locais em public/planilhas/ — processadas além das do Drive.
    Último recurso: se o Drive estiver indisponível, os dados locais garantem
    que o painel tenha conteúdo atualizado. */
@@ -279,7 +285,11 @@ function extrairResumo(wb: XLSX.WorkBook): ResumoData | null {
         }
       }
 
-      return { valor, previsto: previsto || valor, ton, saldo, itens, data };
+      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso
+         aplica o fator de markup médio do CD (previsto ÷ valor ≈ 1,594,
+         medido na última planilha com a coluna preenchida) em vez de
+         repetir o valor de custo. */
+      return { valor, previsto: previsto || valor * FATOR_PREVISTO, ton, saldo, itens, data };
     }
   }
   return null;
@@ -446,9 +456,10 @@ function extrairUnidadesResumo(wb: XLSX.WorkBook): UnidadeResumo[] | null {
       saldo: num(r, cSaldo),
       pesoTon: ton,
       valor,
-      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso o
-         previsto acompanha o valor, como já acontece na linha TOTAL. */
-      previsto: num(r, cPrevisto) || valor,
+      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso
+         aplica o fator de markup médio do CD (≈ 1,594) em vez de repetir
+         o valor de custo. */
+      previsto: num(r, cPrevisto) || valor * FATOR_PREVISTO,
       share: num(r, cShare) * (cShare >= 0 && num(r, cShare) <= 1 ? 100 : 1),
     });
   }
