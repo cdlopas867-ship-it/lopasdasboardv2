@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      dashboard_settings: {
+        Row: {
+          created_at: string
+          key: string
+          numeric_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          numeric_value: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          numeric_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dashboard_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          payload: Json
+          source_updated_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payload: Json
+          source_updated_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payload?: Json
+          source_updated_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_history: {
+        Row: {
+          balance_units: number
+          created_at: string
+          forecast_amount: number
+          id: string
+          imported_at: string
+          item_count: number
+          reserved_amount: number | null
+          reserved_tons: number | null
+          source_date: string | null
+          updated_at: string
+          value_amount: number
+          weight_tons: number
+        }
+        Insert: {
+          balance_units: number
+          created_at?: string
+          forecast_amount: number
+          id?: string
+          imported_at: string
+          item_count: number
+          reserved_amount?: number | null
+          reserved_tons?: number | null
+          source_date?: string | null
+          updated_at?: string
+          value_amount: number
+          weight_tons: number
+        }
+        Update: {
+          balance_units?: number
+          created_at?: string
+          forecast_amount?: number
+          id?: string
+          imported_at?: string
+          item_count?: number
+          reserved_amount?: number | null
+          reserved_tons?: number | null
+          source_date?: string | null
+          updated_at?: string
+          value_amount?: number
+          weight_tons?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,7 +1,12 @@
 import "./lib/error-capture";
-
-import { consumeLastCapturedError } from "./lib/error-capture";
+import { consumeLastCapturedError, describeError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+
+/* O servidor principal precisa ser leve e compatível com o runtime do Lovable.
+   Importações do Drive e leitura de arquivos não devem acontecer no carregamento
+   do módulo SSR: em runtime edge elas podem derrubar a página inteira antes que
+   a rota seja atendida. Essas tarefas continuam disponíveis nas rotas/API e no
+   carregamento do cliente. */
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -18,30 +23,24 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-// h3 swallows in-handler throws into a normal 500 Response with body
-// {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
-async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
-  if (response.status < 500) return response;
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) return response;
-
-  const body = await response.clone().text();
-  if (!isH3SwallowedErrorBody(body)) return response;
-
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return new Response(renderErrorPage(), {
-    status: 500,
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
+function statusFromError(error: unknown): number {
+  if (error && typeof error === "object" && "statusCode" in error) {
+    const status = Number((error as { statusCode?: unknown }).statusCode);
+    if (Number.isInteger(status) && status >= 400 && status <= 599) return status;
+  }
+  return 500;
 }
 
-function isH3SwallowedErrorBody(body: string): boolean {
-  try {
-    const payload = JSON.parse(body) as { unhandled?: unknown; message?: unknown };
-    return payload.unhandled === true && payload.message === "HTTPError";
-  } catch {
-    return false;
-  }
+function errorResponse(error: unknown): Response {
+  const detail = consumeLastCapturedError() ?? error;
+  console.error("[server] falha ao processar requisição:\n" + describeError(detail));
+  return new Response(renderErrorPage(), {
+    status: statusFromError(error),
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
+    },
+  });
 }
 
 export default {
@@ -49,13 +48,23 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+
+      /* h3 pode devolver um 500 JSON genérico quando uma exceção escapou de
+         uma rota. Converte-o para a página de erro e registra a causa real. */
+      if (response.status >= 500 && (response.headers.get("content-type") ?? "").includes("application/json")) {
+        const body = await response.clone().text();
+        try {
+          const payload = JSON.parse(body) as { unhandled?: unknown; error?: unknown };
+          if (payload.unhandled === true || payload.error === true) {
+            return errorResponse(new Error(`Resposta SSR não tratada: ${body}`));
+          }
+        } catch {
+          /* corpo não JSON — devolve a resposta original */
+        }
+      }
+      return response;
     } catch (error) {
-      console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return errorResponse(error);
     }
   },
 };

@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      // Bind mounts in the sandbox don't emit inotify events reliably, so Vite's
+      // file watcher misses edits — polling keeps hot reload working.
+      watch: { usePolling: true, interval: 300 },
+    },
+  },
 });

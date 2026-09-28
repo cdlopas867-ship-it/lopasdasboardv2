@@ -5,17 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * Design system — Lopas 2026 (Editorial)
+ * Direção: editorial lifestyle catalog — bege quente, verde trevo da marca,
+ * grafite, serifada Instrument Serif para títulos e Inter para texto.
  */
 
 @theme inline {
@@ -46,6 +38,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-soft: var(--brand-green-soft);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-beige: var(--brand-beige);
+  --color-brand-sand: var(--brand-sand);
+  --color-brand-amber: var(--brand-amber);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -59,77 +57,95 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --radius: 0.75rem;
+  /* Base editorial */
+  --background: oklch(0.974 0.005 95);
+  --foreground: oklch(0.24 0.008 240);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --card-foreground: oklch(0.24 0.008 240);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.24 0.008 240);
+  /* Verde trevo do logo Lopas */
+  --primary: oklch(0.637 0.148 133.5);
+  --primary-foreground: oklch(0.99 0.003 95);
+  --secondary: oklch(0.945 0.012 90);
+  --secondary-foreground: oklch(0.24 0.008 240);
+  --muted: oklch(0.945 0.012 90);
+  --muted-foreground: oklch(0.5 0.015 90);
+  --accent: oklch(0.93 0.035 125);
+  --accent-foreground: oklch(0.3 0.04 130);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --border: oklch(0.24 0.008 240 / 8%);
+  --input: oklch(0.24 0.008 240 / 12%);
+  --ring: oklch(0.637 0.148 133.5);
+  /* Tokens de marca */
+  --brand-green: oklch(0.637 0.148 133.5);
+  --brand-green-soft: oklch(0.92 0.045 130);
+  --brand-dark: oklch(0.24 0.008 240);
+  --brand-beige: oklch(0.974 0.005 95);
+  --brand-sand: oklch(0.93 0.02 85);
+  --brand-amber: oklch(0.7 0.15 70);
+  /* Gráficos: verde, areia, grafite, âmbar */
+  --chart-1: oklch(0.637 0.148 133.5);
+  --chart-2: oklch(0.75 0.06 90);
+  --chart-3: oklch(0.35 0.02 240);
+  --chart-4: oklch(0.7 0.15 70);
+  --chart-5: oklch(0.55 0.08 140);
+  --sidebar: oklch(0.974 0.005 95);
+  --sidebar-foreground: oklch(0.24 0.008 240);
+  --sidebar-primary: oklch(0.637 0.148 133.5);
+  --sidebar-primary-foreground: oklch(0.99 0.003 95);
+  --sidebar-accent: oklch(0.945 0.012 90);
+  --sidebar-accent-foreground: oklch(0.24 0.008 240);
+  --sidebar-border: oklch(0.24 0.008 240 / 8%);
+  --sidebar-ring: oklch(0.637 0.148 133.5);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+  --background: oklch(0.21 0.008 240);
+  --foreground: oklch(0.96 0.005 95);
+  --card: oklch(0.26 0.01 240);
+  --card-foreground: oklch(0.96 0.005 95);
+  --popover: oklch(0.26 0.01 240);
+  --popover-foreground: oklch(0.96 0.005 95);
+  --primary: oklch(0.7 0.15 133.5);
+  --primary-foreground: oklch(0.21 0.008 240);
+  --secondary: oklch(0.3 0.012 240);
+  --secondary-foreground: oklch(0.96 0.005 95);
+  --muted: oklch(0.3 0.012 240);
+  --muted-foreground: oklch(0.7 0.02 90);
+  --accent: oklch(0.32 0.04 130);
+  --accent-foreground: oklch(0.93 0.035 125);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --ring: oklch(0.7 0.15 133.5);
+  --brand-green: oklch(0.7 0.15 133.5);
+  --brand-green-soft: oklch(0.35 0.05 130);
+  --brand-dark: oklch(0.96 0.005 95);
+  --brand-beige: oklch(0.21 0.008 240);
+  --brand-sand: oklch(0.3 0.02 90);
+  --brand-amber: oklch(0.75 0.14 70);
+  --chart-1: oklch(0.7 0.15 133.5);
+  --chart-2: oklch(0.75 0.06 90);
+  --chart-3: oklch(0.6 0.02 240);
+  --chart-4: oklch(0.75 0.14 70);
+  --chart-5: oklch(0.65 0.08 140);
+  --sidebar: oklch(0.26 0.01 240);
+  --sidebar-foreground: oklch(0.96 0.005 95);
+  --sidebar-primary: oklch(0.7 0.15 133.5);
+  --sidebar-primary-foreground: oklch(0.21 0.008 240);
+  --sidebar-accent: oklch(0.3 0.012 240);
+  --sidebar-accent-foreground: oklch(0.96 0.005 95);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --sidebar-ring: oklch(0.7 0.15 133.5);
 }
 
 @layer base {
@@ -137,8 +153,753 @@
     border-color: var(--color-border);
   }
 
+  html, body {
+    min-height: 100vh;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
+}
+
+/* Micro-interações editoriais */
+@utility card-lift {
+  transition:
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -18px oklch(0.24 0.008 240 / 25%);
+  }
+}
+
+@utility expand-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+
+  & > * {
+    overflow: hidden;
+  }
+}
+
+@utility expand-grid-open {
+  grid-template-rows: 1fr;
+}
+
+/* Intro — revelação do logo Lopas */
+@keyframes intro-logo-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-8deg);
+    filter: blur(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0);
+  }
+}
+
+@keyframes intro-text-in {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.9);
+    filter: blur(10px);
+    letter-spacing: 0.4em;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+    letter-spacing: 0.15em;
+  }
+}
+
+@keyframes intro-ring {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes intro-exit {
+  0% {
+    clip-path: inset(0 0 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+@keyframes intro-video-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.0) translateX(0);
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.18) translateX(-1.5%);
+  }
+}
+
+@utility animate-intro-logo {
+  animation: intro-logo-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+@utility animate-intro-text {
+  animation: intro-text-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+}
+
+@utility animate-intro-text-2 {
+  animation: intro-text-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.8s both;
+}
+
+@utility animate-intro-ring {
+  animation: intro-ring 1.4s ease-out 0.3s both;
+}
+
+@utility animate-intro-exit {
+  animation: intro-exit 0.7s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+@utility animate-intro-video {
+  animation: intro-video-in 4.5s cubic-bezier(0.25, 0.1, 0.25, 1) both,
+    video-kenburns 30s ease-in-out 4.5s infinite;
+}
+
+/* Cursor personalizado — trevo Lopas (ponta de clique no centro do trevo) */
+body,
+a,
+button,
+[role="button"],
+label,
+summary,
+input,
+select,
+textarea,
+.cursor-pointer,
+.card-lift,
+html[data-b44-comment-cursor][data-b44-comment-cursor],
+html[data-b44-comment-cursor][data-b44-comment-cursor] body,
+html[data-b44-comment-cursor][data-b44-comment-cursor] body *,
+html[data-b44-comment-cursor][data-b44-comment-cursor] a,
+html[data-b44-comment-cursor][data-b44-comment-cursor] button {
+  cursor: url("/trevo-lopas.png") 26 22, pointer !important;
+}
+
+/* Esconde a bolinha branca do modo de comentários do preview,
+   que cobre o cursor real do site */
+[data-b44-comment-cursor][popover] {
+  display: none !important;
+}
+
+/* Apresentação do dashboard ao iniciar o app */
+@keyframes apresent-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes apresent-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes apresent-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Indicador em ciclo na tela de apresentação pós-login — surge e some */
+@keyframes intro-metrica {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.92);
+    filter: blur(10px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.92);
+    filter: blur(10px);
+  }
+}
+.intro-metrica {
+  animation: intro-metrica 3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Efeito de surgir da apresentação ao iniciar (após a intro) */
+@keyframes apresent-surgir {
+  0% {
+    opacity: 0;
+    filter: blur(20px);
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+.apresent-surgir {
+  animation: apresent-surgir 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.apresent-overlay {
+  animation: apresent-overlay-in 0.3s ease-out both;
+}
+.apresent-card {
+  animation: apresent-card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.apresent-slide {
+  animation: apresent-slide-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes apresent-progresso {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+.apresent-progresso {
+  animation-name: apresent-progresso;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+/* Vídeo-resumo do dashboard — animações das cenas */
+@keyframes video-barra-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.video-barra-x {
+  transform-origin: left center;
+  animation: video-barra-x 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes video-barra-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.video-barra-y {
+  transform-origin: bottom center;
+  animation: video-barra-y 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes video-sobe {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.video-sobe {
+  animation: video-sobe 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes video-segmento {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+.video-segmento {
+  animation-name: video-segmento;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+.video-pausada {
+  animation-play-state: paused;
+}
+/* Destaque sequencial — cada valor acende por vez, em ciclo contínuo */
+@keyframes video-valor-sequencia {
+  0%,
+  9% {
+    color: #fbbf24;
+    text-shadow: 0 0 14px rgba(241, 196, 15, 0.55);
+    transform: translateY(-2px) scale(1.12);
+  }
+  9.01%,
+  100% {
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: none;
+    transform: none;
+  }
+}
+.video-valor-sequencia {
+  animation: video-valor-sequencia 4.5s linear infinite;
+}
+
+/* Hero — texto que surge sobre a imagem do armazém */
+@keyframes hero-surgir {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+    filter: blur(10px);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(40px);
+    filter: blur(10px);
+  }
+}
+.hero-surgir {
+  animation: hero-surgir 6s cubic-bezier(0.16, 1, 0.3, 1) 0s infinite;
+}
+.hero-surgir-2 {
+  animation: hero-surgir 6s cubic-bezier(0.16, 1, 0.3, 1) 0.8s infinite;
+}
+.hero-surgir-3 {
+  animation: hero-surgir 6s cubic-bezier(0.16, 1, 0.3, 1) 1.6s infinite;
+}
+
+/* Resumo do Estoque — cards que emergem e submergem ao rolar */
+@keyframes card-emerge {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.96);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes card-submerge {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+    filter: blur(6px);
+  }
+}
+.card-emerge {
+  animation: card-emerge 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.card-submerge {
+  animation: card-submerge 0.4s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* Fundo — movimento contínuo de câmera (Ken Burns em loop) */
+@keyframes video-kenburns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  25% {
+    transform: scale(1.08) translate(-2%, -1.5%);
+  }
+  50% {
+    transform: scale(1.14) translate(1.5%, 1%);
+  }
+  75% {
+    transform: scale(1.1) translate(2%, 1.5%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+.video-kenburns {
+  animation: video-kenburns 30s ease-in-out infinite;
+}
+@keyframes video-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.video-pop {
+  animation: video-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Transição entre cenas — fade simples de opacidade */
+@keyframes video-sai {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.video-sai {
+  animation: video-sai 0.6s ease-in-out both;
+}
+
+@keyframes video-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.video-entra {
+  animation: video-entra 0.5s ease-out both;
+}
+
+/* Cópia da cena que sai: animações internas congeladas, só o fade de saída */
+.video-congelada * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Login — texto da marca em loop (fade in/out) */
+@keyframes login-marca-loop {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.login-marca-loop {
+  animation: login-marca-loop 5s ease-in-out infinite;
+}
+.login-marca-loop-2 {
+  animation: login-marca-loop 5s ease-in-out 0.8s infinite;
+}
+
+/* Login — modal surge com fade + slide-up */
+@keyframes login-surgir {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+.login-surgir {
+  animation: login-surgir 1.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.login-surgir-marca {
+  animation: login-surgir 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Gráficos — barras que crescem ao entrar na viewport */
+@keyframes barra-cresce {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+.barra-cresce {
+  transform-origin: bottom center;
+  animation: barra-cresce 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes barra-larga {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+.barra-larga {
+  transform-origin: left center;
+  animation: barra-larga 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Gráfico — container surge suavemente */
+@keyframes grafico-surge {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.grafico-surge {
+  animation: grafico-surge 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Gráficos — movimento contínuo elaborado (loop) */
+
+/* Linhas recharts — começa em branco e vai se preenchendo em loop */
+@keyframes linha-preenche {
+  0% { stroke-dashoffset: 1000; }
+  40% { stroke-dashoffset: 0; }
+  85% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 1000; }
+}
+.grafico-loop .recharts-line path {
+  stroke-dasharray: 1000;
+  animation: linha-preenche 6s ease-in-out infinite;
+}
+
+/* Barras verticais — começa vazia e se preenche lentamente em loop */
+@keyframes barra-preenche {
+  0% { transform: scaleY(0); opacity: 0.3; }
+  50% { transform: scaleY(1); opacity: 1; }
+  85% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(0); opacity: 0.3; }
+}
+.barra-onda {
+  transform-origin: bottom center;
+  animation: barra-preenche 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* Barras horizontais — começa vazia e se preenche lentamente em loop */
+@keyframes barra-preenche-x {
+  0% { transform: scaleX(0); opacity: 0.3; }
+  50% { transform: scaleX(1); opacity: 1; }
+  85% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(0); opacity: 0.3; }
+}
+.barra-onda-x {
+  transform-origin: left center;
+  animation: barra-preenche-x 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* Brilho que percorre as barras de progresso (mais elaborado) */
+@keyframes barra-brilho {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.barra-brilho {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 28%,
+    rgba(255,255,255,0.12) 40%,
+    rgba(255,255,255,0.4) 50%,
+    rgba(255,255,255,0.12) 60%,
+    transparent 72%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: barra-brilho 4s linear infinite;
+}
+
+/* Curva ABC — card surge do ponto da linha */
+@keyframes abc-auto-card {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.abc-auto-card {
+  animation: abc-auto-card 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes abc-auto-dot {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.6); opacity: 0.5; }
+}
+.abc-auto-dot {
+  animation: abc-auto-dot 0.7s ease-in-out infinite;
+}
+
+/* Login — modal mergulha/afunda ao sair */
+@keyframes login-mergulhar {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(60px) scale(0.94);
+    filter: blur(12px);
+  }
+}
+.login-mergulhar {
+  animation: login-mergulhar 0.9s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* Login — página inteira sobe e dissolve ao navegar para o dashboard */
+@keyframes login-sair-pagina {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100%) scale(1.06);
+    filter: blur(16px);
+  }
+}
+.login-sair-pagina {
+  animation: login-sair-pagina 0.9s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* Dashboard — entrada suave após sair do login */
+@keyframes dashboard-entrar {
+  0% {
+    opacity: 0;
+    transform: scale(1.04);
+    filter: blur(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+.dashboard-entrar {
+  animation: dashboard-entrar 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Resumo intro — slides de indicadores antes do vídeo (surgir e trocar) */
+@keyframes resumo-slide-entra {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+.resumo-slide-entra {
+  animation: resumo-slide-entra 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes resumo-toast-entra {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.resumo-toast {
+  animation: resumo-toast-entra 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes resumo-intro-sair {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.05);
+    filter: blur(12px);
+  }
+}
+.resumo-intro-saindo {
+  animation: resumo-intro-sair 0.6s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* Tela de boas-vindas — imagem de satélite + dizeres Lopas (surgir e sumir) */
+@keyframes boas-vindas-fade {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes boas-vindas-zoom {
+  0% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@keyframes boas-vindas-texto {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+    filter: blur(12px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  78% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.92);
+    filter: blur(12px);
+  }
+}
+.boas-vindas-overlay {
+  animation: boas-vindas-fade 2.8s ease-in-out both;
+}
+.boas-vindas-bg {
+  animation: boas-vindas-zoom 2.8s ease-out both;
+}
+.boas-vindas-texto {
+  animation: boas-vindas-texto 2.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.boas-vindas-texto-2 {
+  animation: boas-vindas-texto 2.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
 }
