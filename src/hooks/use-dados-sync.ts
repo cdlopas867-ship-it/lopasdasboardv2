@@ -100,6 +100,14 @@ export function useDadosSync<T>(initial: T) {
     if (!isValidPainel(payload)) return;
     const key = dataKey(payload);
     if (key === appliedKey.current) return;
+    /* Avisa quando chegam dados novos depois da primeira carga —
+       ou seja, quando a planilha da pasta foi atualizada. */
+    if (appliedKey.current) {
+      toast.success("Dados atualizados", {
+        description: "O painel recebeu novos dados da planilha.",
+        duration: 6000,
+      });
+    }
     appliedKey.current = key;
     setDados(payload);
     setLoaded(true);
