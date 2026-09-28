@@ -86,6 +86,7 @@ type Props = {
   valorFaturado?: number | undefined;
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
+  sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   onFechar?: () => void;
   onLogout?: () => void;
 };
@@ -107,6 +108,7 @@ export default function VideoResumoDashboard({
   valorFaturado,
   saidasCD,
   foraDeLinha,
+  sincronizacao,
   onFechar,
   onLogout,
 }: Props) {
