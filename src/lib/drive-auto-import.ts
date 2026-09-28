@@ -450,9 +450,10 @@ function extrairUnidadesResumo(wb: XLSX.WorkBook): UnidadeResumo[] | null {
       saldo: num(r, cSaldo),
       pesoTon: ton,
       valor,
-      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso o
-         previsto acompanha o valor, como já acontece na linha TOTAL. */
-      previsto: num(r, cPrevisto) || valor,
+      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso
+         aplica o fator de markup médio do CD (≈ 1,594) em vez de repetir
+         o valor de custo. */
+      previsto: num(r, cPrevisto) || valor * FATOR_PREVISTO,
       share: num(r, cShare) * (cShare >= 0 && num(r, cShare) <= 1 ? 100 : 1),
     });
   }
