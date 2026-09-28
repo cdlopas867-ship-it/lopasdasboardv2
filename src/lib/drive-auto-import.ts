@@ -960,6 +960,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         ...(existing2 ?? {}),
         ...(melhorResumo.data ? { atualizadoEm: melhorResumo.data } : {}),
         ...(reservadosResumo2 ? { reservadosResumo: reservadosResumo2 } : {}),
+        sincronizacao,
         ...extras,
       });
     }
@@ -1020,6 +1021,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         previsto: melhorResumo.previsto,
       },
       reservadosResumo,
+      sincronizacao,
       ...extras,
     });
   } else {
@@ -1033,6 +1035,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         itens: melhorResumo.itens,
         previsto: melhorResumo.previsto,
       },
+      sincronizacao,
       ...extras,
     });
   }
