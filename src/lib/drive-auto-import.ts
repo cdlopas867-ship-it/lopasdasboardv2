@@ -790,11 +790,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         melhorResumoMod = stat?.mtime;
       }
 
+      /* Cópias locais só servem de reserva — a pasta do Drive sempre vence. */
       const cargMap = lerCarregadoMensal(wb);
-      if (cargMap && cargMap.size > 0) carregadoDriveMap = cargMap;
+      if (cargMap && cargMap.size > 0 && !carregadoDriveMap) carregadoDriveMap = cargMap;
 
       const saidasCD = lerSaidasCD(wb);
-      if (saidasCD && saidasCD.meses.length > 0) melhorSaidasCD = saidasCD;
+      if (saidasCD && saidasCD.meses.length > 0 && !melhorSaidasCD) melhorSaidasCD = saidasCD;
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }
@@ -857,7 +858,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       recebido: m.recebido,
       /* Meses sem dados no Drive (jan–abr) usam os valores da planilha
          "Toneladas Mensal" enviada pelo usuário. */
-      carregado: carregadoPorMes.get(m.mes) ?? CARREGADO_SEM_DRIVE[m.mes] ?? 0,
+      carregado: carregadoDriveMap?.get(m.mes) ?? carregadoPorMes.get(m.mes) ?? CARREGADO_SEM_DRIVE[m.mes] ?? 0,
     }));
   }
 
