@@ -1,5 +1,6 @@
 /* Itens fora de linha — planilha "Estoque Em Linha x Fora de Linha"
-   (aba "Fora de Linha", 147 itens; aba "Resumo" para a visão geral). */
+   (aba "Fora de Linha", 147 itens; aba "Resumo" para a visão geral).
+   Dados conforme aba Resumo da planilha do Drive. */
 
 export type ItemForaDeLinha = {
   chave: string;
@@ -54,7 +55,7 @@ export const POSICAO_FORA_DE_LINHA: PosicaoEstoque = {
   pesoTon: 162.463,
   pesoReservadoTon: 67.671,
   valorEstoque: 705498,
-  valorReservado: 0,
+  valorReservado: 280432.81,
 };
 
 export const POSICAO_TOTAL: PosicaoEstoque = {
@@ -67,7 +68,7 @@ export const POSICAO_TOTAL: PosicaoEstoque = {
   pesoTon: 3946.923,
   pesoReservadoTon: 2277.401,
   valorEstoque: 17017064.98,
-  valorReservado: 8453099.91,
+  valorReservado: 8733532.72,
 };
 
 export const ITENS_FORA_DE_LINHA: ItemForaDeLinha[] = [
@@ -81,7 +82,6 @@ export const ITENS_FORA_DE_LINHA: ItemForaDeLinha[] = [
   {"chave": "2320.13076", "item": 2320, "desc": "VOL CX GR 3 PTS NICE PORTAS 2,150X0,940X0,055", "mascara": "(13076)FRASSINO/OFF WHITE", "categoria": "UNIDADE GUARDA ROUPAS", "origem": "EM AMBAS", "saldoFocco": 12, "saldoFull": 0, "reservas": 0, "disponivel": 12, "pesoKg": 42.3, "pesoReservadoKg": 0, "valorEstoque": 29370.8, "valorReservado": 0},
   {"chave": "75841.13222", "item": 75841, "desc": "VOL CX GR 6 PTS LOOP 2024 TAMPO 2,735X0,515X0,083", "mascara": "(13222)FRASSINO/SALVIA", "categoria": "UNIDADE GUARDA ROUPAS", "origem": "EM AMBAS", "saldoFocco": 7, "saldoFull": 0, "reservas": 0, "disponivel": 7, "pesoKg": 31.4, "pesoReservadoKg": 0, "valorEstoque": 15569.9, "valorReservado": 0},
   {"chave": "75868.13792", "item": 75868, "desc": "VOL CX GR 6 PTS LOOP 2024 PORTA 2,400X0,417X0,103", "mascara": "(13792)SALVIA", "categoria": "UNIDADE GUARDA ROUPAS", "origem": "EM AMBAS", "saldoFocco": 5, "saldoFull": 0, "reservas": 0, "disponivel": 5, "pesoKg": 19.2, "pesoReservadoKg": 0, "valorEstoque": 12985.0, "valorReservado": 0},
-  {"chave": "73233.15555", "item": 73233, "desc": "VOL CX MESA DE CABECEIRA C/2 GAV LEDER 0,625X0,437X0,133", "mascara": "(15555)AMENDOA CLEAN", "categoria": "UNIDADE DE SALAS", "origem": "SO ELIANE", "saldoFocco": 8, "saldoFull": 0, "reservas": 0, "disponivel": 8, "pesoKg": 25.6, "pesoReservadoKg": 0, "valorEstoque": 18750.2, "valorReservado": 0},
-  {"chave": "73255.15557", "item": 73255, "desc": "VOL CX MESA DE CABECEIRA C/2 GAV LOOP 0,720X0,393X0,128", "mascara": "(15557)AMENDOA CLEAN/OFF WH", "categoria": "UNIDADE DE SALAS", "origem": "SO ELIANE", "saldoFocco": 7, "saldoFull": 0, "reservas": 0, "disponivel": 7, "pesoKg": 21.3, "pesoReservadoKg": 0, "valorEstoque": 17620.5, "valorReservado": 0},
-  {"chave": "72829.16467", "item": 72829, "desc": "VOL CX BARRA CAMA CASAL 1,60 LOOP/LEDER", "mascara": "(16467)FRASSINO", "categoria": "UNIDADE DE COMPLEMENTOS", "origem": "SO ELIANE", "saldoFocco": 19, "saldoFull": 0, "reservas": 0, "disponivel": 19, "pesoKg": 18.8, "pesoReservadoKg": 0, "valorEstoque": 74586, "valorReservado": 0},
+  {"chave": "72829.16467", "item": 72829, "desc": "VOL CX BARRA CAMA CASAL 1,60 LOOP/LEDER", "mascara": "(16467)FRASSINO", "categoria": "UNIDADE DE COMPLEMENTOS", "origem": "SO ELIANE", "saldoFocco": 266, "saldoFull": 0, "reservas": 266, "disponivel": 0, "pesoKg": 9.926, "pesoReservadoKg": 9.926, "valorEstoque": 74586, "valorReservado": 74586},
+  {"chave": "73233.15555", "item": 73233, "desc": "VOL CX MESA DE CABECEIRA C/2 GAV LEDER 0,625X0,437X0,133", "mascara": "(15555)AMENDOA CLEAN", "categoria": "UNIDADE DE SALAS", "origem": "SO ELIANE", "saldoFocco": 207, "saldoFull": 0, "reservas": 207, "disponivel": 0, "pesoKg": 4.41, "pesoReservadoKg": 4.41, "valorEstoque": 36371, "valorReservado": 36371},
 ];
