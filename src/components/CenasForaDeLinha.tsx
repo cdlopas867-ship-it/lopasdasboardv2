@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { fmtInt, fmtMoeda, fmtPct, fmtPeso } from "@/lib/format";
+import { fmtInt, fmtPct, fmtPeso } from "@/lib/format";
 import {
   ITENS_FORA_DE_LINHA,
   POSICAO_EM_LINHA,
@@ -68,7 +68,6 @@ function Comparativo() {
   ];
   const metricas: [string, (i: typeof POSICAO_EM_LINHA) => number][] = [
     ["Itens", (i) => i.itens],
-    ["Valor em estoque", (i) => i.valorEstoque],
     ["Peso total", (i) => i.pesoTon],
   ];
   return (
@@ -137,9 +136,6 @@ function ItemRow({ item }: { item: ItemForaDeLinha }) {
       <td className="px-3 py-3 text-right font-mono text-sm whitespace-nowrap text-white/70">
         {fmtPeso(item.pesoKg)}
       </td>
-      <td className="px-3 py-3 text-right font-mono text-sm whitespace-nowrap text-primary">
-        {fmtMoeda(item.valorEstoque)}
-      </td>
     </tr>
   );
 }
@@ -161,26 +157,16 @@ function CenaResumo() {
         className="video-sobe mt-3 max-w-2xl text-sm leading-relaxed text-white/70"
         style={{ animationDelay: "0.16s" }}
       >
-        {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtMoeda(pos.valorEstoque)} em
-        custo ({fmtPct(pos.valorEstoque / POSICAO_TOTAL.valorEstoque)} do valor total) e{" "}
-        {fmtPeso(pos.pesoTon * 1000)} de massa ({fmtPct(pos.pesoTon / POSICAO_TOTAL.pesoTon)} do peso
-        total).
+        {fmtInt(pos.itens)} itens fora de linha ocupam o CD — {fmtPeso(pos.pesoTon * 1000)} de massa total
+        ({fmtPct(pos.pesoTon / POSICAO_TOTAL.pesoTon)} do peso total).
       </p>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
         <div style={{ animationDelay: "0.2s" }}>
           <KpiCard
             rotulo="Itens fora de linha"
             valor={fmtInt(pos.itens)}
             detalhe={`${fmtPct(pos.itens / POSICAO_TOTAL.itens)} do catálogo total de ${fmtInt(POSICAO_TOTAL.itens)} itens.`}
-            delay="0s"
-          />
-        </div>
-        <div style={{ animationDelay: "0.24s" }}>
-          <KpiCard
-            rotulo="Valor em estoque"
-            valor={fmtMoeda(pos.valorEstoque)}
-            detalhe={`R$ ${fmtInt(pos.valorReservado)} já reservados para vendas.`}
             delay="0s"
           />
         </div>
@@ -217,18 +203,11 @@ function CenaLista({
   origem,
   setOrigem,
   itens,
-  valorFiltrado,
-}: Omit<Props, "cena" | "anim">) {
+}: Omit<Props, "cena" | "anim" | "valorFiltrado">) {
   return (
     <div className="py-4">
       <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
         Lista de itens · {itens.length} de {ITENS_FORA_DE_LINHA.length}
-      </p>
-      <p
-        className="video-sobe mt-1 text-xs text-white/50"
-        style={{ animationDelay: "0.08s" }}
-      >
-        Valor filtrado: <span className="font-semibold text-primary">{fmtMoeda(valorFiltrado)}</span>
       </p>
 
       <div className="video-sobe mt-4 flex flex-col gap-3 sm:flex-row sm:items-center" style={{ animationDelay: "0.16s" }}>
@@ -271,7 +250,6 @@ function CenaLista({
               <th className="px-3 pb-2 text-right">Saldo</th>
               <th className="px-3 pb-2 text-right">Disponível</th>
               <th className="px-3 pb-2 text-right">Peso</th>
-              <th className="px-3 pb-2 text-right">Valor</th>
             </tr>
           </thead>
           <tbody>
@@ -280,7 +258,7 @@ function CenaLista({
             ))}
             {!itens.length && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-sm text-white/50">
+                <td colSpan={7} className="px-3 py-10 text-center text-sm text-white/50">
                   Nenhum item encontrado com esses filtros.
                 </td>
               </tr>
