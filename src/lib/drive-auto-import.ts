@@ -9,7 +9,7 @@
  * do Drive, mesmo sem ninguém com o painel aberto. */
 
 import * as XLSX from "xlsx";
-import { addRegistro, getHistorico } from "./historico-store";
+import { addRegistro, getHistorico, garantirRegistroDiario } from "./historico-store";
 import { setData, getLatestData } from "./sync-store";
 import { lerReservados, calcularReservados } from "./reservados";
 import { lerPendentes } from "./pendentes";
@@ -1091,6 +1091,12 @@ export function iniciarAutoImport() {
       console.error("[auto-import] falha no ciclo:", e),
     );
   }, 15 * 1000);
+
+  /* Garante 1 registro de peso por dia, mesmo sem mudança na planilha */
+  setInterval(() => {
+    garantirRegistroDiario().catch(() => {});
+  }, 10 * 60 * 1000);
+  setTimeout(() => { garantirRegistroDiario().catch(() => {}); }, 60_000);
 
   console.info("[auto-import] ciclo de importação automática do Drive iniciado (a cada 15 s)");
 }
