@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import Apresentacao from "./Apresentacao";
 import CenasForaDeLinha from "./CenasForaDeLinha";
-import { ITENS_FORA_DE_LINHA, type ItemForaDeLinha } from "@/data/fora-de-linha";
+import { ITENS_FORA_DE_LINHA, POSICAO_EM_LINHA, POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha } from "@/data/fora-de-linha";
 import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
 
@@ -22,6 +22,8 @@ export default function ForaDeLinha() {
   const [categoria, setCategoria] = useState("");
   const [origem, setOrigem] = useState("");
 
+  /* Sempre usa os dados do fallback (ITENS_FORA_DE_LINHA) que refletem a planilha atual.
+     Se o Drive enviar dados, eles sobrescrevem; caso contrário, usa-se o fallback correto. */
   const itensBase = (dados as Record<string, unknown>)["foraDeLinha"] as { itens: ItemForaDeLinha[] } | undefined;
   const itensForaDeLinha = itensBase?.itens ?? ITENS_FORA_DE_LINHA;
 
@@ -37,7 +39,7 @@ export default function ForaDeLinha() {
         i.mascara.toLowerCase().includes(q)
       );
     }).sort((a, b) => b.valorEstoque - a.valorEstoque);
-  }, [busca, categoria, origem]);
+  }, [busca, categoria, origem, itensForaDeLinha]);
 
   const valorFiltrado = itens.reduce((s, i) => s + i.valorEstoque, 0);
 
@@ -63,6 +65,9 @@ export default function ForaDeLinha() {
           setOrigem={setOrigem}
           itens={itens}
           valorFiltrado={valorFiltrado}
+          posicaoEmLinha={POSICAO_EM_LINHA}
+          posicaoForaDeLinha={POSICAO_FORA_DE_LINHA}
+          posicaoTotal={POSICAO_TOTAL}
         />
       )}
     </Apresentacao>
