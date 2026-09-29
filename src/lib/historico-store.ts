@@ -56,3 +56,18 @@ export async function addRegistro(reg: Omit<RegistroHistorico, "timestamp">, tim
   } catch { /* sem Supabase — dados ficam só em memória */ }
   return registro;
 }
+
+/* Dia no fuso de São Paulo (AAAA-MM-DD) */
+function diaSP(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+}
+
+/* Se ainda não há registro hoje, grava o peso atual (último conhecido) com a hora de agora */
+export async function garantirRegistroDiario() {
+  const all = await getHistorico(); const ultimo = all.at(-1);
+  if (!ultimo) return;
+  const agora = new Date().toISOString();
+  if (diaSP(ultimo.timestamp) === diaSP(agora)) return;
+  const { timestamp: _t, ...resto } = ultimo;
+  await addRegistro(resto, agora);
+}
