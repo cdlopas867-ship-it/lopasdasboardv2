@@ -44,8 +44,9 @@ export async function addRegistro(reg: Omit<RegistroHistorico, "timestamp">, tim
   /* Compara apenas os valores centrais do estoque — reservadoTon/Valor
      podem flutuar conforme o parse da planilha encontra ou não a aba de
      reservas, e não devem gerar registros duplicados. */
-  if (ultimo && ultimo.valor === reg.valor && ultimo.previsto === reg.previsto && ultimo.ton === reg.ton && ultimo.saldo === reg.saldo && ultimo.itens === reg.itens) return ultimo;
   const ts = timestamp ?? new Date().toISOString();
+  /* Só ignora repetição no mesmo dia — cada dia sempre ganha seu registro */
+  if (ultimo && diaSP(ultimo.timestamp) === diaSP(ts) && ultimo.valor === reg.valor && ultimo.previsto === reg.previsto && ultimo.ton === reg.ton && ultimo.saldo === reg.saldo && ultimo.itens === reg.itens) return ultimo;
   const registro = { ...reg, timestamp: ts };
   /* Salva em memória sempre (funciona mesmo sem Supabase) */
   getMemoria().push(registro);
