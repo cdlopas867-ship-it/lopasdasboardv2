@@ -32,14 +32,7 @@ export async function getGateSession() {
   return useSession<GateSession>(sessionConfig());
 }
 
-/* Em ambientes locais/dev e em builds sem credenciais explícitas, o painel deve
-   continuar funcionando sem bloquear a sincronização do Drive. Isso evita que o
-   app fique preso em /login ou que as rotas /api/sync-data retornem 401 antes de
-   importar a planilha. */
 export async function isUnlocked(): Promise<boolean> {
-  if (process.env["ALLOW_PUBLIC_ACCESS"] === "true") return true;
-  if (!process.env["SITE_USERNAME"] || !process.env["SITE_PASSWORD"]) return true;
-
   const session = await getGateSession();
   return session.data.unlocked === true;
 }
