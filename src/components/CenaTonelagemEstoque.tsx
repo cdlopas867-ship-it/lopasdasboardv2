@@ -2,10 +2,9 @@ import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import { TONELAGEM_ESTOQUE_MENSAL } from "@/data/tonelagem-estoque";
 
-/* Cena — Tonelagem do estoque mês a mês com variação percentual.
- * Barras por mês com o peso (PESO BRT) e a variação vs. mês anterior.
- * Cabeçalho unificado (último mês + resumo do período) e rótulos dos meses
- * em linha própria, para caber na tela sem sobrepor a marca d'água. */
+/* Cena — Tonelagem do estoque mês a mês (gráfico de área minimalista).
+ * Linha suave com gradiente verde translúcido sob a curva, pontos por mês
+ * e o mês atual destacado em âmbar. Card claro flutuando sobre o fundo escuro. */
 
 type Props = {
   anim: boolean;
@@ -26,42 +25,56 @@ export default function CenaTonelagemEstoque({ anim }: Props) {
     { rotulo: "Máx.", valor: maxTon },
   ];
 
+  /* Geometria do SVG — viewBox 708×178, pontos calculados dinamicamente */
+  const vbW = 708;
+  const vbH = 178;
+  const plotTop = 28;
+  const plotBottom = 126;
+  const plotH = plotBottom - plotTop;
+  const startX = 24;
+  const endX = 684;
+  const stepX = (endX - startX) / (dados.length - 1);
+  const range = maxTon - minTon || 1;
+
+  const pts = dados.map((d, i) => ({
+    x: startX + i * stepX,
+    y: plotBottom - ((d.ton - minTon) / range) * plotH,
+  }));
+
+  const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x} ${p.y}`).join(" ");
+  const areaPath = `${linePath} L${pts[pts.length - 1]!.x} ${vbH - 20} L${pts[0]!.x} ${vbH - 20} Z`;
+  const gridPath = `M0 ${plotTop}H${vbW}M0 ${(plotTop + plotBottom) / 2}H${vbW}M0 ${plotBottom}H${vbW}`;
+
   return (
-    <div className="w-full pb-6">
-      <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
+    <div className="tonelagem-card w-full pb-6">
+      <p className="video-sobe tonelagem-eyebrow">
         Toneladas do Estoque · Mês a Mês
       </p>
 
       {/* Cabeçalho — último mês, variação e resumo do período */}
-      <div
-        className="video-sobe mt-2 flex flex-wrap items-end justify-between gap-x-6 gap-y-2"
-        style={{ animationDelay: "0.1s" }}
-      >
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <p className="font-serif text-4xl leading-none text-white sm:text-5xl">
-            {fmtInt(ultimo.ton)} <span className="text-base text-white/50 sm:text-lg">t</span>
+      <div className="video-sobe tonelagem-head" style={{ animationDelay: "0.1s" }}>
+        <div className="tonelagem-latest">
+          <p className="tonelagem-value">
+            {fmtInt(ultimo.ton)} <span className="tonelagem-unit">t</span>
           </p>
           <span
             className={cn(
-              "font-mono text-base font-bold sm:text-xl",
-              deltaUltimo >= 0 ? "text-emerald-400" : "text-red-400",
+              "tonelagem-change",
+              deltaUltimo >= 0 ? "tonelagem-change-up" : "tonelagem-change-down",
             )}
           >
             {deltaUltimo >= 0 ? "▲" : "▼"} {fmtBrMax(Math.abs(deltaUltimo), 1)}%
           </span>
-          <span className="text-xs text-white/45 sm:text-sm">
+          <span className="tonelagem-period">
             {ultimo.mes} · vs. {anterior.mes}
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="tonelagem-pills">
           {resumo.map((r) => (
-            <span
-              key={r.rotulo}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[9px] font-bold tracking-widest text-white/45 uppercase"
-            >
+            <span key={r.rotulo} className="tonelagem-pill">
               {r.rotulo}{" "}
-              <span className="ml-0.5 font-mono text-[10px] tracking-normal text-white/80">
+              <span className="tonelagem-pill-value">
                 {fmtInt(r.valor)} t
               </span>
             </span>
@@ -69,69 +82,87 @@ export default function CenaTonelagemEstoque({ anim }: Props) {
         </div>
       </div>
 
-      {/* Gráfico — barras de tonelagem por mês */}
-      <div className="video-sobe mt-3" style={{ animationDelay: "0.2s" }}>
-        <div className="flex h-32 items-end gap-1.5 sm:gap-3">
-          {dados.map((d, i) => {
+      {/* Gráfico — linha de área com gradiente verde */}
+      <div className="video-sobe tonelagem-chart" style={{ animationDelay: "0.2s" }}>
+        <svg
+          className="tonelagem-plot"
+          viewBox={`0 0 ${vbW} ${vbH}`}
+          role="img"
+          aria-label="Gráfico de área mensal de toneladas"
+        >
+          <defs>
+            <linearGradient id="tonelagemAreaFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#7ec896" stopOpacity=".3" />
+              <stop offset="100%" stopColor="#7ec896" stopOpacity=".02" />
+            </linearGradient>
+          </defs>
+          <path className="tonelagem-gridline" d={gridPath} />
+          <path
+            className={cn("tonelagem-area", !anim && "video-pausada")}
+            d={areaPath}
+          />
+          <path
+            className={cn("tonelagem-curve", !anim && "video-pausada")}
+            d={linePath}
+          />
+          {pts.map((p, i) => {
             const destaque = i === dados.length - 1;
             return (
-              <div key={d.mes} className="flex h-full flex-1 flex-col items-center justify-end">
-                <p
-                  className={cn(
-                    "video-valor-sequencia mb-1 text-center font-mono text-[10px] font-bold text-white/85 sm:text-[11px]",
-                    !anim && "video-pausada",
-                  )}
-                  style={{ animationDelay: `${i * 0.5}s` }}
-                >
-                  {fmtInt(d.ton)}
-                </p>
-                <div
-                  className={cn(
-                    "video-barra-y mx-auto w-full max-w-[3rem] rounded-t-md",
-                    destaque
-                      ? "bg-gradient-to-t from-amber-500/80 to-amber-400 shadow-[0_0_18px_rgba(241,196,15,0.35)]"
-                      : "bg-gradient-to-t from-white/45 to-white/80",
-                    !anim && "video-pausada",
-                  )}
-                  style={{
-                    height: `${Math.max((d.ton / maxTon) * 100, 6)}%`,
-                    animationDelay: `${0.2 + 0.06 * i}s`,
-                  }}
-                />
-              </div>
+              <circle
+                key={i}
+                className={cn(
+                  "tonelagem-dot",
+                  destaque && "tonelagem-dot-current",
+                  !anim && "video-pausada",
+                )}
+                style={{ animationDelay: `${i * 0.15}s, ${i * 0.5}s` }}
+                cx={p.x}
+                cy={p.y}
+                r={destaque ? 6 : 4.5}
+              />
             );
           })}
-        </div>
+        </svg>
 
         {/* Rótulos dos meses + variação vs. mês anterior */}
-        <div className="mt-2 flex gap-1.5 border-t border-white/10 pt-2 sm:gap-3">
+        <div className="tonelagem-month-grid">
           {dados.map((d, i) => {
             const prev = dados[i - 1];
             const delta = prev ? ((d.ton - prev.ton) / prev.ton) * 100 : null;
             const destaque = i === dados.length - 1;
             return (
-              <div key={d.mes} className="flex-1 text-center">
+              <div key={d.mes} className="tonelagem-month">
                 <p
                   className={cn(
-                    "text-[10px] font-bold uppercase",
-                    destaque ? "text-amber-400" : "text-white/70",
+                    "tonelagem-month-name",
+                    destaque && "tonelagem-month-name-current",
                   )}
                 >
                   {d.mes.slice(0, 3)}
                 </p>
                 <p
                   className={cn(
-                    "mt-0.5 font-mono text-[9px] font-bold sm:text-[10px]",
-                    delta === null ? "text-white/30" : delta >= 0 ? "text-emerald-400" : "text-red-400",
+                    "tonelagem-month-value tonelagem-ciclo-valor",
+                    !anim && "video-pausada",
+                  )}
+                  style={{ animationDelay: `${i * 0.5}s` }}
+                >
+                  {fmtInt(d.ton)}
+                </p>
+                <p
+                  className={cn(
+                    "tonelagem-month-delta",
+                    delta !== null && delta < 0 && "tonelagem-month-delta-down",
                   )}
                 >
-                  {delta === null ? "—" : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
+                  {delta === null
+                    ? "—"
+                    : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
                 </p>
               </div>
             );
           })}
         </div>
-
       </div>
     </div>
   );

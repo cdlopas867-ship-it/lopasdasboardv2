@@ -5,6 +5,7 @@ import InfoTooltip from "@/components/InfoTooltip";
 import { GraficoMotivoMensal } from "@/components/GraficoMotivoMensal";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
+import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import { imagemAvaria, temImagemAvaria } from "@/data/avarias-imagens";
 import { POSICAO_FORA_DE_LINHA, POSICAO_EM_LINHA, POSICAO_TOTAL, ITENS_FORA_DE_LINHA, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -404,8 +405,14 @@ export default function CenasApresentacao({
                   {fmtTonDec(totCarregado)}{" "}
                   <span className="text-sm text-white/60 sm:text-base">carregadas</span>
                 </p>
-
+                <p className="font-serif text-2xl sm:text-4xl">
+                  <span className={cn(totRecebido - totCarregado >= 0 ? "text-emerald-400" : "text-red-400")}>
+                    {fmtTonDec(Math.abs(totRecebido - totCarregado))}
+                  </span>{" "}
+                  <span className="text-sm text-white/60 sm:text-base">saldo</span>
+                </p>
               </div>
+
               <div className="mt-8 flex h-44 items-end justify-between gap-3 sm:gap-5">
                 {listaMes.map((m, i) => {
                   const max = Math.max(
@@ -492,6 +499,21 @@ export default function CenasApresentacao({
                           ? "—"
                           : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
                       </p>
+                      {/* Diferença recebido − carregado do mês */}
+                      {(() => {
+                        const diff = m.recebido - m.carregado;
+                        return (
+                          <p
+                            className={cn(
+                              "video-sobe text-center font-mono text-[8px] font-bold",
+                              diff >= 0 ? "text-emerald-400/80" : "text-red-400/80",
+                            )}
+                            style={{ animationDelay: `${0.12 * i + 0.75}s` }}
+                          >
+                            {diff >= 0 ? "+" : "−"}{fmtInt(Math.abs(diff))}
+                          </p>
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -510,6 +532,9 @@ export default function CenasApresentacao({
                   <span className="text-emerald-400">▲</span>/<span className="text-red-400">▼</span> vs. mês anterior
                 </span>
                 <span className="text-white/50">% carregado/recebido</span>
+                <span className="text-white/50">
+                  <span className="text-emerald-400">+</span>/<span className="text-red-400">−</span> saldo mês
+                </span>
                 <span className="text-brand-amber">★ Agosto em destaque</span>
               </div>
             </>
@@ -804,7 +829,7 @@ export default function CenasApresentacao({
                           <span className="w-12 text-right font-mono text-[10px] font-bold text-brand-amber">
                             {fmtBrMax(m.pct, 0)}%
                           </span>
-                          <span className="w-12 shrink-0 text-right font-mono text-[10px] text-white/45">
+                          <span className="w-28 shrink-0 whitespace-nowrap rounded bg-white/10 px-1.5 py-0.5 text-center font-mono text-[10px] font-semibold text-white/75">
                             {m.dtFinal ? `${m.dtInicial ? `${m.dtInicial.slice(8, 10)}/${m.dtInicial.slice(5, 7)} – ` : ""}${m.dtFinal.slice(8, 10)}/${m.dtFinal.slice(5, 7)}` : "—"}
                           </span>
                           <span className="w-10 text-right text-[9px] text-white/45">
@@ -1003,8 +1028,13 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} />
       )}
 
-      {/* Cena 15 — encerramento */}
+      {/* Cena 14 — Saúde do estoque (donut) */}
       {cena === 13 && (
+        <CenaSaudeEstoque anim={anim} mensal={mensal} />
+      )}
+
+      {/* Cena 15 — encerramento */}
+      {cena === 14 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
