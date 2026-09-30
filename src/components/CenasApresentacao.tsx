@@ -1000,7 +1000,7 @@ export default function CenasApresentacao({
 
       {/* Cena 14 — Tonelagem do estoque mês a mês com variação % */}
       {cena === 12 && (
-        <CenaTonelagemEstoque anim={anim} pendentes={pendentes} />
+        <CenaTonelagemEstoque anim={anim} />
       )}
 
       {/* Cena 15 — encerramento */}

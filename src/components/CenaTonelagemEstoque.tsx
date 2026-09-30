@@ -1,19 +1,17 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import { TONELAGEM_ESTOQUE_MENSAL } from "@/data/tonelagem-estoque";
-import { PENDENTES_RESUMO_FIXO } from "@/data/valores-fixos";
-import type { VideoPendentes } from "./VideoResumoDashboard";
 
 /* Cena — Tonelagem do estoque mês a mês com variação percentual.
  * Barras por mês com o peso (PESO BRT) e a variação vs. mês anterior.
- * Destaque adicional: tonelagem pendente e datas de cada mês. */
+ * Cabeçalho unificado (último mês + resumo do período) e rótulos dos meses
+ * em linha própria, para caber na tela sem sobrepor a marca d'água. */
 
 type Props = {
   anim: boolean;
-  pendentes?: VideoPendentes | undefined;
 };
 
-export default function CenaTonelagemEstoque({ anim, pendentes }: Props) {
+export default function CenaTonelagemEstoque({ anim }: Props) {
   const dados = TONELAGEM_ESTOQUE_MENSAL;
   const ultimo = dados[dados.length - 1]!;
   const anterior = dados[dados.length - 2]!;
@@ -27,13 +25,6 @@ export default function CenaTonelagemEstoque({ anim, pendentes }: Props) {
     { rotulo: "Média", valor: media },
     { rotulo: "Máx.", valor: maxTon },
   ];
-
-  /* Mapa de pendências por mês (mesma chave "Jan/26") */
-  const pendMap = new Map<string, { ton: number; itens: number; dtInicial?: string; dtFinal?: string; lotes?: number }>();
-  const pendFonte = pendentes ?? PENDENTES_RESUMO_FIXO;
-  for (const m of pendFonte?.meses ?? []) {
-    pendMap.set(m.mes, { ton: m.ton, itens: m.itens, dtInicial: m.dtInicial, dtFinal: m.dtFinal, lotes: m.lotes });
-  }
 
   return (
     <div className="w-full pb-6">
@@ -112,18 +103,14 @@ export default function CenaTonelagemEstoque({ anim, pendentes }: Props) {
           })}
         </div>
 
-        {/* Rótulos dos meses + variação + volumes pendentes (tudo junto) */}
+        {/* Rótulos dos meses + variação vs. mês anterior */}
         <div className="mt-2 flex gap-1.5 border-t border-white/10 pt-2 sm:gap-3">
           {dados.map((d, i) => {
             const prev = dados[i - 1];
             const delta = prev ? ((d.ton - prev.ton) / prev.ton) * 100 : null;
             const destaque = i === dados.length - 1;
-            const pend = pendMap.get(d.mes);
             return (
-              <div
-                key={d.mes}
-                className={cn("flex-1 text-center", !anim && "video-pausada")}
-              >
+              <div key={d.mes} className="flex-1 text-center">
                 <p
                   className={cn(
                     "text-[10px] font-bold uppercase",
@@ -140,29 +127,11 @@ export default function CenaTonelagemEstoque({ anim, pendentes }: Props) {
                 >
                   {delta === null ? "—" : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
                 </p>
-                {/* Volumes pendentes — destaque âmbar junto à barra */}
-                {pend && (
-                  <div
-                    className="video-sobe mt-1.5 border-t border-white/10 pt-1"
-                    style={{ animationDelay: `${0.3 + 0.06 * i}s` }}
-                  >
-                    <p className="font-mono text-[9px] font-bold text-brand-amber">
-                      {fmtBrMax(pend.ton, 1)} t
-                    </p>
-                    <p className="mt-0.5 text-[7px] font-bold text-white/70">
-                      {fmtInt(pend.itens)} ord
-                    </p>
-                    <p className="mt-0.5 text-[6px] leading-tight text-white/45">
-                      {pend.dtFinal
-                        ? `${pend.dtInicial ? `${pend.dtInicial.slice(8, 10)}/${pend.dtInicial.slice(5, 7)}–` : ""}${pend.dtFinal.slice(8, 10)}/${pend.dtFinal.slice(5, 7)}`
-                        : "—"}
-                    </p>
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
+
       </div>
     </div>
   );
