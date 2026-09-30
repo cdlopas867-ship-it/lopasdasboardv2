@@ -1,18 +1,23 @@
 import { useEffect, useState } from "react";
-import { fmtInt, fmtBrMax } from "@/lib/format";
-import type { VideoAvarias, VideoDia, VideoKpi, VideoPendentes } from "./VideoResumoDashboard";
+import { fmtInt, fmtBrMax, fmtMoeda, fmtPeso } from "@/lib/format";
+import type { VideoAvarias, VideoDia, VideoKpi, VideoPendentes, VideoReservados } from "./VideoResumoDashboard";
+import type { VideoForaDeLinha } from "./CenasApresentacao";
+import { POSICAO_EM_LINHA, POSICAO_TOTAL } from "@/data/fora-de-linha";
 
 /* Tela de resumo intro — 6 slides com os principais indicadores do CD,
    no estilo editorial da marca, antes de iniciar a reprodução automática.
    Botão "Pular resumo" avança direto para o vídeo. */
 
-type IconeTipo = "peso" | "ocupacao" | "valor" | "avarias" | "recebimento" | "pendentes";
+type IconeTipo = "peso" | "ocupacao" | "valor" | "avarias" | "recebimento" | "pendentes" | "estoque";
+
+type LinhaSlide = { label: string; valor: string };
 
 type Slide = {
   icone: IconeTipo;
   titulo: string;
   valor?: string;
   subtitulo: string;
+  linhas?: LinhaSlide[];
 };
 
 const DURACAO_SLIDE = 4000;
@@ -22,12 +27,16 @@ function prepararSlides(
   avarias?: VideoAvarias | undefined,
   semana?: { rotulo: string; total: string; dias: VideoDia[] } | null,
   pendentes?: VideoPendentes | undefined,
+  reservados?: VideoReservados | undefined,
+  valorFaturado?: number | undefined,
+  foraDeLinha?: VideoForaDeLinha | undefined,
 ): Slide[] {
   const slides: Slide[] = [];
 
   const peso = kpis.find((k) => k.id === "peso");
   const ocup = kpis.find((k) => k.id === "ocupacao");
   const valor = kpis.find((k) => k.id === "valor");
+  const previsto = kpis.find((k) => k.id === "previsto");
 
   if (peso) {
     const extraGr = peso.extra?.find(([k]) => k === "Guarda-Roupas");
@@ -57,6 +66,33 @@ function prepararSlides(
         ? `Guarda-Roupas concentra ${extraGr[1]} (53%) do valor total`
         : valor.detalhe ?? "",
     });
+  }
+
+  /* Slide consolidado — valor, peso, disponível, reservado, em linha e previsto */
+  {
+    const posTotal = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
+    const posEmLinha = foraDeLinha?.posicaoEmLinha ?? POSICAO_EM_LINHA;
+    const linhas: LinhaSlide[] = [];
+    if (valor) linhas.push({ label: "Valor total", valor: valor.valor });
+    if (peso) linhas.push({ label: "Peso real", valor: peso.valor });
+    linhas.push({ label: "Disponível", valor: `${fmtInt(posTotal.disponivel)} un` });
+    if (reservados) {
+      linhas.push({ label: "Reservado", valor: fmtMoeda(reservados.totalValor) });
+    }
+    linhas.push({ label: "Em linha", valor: fmtPeso(posEmLinha.pesoTon * 1000) });
+    if (previsto) {
+      linhas.push({ label: "Previsto", valor: previsto.valor });
+    } else if (reservados && valorFaturado) {
+      linhas.push({ label: "Previsto", valor: fmtMoeda(reservados.totalTon * valorFaturado) });
+    }
+    if (linhas.length >= 3) {
+      slides.push({
+        icone: "estoque",
+        titulo: "Resumo do Estoque",
+        subtitulo: "Visão consolidada do CD Lopas · 2026",
+        linhas,
+      });
+    }
   }
   if (avarias) {
     slides.push({
@@ -138,6 +174,17 @@ function IconeSlide({ tipo }: { tipo: IconeTipo }) {
       </svg>
     );
   }
+  if (tipo === "estoque") {
+    return (
+      <svg viewBox="0 0 64 64" className={cls} fill="none" strokeWidth="1.5" stroke={s} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 26 L32 10 L58 26" />
+        <path d="M10 24 V54 H54 V24" />
+        <path d="M18 54 V34 H46 V54" />
+        <path d="M26 34 V44 M38 34 V44" />
+        <circle cx="32" cy="20" r="3" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 64 64" className={cls} fill="none" strokeWidth="1.5" stroke={s} strokeLinecap="round" strokeLinejoin="round">
       <path d="M8 20 H56 V50 H8 Z" />
@@ -152,11 +199,14 @@ type Props = {
   avarias?: VideoAvarias | undefined;
   semana?: { rotulo: string; total: string; dias: VideoDia[] } | null;
   pendentes?: VideoPendentes | undefined;
+  reservados?: VideoReservados | undefined;
+  valorFaturado?: number | undefined;
+  foraDeLinha?: VideoForaDeLinha | undefined;
   onConcluir: () => void;
 };
 
-export default function ResumoIntro({ kpis, avarias, semana, pendentes, onConcluir }: Props) {
-  const slides = prepararSlides(kpis, avarias, semana, pendentes);
+export default function ResumoIntro({ kpis, avarias, semana, pendentes, reservados, valorFaturado, foraDeLinha, onConcluir }: Props) {
+  const slides = prepararSlides(kpis, avarias, semana, pendentes, reservados, valorFaturado, foraDeLinha);
   const [atual, setAtual] = useState(0);
   const [saindo, setSaindo] = useState(false);
 
@@ -239,14 +289,27 @@ export default function ResumoIntro({ kpis, avarias, semana, pendentes, onConclu
           <p className="text-[10px] font-bold tracking-[0.3em] text-[#76A035] uppercase sm:text-[11px]">
             {slide.titulo}
           </p>
-          {slide.valor && (
-            <p className="mt-2 font-serif text-3xl tracking-tight text-white sm:text-4xl">
-              {slide.valor}
-            </p>
+          {slide.linhas ? (
+            <div className="mt-3 w-full max-w-[16rem] space-y-1.5 sm:max-w-xs">
+              {slide.linhas.map((l, i) => (
+                <div key={i} className="flex items-center justify-between border-b border-white/10 pb-1 last:border-0">
+                  <span className="text-xs font-medium text-white/55 sm:text-sm">{l.label}</span>
+                  <span className="font-mono text-sm font-bold text-white sm:text-base">{l.valor}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              {slide.valor && (
+                <p className="mt-2 font-serif text-3xl tracking-tight text-white sm:text-4xl">
+                  {slide.valor}
+                </p>
+              )}
+              <p className="mt-2 max-w-[18rem] text-xs leading-relaxed text-white/60 sm:text-sm sm:max-w-xs">
+                {slide.subtitulo}
+              </p>
+            </>
           )}
-          <p className="mt-2 max-w-[18rem] text-xs leading-relaxed text-white/60 sm:text-sm sm:max-w-xs">
-            {slide.subtitulo}
-          </p>
         </div>
 
         {/* Barra de progresso */}
