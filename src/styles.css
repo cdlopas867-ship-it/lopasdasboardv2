@@ -905,6 +905,12 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
 }
 
 
+/* Conteúdo do vídeo-resumo — brilho sutil nos textos para legibilidade
+   sobre o fundo de imagens aéreas. */
+.video-conteudo {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
 .tonelagem-card {
   box-sizing: border-box;
   padding: 0;
