@@ -4,6 +4,7 @@ import { fmtBrMax, fmtInt, fmtTonDec, fmtMoeda, fmtMoeda2, fmtPct, fmtPeso } fro
 import InfoTooltip from "@/components/InfoTooltip";
 import { GraficoMotivoMensal } from "@/components/GraficoMotivoMensal";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
+import CenaEmLinhaVsForaDeLinha from "@/components/CenaEmLinhaVsForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import { imagemAvaria, temImagemAvaria } from "@/data/avarias-imagens";
@@ -1018,23 +1019,28 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 14 — Fora de linha por categoria */}
+      {/* Cena 12 — Fora de linha por categoria */}
       {cena === 11 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
-      {/* Cena 14 — Tonelagem do estoque mês a mês com variação % */}
+      {/* Cena 13 — Em Linha × Fora de Linha (comparação) */}
       {cena === 12 && (
+        <CenaEmLinhaVsForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
+      )}
+
+      {/* Cena 14 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 13 && (
         <CenaTonelagemEstoque anim={anim} />
       )}
 
-      {/* Cena 14 — Saúde do estoque (donut) */}
-      {cena === 13 && (
+      {/* Cena 15 — Saúde do estoque (donut) */}
+      {cena === 14 && (
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
-      {/* Cena 15 — encerramento */}
-      {cena === 14 && (
+      {/* Cena 16 — encerramento */}
+      {cena === 15 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
