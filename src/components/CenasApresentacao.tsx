@@ -841,7 +841,7 @@ export default function CenasApresentacao({
                           <span className="w-12 text-right font-mono text-[10px] font-bold text-brand-amber">
                             {fmtBrMax(m.pct, 0)}%
                           </span>
-                          <span className="w-12 shrink-0 text-right font-mono text-[10px] text-white/45">
+                          <span className="w-28 shrink-0 whitespace-nowrap rounded bg-white/10 px-1.5 py-0.5 text-center font-mono text-[10px] font-semibold text-white/75">
                             {m.dtFinal ? `${m.dtInicial ? `${m.dtInicial.slice(8, 10)}/${m.dtInicial.slice(5, 7)} – ` : ""}${m.dtFinal.slice(8, 10)}/${m.dtFinal.slice(5, 7)}` : "—"}
                           </span>
                           <span className="w-10 text-right text-[9px] text-white/45">
