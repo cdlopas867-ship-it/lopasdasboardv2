@@ -27,8 +27,7 @@ function normalizeHeader(value: unknown): string {
   return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
+    .replace(/\s+/g, "")
     .toUpperCase();
 }
 
@@ -73,7 +72,7 @@ export function lerPendentes(wb: XLSX.WorkBook): PendenteProducao[] {
     const headerIdx = rows.findIndex((r) =>
       r?.some((c) => {
         const h = normalizeHeader(c);
-        return h.includes("DTINICIAL") || h.includes("DT INICIAL") || h.includes("DATAINICIAL");
+        return h.includes("DTINICIAL") || h.includes("DATAINICIAL");
       }),
     );
     if (headerIdx < 0) continue;
@@ -93,6 +92,7 @@ export function lerPendentes(wb: XLSX.WorkBook): PendenteProducao[] {
     const cDesc = col("DESCITEM");
     const cPrev = col("PREVISTO");
     const cEntg = col("ENTREGUE");
+    const cPrevFix = headers.findIndex((h) => h === "PREVISTO");
     const cPerc = headers.findIndex((h) => h === "PERC");
 
     const num = (r: unknown[] | undefined, i: number) => Number(r?.[i] ?? 0);
@@ -109,7 +109,7 @@ export function lerPendentes(wb: XLSX.WorkBook): PendenteProducao[] {
         numOrdem: str(r, cOrdem >= 0 ? cOrdem : 0),
         codItem: str(r, cCod >= 0 ? cCod : 0),
         descItem: str(r, cDesc >= 0 ? cDesc : 0),
-        previsto: num(r, cPrev >= 0 ? cPrev : 0),
+        previsto: num(r, cPrevFix >= 0 ? cPrevFix : cPrev >= 0 ? cPrev : 0),
         entregue: num(r, cEntg >= 0 ? cEntg : 0),
         pendente,
         perc: num(r, cPerc >= 0 ? cPerc : 0),

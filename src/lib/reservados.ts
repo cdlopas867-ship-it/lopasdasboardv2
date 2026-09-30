@@ -84,6 +84,8 @@ export function lerReservados(wb: XLSX.WorkBook): ItemReservado[] | null {
   const find = (patterns: RegExp[]) => header.findIndex((h) => patterns.some((p) => p.test(h)));
 
   const colCod = find([/^COD(IGO)?\s+ITEM/, /^ITEM\b/, /^COD/]);
+  /* Planilhas de resumo (ex.: analise-estoque) têm "Qtd reservada" mas não código de item. */
+  if (colCod < 0) return null;
   const colDesc = find([/DESCRICAO/, /PRODUTO/]);
   const colMascara = find([/MASCARA/]);
   const colPeso = find([/PESO\s*(BRT|BRUTO)?/, /TONELADA/, /^TON\b/]);
