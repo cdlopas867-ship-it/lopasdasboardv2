@@ -289,7 +289,7 @@ export default function ResumoIntro({ kpis, avarias, semana, pendentes, reservad
               {slide.linhas.map((l, i) => (
                 <div key={i} className={`flex items-center justify-between py-2 ${i < slide.linhas!.length - 1 ? "border-b border-white/10" : ""}`}>
                   <span className="text-sm font-medium tracking-wide text-white/60">{l.label}</span>
-                  <span className="font-mono text-lg font-bold text-[#9CCB4D] sm:text-xl" style={{ textShadow: "0 0 12px rgba(156,203,77,0.5)" }}>{l.valor}</span>
+                  <span className="font-serif text-lg font-bold text-[#9CCB4D] sm:text-xl" style={{ textShadow: "0 0 12px rgba(156,203,77,0.5)" }}>{l.valor}</span>
                 </div>
               ))}
             </div>
