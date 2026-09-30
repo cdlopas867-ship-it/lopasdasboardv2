@@ -59,6 +59,7 @@ export function calcularPendentesResumo(
     const label = `${MESES[Number(mes) - 1] ?? "?"}/${ano!.slice(2)}`;
     /* Data final do mês = maior DT FINAL das pendências do mês */
     const dtFinal = items.reduce((max, p) => (p.dtFinal > max ? p.dtFinal : max), items[0]!.dtFinal);
+    const dtInicial = items.reduce((min, p) => (p.dtInicial && p.dtInicial < min ? p.dtInicial : min), items[0]!.dtInicial || dtFinal);
     /* Lotes abertos = valores distintos de LOTE com pendência no mês */
     const lotes = new Set(items.map((p) => p.lote).filter(Boolean)).size;
     return {
@@ -66,6 +67,7 @@ export function calcularPendentesResumo(
       ton: +ton.toFixed(1),
       pct: totalTon > 0 ? +((ton / totalTon) * 100).toFixed(0) : 0,
       itens: items.length,
+      dtInicial,
       dtFinal,
       lotes,
     };

@@ -805,7 +805,7 @@ export default function CenasApresentacao({
                             {fmtBrMax(m.pct, 0)}%
                           </span>
                           <span className="w-12 shrink-0 text-right font-mono text-[10px] text-white/45">
-                            {m.dtFinal ? `${m.dtFinal.slice(8, 10)}/${m.dtFinal.slice(5, 7)}` : "—"}
+                            {m.dtFinal ? `${m.dtInicial ? `${m.dtInicial.slice(8, 10)}/${m.dtInicial.slice(5, 7)} – ` : ""}${m.dtFinal.slice(8, 10)}/${m.dtFinal.slice(5, 7)}` : "—"}
                           </span>
                           <span className="w-10 text-right text-[9px] text-white/45">
                             {m.lotes ?? 0} lot
