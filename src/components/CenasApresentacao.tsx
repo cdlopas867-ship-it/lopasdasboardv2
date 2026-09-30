@@ -404,7 +404,25 @@ export default function CenasApresentacao({
                   {fmtTonDec(totCarregado)}{" "}
                   <span className="text-sm text-white/60 sm:text-base">carregadas</span>
                 </p>
-
+                <p className="font-serif text-2xl sm:text-4xl">
+                  <span className={cn(totRecebido - totCarregado >= 0 ? "text-emerald-400" : "text-red-400")}>
+                    {fmtTonDec(Math.abs(totRecebido - totCarregado))}
+                  </span>{" "}
+                  <span className="text-sm text-white/60 sm:text-base">saldo</span>
+                </p>
+              </div>
+              {/* Saúde do estoque — % carregado sobre recebido no período */}
+              <div className="video-sobe mt-2 flex items-center gap-2" style={{ animationDelay: "0.15s" }}>
+                <span className="text-[9px] font-bold tracking-[0.3em] text-white/50 uppercase">Saúde do estoque</span>
+                {(() => {
+                  const saude = totRecebido > 0 ? (totCarregado / totRecebido) * 100 : 0;
+                  const cor = saude >= 100 ? "text-emerald-400" : saude >= 95 ? "text-brand-amber" : "text-red-400";
+                  return (
+                    <span className={cn("font-mono text-sm font-bold", cor)}>
+                      {fmtBrMax(saude, 1)}%
+                    </span>
+                  );
+                })()}
               </div>
               <div className="mt-8 flex h-44 items-end justify-between gap-3 sm:gap-5">
                 {listaMes.map((m, i) => {
@@ -492,6 +510,21 @@ export default function CenasApresentacao({
                           ? "—"
                           : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
                       </p>
+                      {/* Diferença recebido − carregado do mês */}
+                      {(() => {
+                        const diff = m.recebido - m.carregado;
+                        return (
+                          <p
+                            className={cn(
+                              "video-sobe text-center font-mono text-[8px] font-bold",
+                              diff >= 0 ? "text-emerald-400/80" : "text-red-400/80",
+                            )}
+                            style={{ animationDelay: `${0.12 * i + 0.75}s` }}
+                          >
+                            {diff >= 0 ? "+" : "−"}{fmtInt(Math.abs(diff))}
+                          </p>
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -510,6 +543,9 @@ export default function CenasApresentacao({
                   <span className="text-emerald-400">▲</span>/<span className="text-red-400">▼</span> vs. mês anterior
                 </span>
                 <span className="text-white/50">% carregado/recebido</span>
+                <span className="text-white/50">
+                  <span className="text-emerald-400">+</span>/<span className="text-red-400">−</span> saldo mês
+                </span>
                 <span className="text-brand-amber">★ Agosto em destaque</span>
               </div>
             </>
