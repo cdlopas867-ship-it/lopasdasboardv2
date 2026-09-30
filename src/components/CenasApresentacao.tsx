@@ -1036,7 +1036,7 @@ export default function CenasApresentacao({
 
       {/* Cena 15 — Saúde do estoque (donut) */}
       {cena === 14 && (
-        <CenaSaudeEstoque anim={anim} mensal={mensal} />
+        <CenaSaudeEstoque anim={anim} mensal={mensal} reservados={reservados} valorFaturado={valorFaturado} foraDeLinha={foraDeLinha} />
       )}
 
       {/* Cena 16 — encerramento */}

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { fmtBrMax, fmtTonDec } from "@/lib/format";
-import type { VideoMes } from "./VideoResumoDashboard";
+import { fmtBrMax, fmtTonDec, fmtMoeda, fmtPeso } from "@/lib/format";
+import type { VideoMes, VideoReservados } from "./VideoResumoDashboard";
+import type { VideoForaDeLinha } from "./CenasApresentacao";
+import { POSICAO_EM_LINHA, POSICAO_TOTAL } from "@/data/fora-de-linha";
 
 /* Cena — Saúde do Estoque
  * Gráfico de rosca (donut) mostrando a % de carregado sobre recebido,
@@ -12,13 +14,16 @@ import type { VideoMes } from "./VideoResumoDashboard";
 type Props = {
   anim: boolean;
   mensal?: VideoMes[] | undefined;
+  reservados?: VideoReservados | undefined;
+  valorFaturado?: number | undefined;
+  foraDeLinha?: VideoForaDeLinha | undefined;
 };
 
 const R = 84;
 const CIRC = 2 * Math.PI * R;
 const DURACAO_CONTAGEM = 1300; // ms — mesma duração do donut
 
-export default function CenaSaudeEstoque({ anim, mensal }: Props) {
+export default function CenaSaudeEstoque({ anim, mensal, reservados, valorFaturado, foraDeLinha }: Props) {
   const listaMes = (mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0);
   const totRecebido = listaMes.reduce((s, m) => s + m.recebido, 0);
   const totCarregado = listaMes.reduce((s, m) => s + m.carregado, 0);
@@ -141,6 +146,36 @@ export default function CenaSaudeEstoque({ anim, mensal }: Props) {
                 {fmtTonDec(Math.abs(totRecebido - totCarregado))}
               </td>
             </tr>
+            {reservados && (
+              <>
+                <tr className="border-b border-white/10">
+                  <td className="py-0.5 text-white/80">Peso total estoque</td>
+                  <td className="py-0.5 text-right font-mono font-semibold text-white/80">
+                    {fmtPeso(reservados.totalPesoEstoque * 1000)}
+                  </td>
+                </tr>
+                <tr className="border-b border-white/10">
+                  <td className="py-0.5 text-white/80">Valor previsto</td>
+                  <td className="py-0.5 text-right font-mono font-bold text-brand-amber">
+                    {valorFaturado ? fmtMoeda(reservados.totalTon * valorFaturado) : "—"}
+                  </td>
+                </tr>
+                <tr className="border-b border-white/10">
+                  <td className="py-0.5 text-white/80">Reservado</td>
+                  <td className="py-0.5 text-right font-mono font-semibold text-white/80">
+                    {fmtMoeda(reservados.totalValor)}
+                  </td>
+                </tr>
+              </>
+            )}
+            {foraDeLinha && (
+              <tr className="border-b border-white/10">
+                <td className="py-0.5 text-white/80">Em linha</td>
+                <td className="py-0.5 text-right font-mono font-bold text-emerald-400">
+                  {fmtPeso((foraDeLinha.posicaoEmLinha ?? POSICAO_EM_LINHA).pesoTon * 1000)}
+                </td>
+              </tr>
+            )}
             <tr className="border-b border-white/10 last:border-0">
               <td className="py-0.5 text-white/80">Saúde</td>
               <td className={cn("py-0.5 text-right font-mono font-bold", cor)}>
