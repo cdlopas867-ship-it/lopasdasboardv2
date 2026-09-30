@@ -412,19 +412,7 @@ export default function CenasApresentacao({
                   <span className="text-sm text-white/60 sm:text-base">saldo</span>
                 </p>
               </div>
-              {/* Saúde do estoque — % carregado sobre recebido no período */}
-              <div className="video-sobe mt-2 flex items-center gap-2" style={{ animationDelay: "0.15s" }}>
-                <span className="text-[9px] font-bold tracking-[0.3em] text-white/50 uppercase">Saúde do estoque</span>
-                {(() => {
-                  const saude = totRecebido > 0 ? (totCarregado / totRecebido) * 100 : 0;
-                  const cor = saude >= 100 ? "text-emerald-400" : saude >= 95 ? "text-brand-amber" : "text-red-400";
-                  return (
-                    <span className={cn("font-mono text-sm font-bold", cor)}>
-                      {fmtBrMax(saude, 1)}%
-                    </span>
-                  );
-                })()}
-              </div>
+
               <div className="mt-8 flex h-44 items-end justify-between gap-3 sm:gap-5">
                 {listaMes.map((m, i) => {
                   const max = Math.max(
