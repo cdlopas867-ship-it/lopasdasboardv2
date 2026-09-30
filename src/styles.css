@@ -1034,7 +1034,7 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
 }
 .tonelagem-month-grid {
   display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-columns: repeat(10, minmax(0, 1fr));
   gap: 4px;
   margin-top: 5px;
   padding-top: 11px;

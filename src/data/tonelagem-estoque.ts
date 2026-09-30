@@ -16,4 +16,5 @@ export const TONELAGEM_ESTOQUE_MENSAL: TonelagemMes[] = [
   { mes: "Jun/26", ton: 4108 },
   { mes: "Jul/26", ton: 4275 },
   { mes: "Ago/26", ton: 3930 },
+  { mes: "Set/26", ton: 3899 },
 ];
