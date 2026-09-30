@@ -31,6 +31,18 @@ export default function CenaSaudeEstoque({ anim, mensal }: Props) {
         ? "text-brand-amber"
         : "text-red-400";
 
+  /* Rótulo qualitativo da saúde conforme a % */
+  const rotuloSaude =
+    saude >= 100
+      ? "Excelente"
+      : saude >= 95
+        ? "Ótima"
+        : saude >= 85
+          ? "Boa"
+          : saude >= 70
+            ? "Regular"
+            : "Crítica";
+
   /* Contagem animada de 0 até o valor da saúde */
   const [contagem, setContagem] = useState(0);
   useEffect(() => {
@@ -89,8 +101,8 @@ export default function CenaSaudeEstoque({ anim, mensal }: Props) {
           <p className="font-serif text-3xl sm:text-4xl text-white">
             {fmtBrMax(contagem, 1)}%
           </p>
-          <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">
-            carregado
+          <p className={cn("text-[9px] font-bold tracking-widest uppercase", cor)}>
+            {rotuloSaude}
           </p>
         </div>
       </div>
