@@ -112,14 +112,18 @@ export default function CenaTonelagemEstoque({ anim, pendentes }: Props) {
           })}
         </div>
 
-        {/* Rótulos dos meses + variação vs. mês anterior */}
+        {/* Rótulos dos meses + variação + volumes pendentes (tudo junto) */}
         <div className="mt-2 flex gap-1.5 border-t border-white/10 pt-2 sm:gap-3">
           {dados.map((d, i) => {
             const prev = dados[i - 1];
             const delta = prev ? ((d.ton - prev.ton) / prev.ton) * 100 : null;
             const destaque = i === dados.length - 1;
+            const pend = pendMap.get(d.mes);
             return (
-              <div key={d.mes} className="flex-1 text-center">
+              <div
+                key={d.mes}
+                className={cn("flex-1 text-center", !anim && "video-pausada")}
+              >
                 <p
                   className={cn(
                     "text-[10px] font-bold uppercase",
@@ -136,49 +140,28 @@ export default function CenaTonelagemEstoque({ anim, pendentes }: Props) {
                 >
                   {delta === null ? "—" : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
                 </p>
+                {/* Volumes pendentes — destaque âmbar junto à barra */}
+                {pend && (
+                  <div
+                    className="video-sobe mt-1.5 border-t border-white/10 pt-1"
+                    style={{ animationDelay: `${0.3 + 0.06 * i}s` }}
+                  >
+                    <p className="font-mono text-[9px] font-bold text-brand-amber">
+                      {fmtBrMax(pend.ton, 1)} t
+                    </p>
+                    <p className="mt-0.5 text-[7px] font-bold text-white/70">
+                      {fmtInt(pend.itens)} ord
+                    </p>
+                    <p className="mt-0.5 text-[6px] leading-tight text-white/45">
+                      {pend.dtFinal
+                        ? `${pend.dtInicial ? `${pend.dtInicial.slice(8, 10)}/${pend.dtInicial.slice(5, 7)}–` : ""}${pend.dtFinal.slice(8, 10)}/${pend.dtFinal.slice(5, 7)}`
+                        : "—"}
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}
-        </div>
-
-        {/* Destaque — volumes pendentes por mês (datas e quantidades) */}
-        <div className="mt-4 border-t border-white/10 pt-3">
-          <p className="text-[9px] font-bold tracking-[0.3em] text-brand-amber uppercase">
-            Volumes Pendentes · por mês
-          </p>
-          <div className="mt-2 flex gap-1.5 sm:gap-3">
-            {dados.map((d, i) => {
-              const pend = pendMap.get(d.mes);
-              return (
-                <div
-                  key={`pend-${d.mes}`}
-                  className={cn(
-                    "video-sobe flex-1 text-center",
-                    !anim && "video-pausada",
-                  )}
-                  style={{ animationDelay: `${0.3 + 0.06 * i}s` }}
-                >
-                  {pend ? (
-                    <>
-                      <p className="font-mono text-[10px] font-bold text-brand-amber">
-                        {fmtBrMax(pend.ton, 1)} t
-                      </p>
-                      <p className="mt-0.5 text-[8px] font-bold text-white/70">
-                        {fmtInt(pend.itens)} ord
-                      </p>
-                      <p className="mt-0.5 text-[7px] leading-tight text-white/45">
-                        {pend.dtFinal
-                          ? `${pend.dtInicial ? `${pend.dtInicial.slice(8, 10)}/${pend.dtInicial.slice(5, 7)}–` : ""}${pend.dtFinal.slice(8, 10)}/${pend.dtFinal.slice(5, 7)}`
-                          : "—"}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-[8px] text-white/25">—</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
     </div>
