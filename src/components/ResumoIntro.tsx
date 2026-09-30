@@ -74,7 +74,6 @@ function prepararSlides(
     if (reservados) {
       linhas.push({ label: "Reservado", valor: `R$ ${(reservados.totalValor / 1e6).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} mi` });
     }
-    linhas.push({ label: "Em linha", valor: fmtPeso(posEmLinha.pesoTon * 1000) });
     if (previsto) {
       linhas.push({ label: "Previsto", valor: previsto.valor });
     } else if (reservados && valorFaturado) {
