@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtTonDec } from "@/lib/format";
 import type { VideoMes } from "./VideoResumoDashboard";
@@ -5,7 +6,8 @@ import type { VideoMes } from "./VideoResumoDashboard";
 /* Cena — Saúde do Estoque
  * Gráfico de rosca (donut) mostrando a % de carregado sobre recebido,
  * indicando a "saúde" do fluxo de estoque no período.
- * Estilo minimalista: anel branco sobre track cinza, % em serif no centro. */
+ * Estilo minimalista: anel branco sobre track cinza, % em serif no centro.
+ * Animação de contagem de 0 até o valor da saúde sincronizada com o donut. */
 
 type Props = {
   anim: boolean;
@@ -14,6 +16,7 @@ type Props = {
 
 const R = 84;
 const CIRC = 2 * Math.PI * R;
+const DURACAO_CONTAGEM = 1300; // ms — mesma duração do donut
 
 export default function CenaSaudeEstoque({ anim, mensal }: Props) {
   const listaMes = (mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0);
@@ -27,6 +30,26 @@ export default function CenaSaudeEstoque({ anim, mensal }: Props) {
       : saude >= 95
         ? "text-brand-amber"
         : "text-red-400";
+
+  /* Contagem animada de 0 até o valor da saúde */
+  const [contagem, setContagem] = useState(0);
+  useEffect(() => {
+    if (!anim) {
+      setContagem(0);
+      return;
+    }
+    let raf: number;
+    const inicio = performance.now();
+    const tick = (agora: number) => {
+      const t = Math.min((agora - inicio) / DURACAO_CONTAGEM, 1);
+      // ease-out cúbico — desacelera no final
+      const eased = 1 - Math.pow(1 - t, 3);
+      setContagem(saude * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [anim, saude]);
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -64,7 +87,7 @@ export default function CenaSaudeEstoque({ anim, mensal }: Props) {
         </svg>
         <div className="absolute text-center">
           <p className="font-serif text-2xl text-white">
-            {fmtBrMax(saude, 1)}%
+            {fmtBrMax(contagem, 1)}%
           </p>
           <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">
             carregado
@@ -109,7 +132,7 @@ export default function CenaSaudeEstoque({ anim, mensal }: Props) {
             <tr className="border-b border-white/10 last:border-0">
               <td className="py-0.5 text-white/80">Saúde</td>
               <td className={cn("py-0.5 text-right font-mono font-bold", cor)}>
-                {fmtBrMax(saude, 1)}%
+                {fmtBrMax(contagem, 1)}%
               </td>
             </tr>
           </tbody>
