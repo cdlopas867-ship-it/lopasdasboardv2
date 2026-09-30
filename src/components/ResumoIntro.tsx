@@ -58,6 +58,7 @@ function prepararSlides(
     slides.push({
       icone: "valor",
       titulo: "Valor em Estoque",
+      valor: valor.valor,
       subtitulo: "",
     });
   }
@@ -278,9 +279,11 @@ export default function ResumoIntro({ kpis, avarias, semana, pendentes, reservad
 
         {/* Dados */}
         <div key={`data-${atual}`} className="resumo-slide-entra flex flex-col items-center">
-          <p className="text-[10px] font-bold tracking-[0.3em] text-[#76A035] uppercase sm:text-[11px]">
-            {slide.titulo}
-          </p>
+          {!slide.linhas && slide.titulo && (
+            <p className="text-[10px] font-bold tracking-[0.3em] text-[#76A035] uppercase sm:text-[11px]">
+              {slide.titulo}
+            </p>
+          )}
           {slide.linhas ? (
             <div className="mt-3 w-full max-w-[18rem] space-y-2 sm:max-w-sm">
               {slide.linhas.map((l, i) => (
