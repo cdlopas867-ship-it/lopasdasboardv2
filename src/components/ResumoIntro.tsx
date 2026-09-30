@@ -290,11 +290,11 @@ export default function ResumoIntro({ kpis, avarias, semana, pendentes, reservad
             {slide.titulo}
           </p>
           {slide.linhas ? (
-            <div className="mt-3 w-full max-w-[16rem] space-y-1.5 sm:max-w-xs">
+            <div className="mt-3 w-full max-w-[18rem] space-y-2 sm:max-w-sm">
               {slide.linhas.map((l, i) => (
-                <div key={i} className="flex items-center justify-between border-b border-white/10 pb-1 last:border-0">
-                  <span className="text-xs font-medium text-white/55 sm:text-sm">{l.label}</span>
-                  <span className="font-mono text-sm font-bold text-white sm:text-base">{l.valor}</span>
+                <div key={i} className="flex items-center justify-between border-b border-white/15 pb-1.5 last:border-0">
+                  <span className="text-xs font-medium text-white/50 sm:text-sm">{l.label}</span>
+                  <span className="font-mono text-lg font-bold text-[#9CCB4D] sm:text-xl" style={{ textShadow: "0 0 12px rgba(156,203,77,0.5)" }}>{l.valor}</span>
                 </div>
               ))}
             </div>
