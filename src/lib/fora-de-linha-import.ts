@@ -140,7 +140,105 @@ export type ForaDeLinhaData = {
 
 /* Processa um workbook e retorna os dados de fora de linha.
    Retorna null se a planilha não contiver as abas esperadas. */
+const normH = (v: unknown) =>
+  str(v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+const CAT_LONGO: Record<string, string> = {
+  "GUARDA-ROUPAS": "UNIDADE GUARDA ROUPAS",
+  SALAS: "UNIDADE DE SALAS",
+  COMPLEMENTOS: "UNIDADE DE COMPLEMENTOS",
+  OUTROS: "OUTROS",
+};
+
+const vazio = (grupo: string): PosicaoEstoque => ({ grupo, itens: 0, saldoFocco: 0, saldoFull: 0, reservas: 0, disponivel: 0, pesoTon: 0, pesoReservadoTon: 0, valorEstoque: 0, valorReservado: 0 });
+
+/* Formato novo "analise-estoque-AAAA-MM-DD": abas Resumo (Situação/Categoria/TOTAL)
+   e "Fora de linha" (Item, Descrição, Cor, Saldo (pç), Peso (t)...). Não traz valor. */
+function lerFormatoAnalise(wb: XLSX.WorkBook): ForaDeLinhaData | null {
+  const nomeFdl = wb.SheetNames.find((n) => normH(n) === "FORA DE LINHA");
+  const ws = nomeFdl ? wb.Sheets[nomeFdl] : undefined;
+  if (!ws) return null;
+  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
+  const hi = rows.findIndex((r) => r?.some((c) => normH(c) === "SITUACAO"));
+  if (hi < 0) return null;
+  const h = (rows[hi] ?? []).map(normH);
+  const c = (n: string) => h.findIndex((x) => x.startsWith(n));
+  const cCat = c("CATEGORIA"), cItem = c("ITEM"), cDesc = c("DESCRICAO"), cCor = c("COR");
+  const cSaldo = c("SALDO"), cPesoUn = c("PESO UN"), cPeso = h.findIndex((x) => x === "PESO (T)");
+  const cRes = h.findIndex((x) => x.startsWith("RESERVADO")), cPesoRes = c("PESO RESERVADO"), cDisp = c("DISPONIVEL");
+  if (cItem < 0) return null;
+  const itens: ItemForaDeLinha[] = [];
+  for (const r of rows.slice(hi + 1)) {
+    const item = str(r?.[cItem]);
+    if (!item) continue;
+    const cat = str(r[cCat]).toUpperCase();
+    const pesoT = num(r[cPeso]);
+    itens.push({
+      chave: `${item}.${str(r[cCor]).match(/\((\d+)\)/)?.[1] ?? itens.length}`,
+      item: num(item),
+      desc: str(r[cDesc]),
+      mascara: str(r[cCor]),
+      categoria: CAT_LONGO[cat] ?? cat,
+      origem: "CD",
+      saldoFocco: num(r[cSaldo]),
+      saldoFull: 0,
+      reservas: num(r[cRes]),
+      disponivel: num(r[cDisp]),
+      pesoKg: cPeso >= 0 ? pesoT * 1000 : num(r[cPesoUn]) * num(r[cSaldo]),
+      pesoReservadoKg: num(r[cPesoRes]) * 1000,
+      valorEstoque: 0,
+      valorReservado: 0,
+    });
+  }
+  /* Resumo: linhas "<Situação> | TOTAL" */
+  const pos = { em: vazio("EM LINHA"), fora: vazio("FORA DE LINHA") };
+  const nomeRes = wb.SheetNames.find((n) => normH(n) === "RESUMO");
+  const wr = nomeRes ? wb.Sheets[nomeRes] : undefined;
+  if (wr) {
+    for (const r of XLSX.utils.sheet_to_json<unknown[]>(wr, { header: 1, defval: null })) {
+      if (normH(r?.[1]) !== "TOTAL") continue;
+      const alvo = normH(r[0]) === "EM LINHA" ? pos.em : normH(r[0]) === "FORA DE LINHA" ? pos.fora : null;
+      if (!alvo) continue;
+      alvo.itens = num(r[2]); alvo.saldoFocco = num(r[3]); alvo.pesoTon = num(r[4]);
+      alvo.reservas = num(r[5]); alvo.pesoReservadoTon = num(r[6]); alvo.disponivel = alvo.saldoFocco - alvo.reservas;
+    }
+  }
+  if (!pos.fora.itens) {
+    pos.fora.itens = itens.length;
+    pos.fora.saldoFocco = itens.reduce((s, i) => s + i.saldoFocco, 0);
+    pos.fora.reservas = itens.reduce((s, i) => s + i.reservas, 0);
+    pos.fora.disponivel = itens.reduce((s, i) => s + i.disponivel, 0);
+    pos.fora.pesoTon = itens.reduce((s, i) => s + i.pesoKg, 0) / 1000;
+    pos.fora.pesoReservadoTon = itens.reduce((s, i) => s + i.pesoReservadoKg, 0) / 1000;
+  }
+  const soma = (k: keyof PosicaoEstoque) => (pos.em[k] as number) + (pos.fora[k] as number);
+  const total: PosicaoEstoque = { grupo: "TOTAL GERAL", itens: soma("itens"), saldoFocco: soma("saldoFocco"), saldoFull: 0, reservas: soma("reservas"), disponivel: soma("disponivel"), pesoTon: soma("pesoTon"), pesoReservadoTon: soma("pesoReservadoTon"), valorEstoque: 0, valorReservado: 0 };
+  return { itens, posicaoEmLinha: pos.em, posicaoForaDeLinha: pos.fora, posicaoTotal: total };
+}
+
+/* Preenche valores (custo) usando o custo médio por item da planilha de reservas. */
+export function aplicarCustos(
+  fdl: ForaDeLinhaData,
+  custos: Map<string, number>,
+  custoMedioGeral: number,
+): ForaDeLinhaData {
+  if (fdl.itens.some((i) => i.valorEstoque > 0)) return fdl;
+  const itens = fdl.itens.map((i) => {
+    const kgUn = i.saldoFocco > 0 ? i.pesoKg / i.saldoFocco : 0;
+    const cu = custos.get(`${i.item}|${i.mascara.match(/\((\d+)\)/)?.[1] ?? ""}`) ?? custos.get(String(i.item)) ?? kgUn * custoMedioGeral;
+    return { ...i, valorEstoque: cu * i.saldoFocco, valorReservado: cu * i.reservas };
+  });
+  const vFora = itens.reduce((s, i) => s + i.valorEstoque, 0);
+  const rFora = itens.reduce((s, i) => s + i.valorReservado, 0);
+  const fora = { ...fdl.posicaoForaDeLinha, valorEstoque: vFora, valorReservado: rFora };
+  const em = { ...fdl.posicaoEmLinha, valorEstoque: fdl.posicaoEmLinha.pesoTon * 1000 * custoMedioGeral, valorReservado: fdl.posicaoEmLinha.pesoReservadoTon * 1000 * custoMedioGeral };
+  const total = { ...fdl.posicaoTotal, valorEstoque: em.valorEstoque + vFora, valorReservado: em.valorReservado + rFora };
+  return { itens, posicaoEmLinha: em, posicaoForaDeLinha: fora, posicaoTotal: total };
+}
+
 export function lerForaDeLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
+  const novo = lerFormatoAnalise(wb);
+  if (novo) return novo;
   const resumo = lerResumo(wb);
   const itens = lerItens(wb);
 

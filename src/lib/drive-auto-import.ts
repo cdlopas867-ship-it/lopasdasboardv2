@@ -23,7 +23,24 @@ import { lerItensEstoque, curvaAbcEstoque, curvaAbcRecebimento } from "./base-es
 import { existsSync, readFileSync, statSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
-import { lerForaDeLinha } from "./fora-de-linha-import";
+import { lerForaDeLinha, aplicarCustos } from "./fora-de-linha-import";
+
+/* Planilha analise-estoque não traz custo: usa o custo médio da planilha de reservas. */
+function comCustos(
+  fdl: NonNullable<ReturnType<typeof lerForaDeLinha>>,
+  res: ReturnType<typeof calcularReservados> | null,
+) {
+  if (!res) return fdl;
+  const custos = new Map<string, number>();
+  for (const i of res.itens) {
+    if (!(i.custoMedio > 0)) continue;
+    const id = i.mascara.match(/\((\d+)\)/)?.[1] ?? "";
+    custos.set(`${i.cod}|${id}`, i.custoMedio);
+    if (!custos.has(i.cod)) custos.set(i.cod, i.custoMedio);
+  }
+  const porKg = res.totalPesoEstoque > 0 ? res.totalValorEstoque / (res.totalPesoEstoque * 1000) : 0;
+  return aplicarCustos(fdl, custos, porKg);
+}
 import type { Avaria } from "./avarias";
 import type { PendenteProducao } from "./pendentes";
 import type { ItemEstoque } from "./base-estoque";
@@ -920,7 +937,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       : {}),
     ...(kpisRecomputed.length > 0 ? { kpis: kpisRecomputed } : {}),
     ...(unidadesRecomputed.length > 0 ? { unidades: unidadesRecomputed } : {}),
-    ...(melhorForaDeLinha ? { foraDeLinha: melhorForaDeLinha } : {}),
+    ...(melhorForaDeLinha ? { foraDeLinha: comCustos(melhorForaDeLinha, melhorReservados) } : {}),
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
     ...(melhorOcupacao
       ? {
