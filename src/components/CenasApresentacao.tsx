@@ -5,6 +5,7 @@ import InfoTooltip from "@/components/InfoTooltip";
 import { GraficoMotivoMensal } from "@/components/GraficoMotivoMensal";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
+import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import { imagemAvaria, temImagemAvaria } from "@/data/avarias-imagens";
 import { POSICAO_FORA_DE_LINHA, POSICAO_EM_LINHA, POSICAO_TOTAL, ITENS_FORA_DE_LINHA, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -1039,8 +1040,13 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} />
       )}
 
-      {/* Cena 15 — encerramento */}
+      {/* Cena 14 — Saúde do estoque (donut) */}
       {cena === 13 && (
+        <CenaSaudeEstoque anim={anim} mensal={mensal} />
+      )}
+
+      {/* Cena 15 — encerramento */}
+      {cena === 14 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
