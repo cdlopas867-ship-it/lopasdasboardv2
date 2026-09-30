@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import Apresentacao from "./Apresentacao";
 import CenasForaDeLinha from "./CenasForaDeLinha";
-import { ITENS_FORA_DE_LINHA, type ItemForaDeLinha } from "@/data/fora-de-linha";
+import { ITENS_FORA_DE_LINHA, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
 
@@ -22,7 +22,7 @@ export default function ForaDeLinha() {
   const [categoria, setCategoria] = useState("");
   const [origem, setOrigem] = useState("");
 
-  const itensBase = (dados as Record<string, unknown>)["foraDeLinha"] as { itens: ItemForaDeLinha[] } | undefined;
+  const itensBase = (dados as Record<string, unknown>)["foraDeLinha"] as { itens: ItemForaDeLinha[]; posicaoEmLinha: PosicaoEstoque; posicaoForaDeLinha: PosicaoEstoque; posicaoTotal: PosicaoEstoque } | undefined;
   const itensForaDeLinha = itensBase?.itens ?? ITENS_FORA_DE_LINHA;
 
   const itens = useMemo(() => {
@@ -37,7 +37,7 @@ export default function ForaDeLinha() {
         i.mascara.toLowerCase().includes(q)
       );
     }).sort((a, b) => b.valorEstoque - a.valorEstoque);
-  }, [busca, categoria, origem]);
+  }, [busca, categoria, origem, itensForaDeLinha]);
 
   const valorFiltrado = itens.reduce((s, i) => s + i.valorEstoque, 0);
 
@@ -63,6 +63,8 @@ export default function ForaDeLinha() {
           setOrigem={setOrigem}
           itens={itens}
           valorFiltrado={valorFiltrado}
+          totalItens={itensForaDeLinha.length}
+          posicoes={itensBase ? { emLinha: itensBase.posicaoEmLinha, fora: itensBase.posicaoForaDeLinha, total: itensBase.posicaoTotal } : undefined}
         />
       )}
     </Apresentacao>

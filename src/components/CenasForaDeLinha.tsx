@@ -4,8 +4,9 @@ import {
   ITENS_FORA_DE_LINHA,
   POSICAO_EM_LINHA,
   POSICAO_FORA_DE_LINHA,
-  POSICAO_TOTAL,
+  POSICAO_TOTAL as POSICAO_TOTAL_FIXO,
   type ItemForaDeLinha,
+  type PosicaoEstoque,
 } from "@/data/fora-de-linha";
 
 /* Cenas da apresentação Fora de linha — mesmas animações das outras telas.
@@ -36,6 +37,8 @@ type Props = {
   setOrigem: (v: string) => void;
   itens: ItemForaDeLinha[];
   valorFiltrado: number;
+  totalItens?: number;
+  posicoes?: { emLinha: PosicaoEstoque; fora: PosicaoEstoque; total: PosicaoEstoque };
 };
 
 function KpiCard({
@@ -61,7 +64,7 @@ function KpiCard({
   );
 }
 
-function Comparativo() {
+function Comparativo({ POSICAO_EM_LINHA, POSICAO_FORA_DE_LINHA, POSICAO_TOTAL }: { POSICAO_EM_LINHA: PosicaoEstoque; POSICAO_FORA_DE_LINHA: PosicaoEstoque; POSICAO_TOTAL: PosicaoEstoque }) {
   const fatias = [
     { nome: "Em linha", pos: POSICAO_EM_LINHA, cor: "bg-primary" },
     { nome: "Fora de linha", pos: POSICAO_FORA_DE_LINHA, cor: "bg-brand-amber" },
@@ -144,8 +147,10 @@ function ItemRow({ item }: { item: ItemForaDeLinha }) {
   );
 }
 
-function CenaResumo() {
-  const pos = POSICAO_FORA_DE_LINHA;
+function CenaResumo({ posicoes }: { posicoes?: Props["posicoes"] }) {
+  const POSICAO_TOTAL = posicoes?.total ?? POSICAO_TOTAL_FIXO;
+  const pos = posicoes?.fora ?? POSICAO_FORA_DE_LINHA;
+  const emLinha = posicoes?.emLinha ?? POSICAO_EM_LINHA;
   return (
     <div className="py-4">
       <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -162,7 +167,7 @@ function CenaResumo() {
         style={{ animationDelay: "0.16s" }}
       >
         {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtMoeda(pos.valorEstoque)} em
-        custo ({fmtPct(pos.valorEstoque / POSICAO_TOTAL.valorEstoque)} do valor total) e{" "}
+        custo ({fmtPct(pos.valorEstoque / Math.max(POSICAO_TOTAL.valorEstoque, 1))} do valor total) e{" "}
         {fmtPeso(pos.pesoTon * 1000)} de massa ({fmtPct(pos.pesoTon / POSICAO_TOTAL.pesoTon)} do peso
         total).
       </p>
@@ -203,7 +208,7 @@ function CenaResumo() {
       </div>
 
       <div className="mt-6">
-        <Comparativo />
+        <Comparativo POSICAO_EM_LINHA={emLinha} POSICAO_FORA_DE_LINHA={pos} POSICAO_TOTAL={POSICAO_TOTAL} />
       </div>
     </div>
   );
@@ -218,11 +223,12 @@ function CenaLista({
   setOrigem,
   itens,
   valorFiltrado,
+  totalItens,
 }: Omit<Props, "cena" | "anim">) {
   return (
     <div className="py-4">
       <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-        Lista de itens · {itens.length} de {ITENS_FORA_DE_LINHA.length}
+        Lista de itens · {itens.length} de {totalItens ?? ITENS_FORA_DE_LINHA.length}
       </p>
       <p
         className="video-sobe mt-1 text-xs text-white/50"
@@ -300,7 +306,7 @@ export default function CenasForaDeLinha(props: Props) {
   const { cena } = props;
   return (
     <>
-      {cena === 0 && <CenaResumo />}
+      {cena === 0 && <CenaResumo posicoes={props.posicoes} />}
       {cena === 1 && <CenaLista {...props} />}
     </>
   );
