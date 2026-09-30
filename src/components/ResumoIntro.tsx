@@ -39,14 +39,11 @@ function prepararSlides(
   const previsto = kpis.find((k) => k.id === "previsto");
 
   if (peso) {
-    const extraGr = peso.extra?.find(([k]) => k === "Guarda-Roupas");
     slides.push({
       icone: "peso",
       titulo: "Peso Total em Estoque",
       valor: peso.valor,
-      subtitulo: extraGr
-        ? `Guarda-Roupas responde por ${extraGr[1]}`
-        : peso.detalhe ?? "",
+      subtitulo: "",
     });
   }
   if (ocup) {
@@ -54,17 +51,14 @@ function prepararSlides(
       icone: "ocupacao",
       titulo: "Ocupação do CD",
       valor: ocup.valor,
-      subtitulo: ocup.detalhe ?? "",
+      subtitulo: "",
     });
   }
   if (valor) {
-    const extraGr = valor.extra?.find(([k]) => k === "Guarda-Roupas");
     slides.push({
       icone: "valor",
       titulo: "Valor em Estoque",
-      subtitulo: extraGr
-        ? `Guarda-Roupas concentra ${extraGr[1]} (53%) do valor total`
-        : valor.detalhe ?? "",
+      subtitulo: "",
     });
   }
 
@@ -99,9 +93,7 @@ function prepararSlides(
       icone: "avarias",
       titulo: "Avarias",
       valor: `${fmtInt(avarias.total)} volumes`,
-      subtitulo: avarias.referenciaParcial
-        ? `Totais e meses conferidos na tabela oficial · custo parcial (${avarias.custo}).`
-        : `Custo: ${avarias.custo}`,
+      subtitulo: "",
     });
   }
   if (semana?.dias?.length) {
@@ -110,7 +102,7 @@ function prepararSlides(
       icone: "recebimento",
       titulo: "Recebimento do Dia",
       valor: `${fmtBrMax(ultimo.ton, 0)} t`,
-      subtitulo: `${ultimo.dia} · ${ultimo.data} · Meta: ${fmtInt(ultimo.meta)} t`,
+      subtitulo: "",
     });
   }
   if (pendentes) {
@@ -118,7 +110,7 @@ function prepararSlides(
       icone: "pendentes",
       titulo: "Pendências de Produção",
       valor: `${fmtBrMax(pendentes.totalTon, 1)} t`,
-      subtitulo: `${fmtInt(pendentes.itens)} ordens · média ${fmtBrMax(pendentes.mediaTon, 1)} t`,
+      subtitulo: "",
     });
   }
 
@@ -305,9 +297,11 @@ export default function ResumoIntro({ kpis, avarias, semana, pendentes, reservad
                   {slide.valor}
                 </p>
               )}
-              <p className="mt-2 max-w-[18rem] text-xs leading-relaxed text-white/60 sm:text-sm sm:max-w-xs">
-                {slide.subtitulo}
-              </p>
+              {slide.subtitulo && (
+                <p className="mt-2 max-w-[18rem] text-xs leading-relaxed text-white/60 sm:text-sm sm:max-w-xs">
+                  {slide.subtitulo}
+                </p>
+              )}
             </>
           )}
         </div>
