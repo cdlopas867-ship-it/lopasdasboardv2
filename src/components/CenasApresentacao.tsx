@@ -139,7 +139,7 @@ export default function CenasApresentacao({
             {unidades.map((u, i) => (
               <div key={u.nome} className="video-sobe" style={{ animationDelay: `${0.12 * i}s` }}>
                 <div className="mb-2 flex items-baseline justify-between">
-                  <span className="font-serif text-2xl text-white sm:text-3xl">{u.nome}</span>
+                  <span className="font-serif text-3xl text-white sm:text-4xl">{u.nome}</span>
                   <span className="text-sm font-bold text-white">
                     {u.valor}{" "}
                     <span className="text-white/50">· {fmtBrMax(u.share, 1)}%</span>
@@ -197,7 +197,7 @@ export default function CenasApresentacao({
               />
             </svg>
             <div className="absolute text-center">
-              <p className="font-serif text-2xl text-white">
+              <p className="font-serif text-3xl sm:text-4xl text-white">
                 {fmtBrMax(ocupacao.pct * 100, 1)}%
               </p>
               <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">
@@ -212,7 +212,7 @@ export default function CenasApresentacao({
             <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
               Legenda
             </p>
-            <table className="w-full text-left text-[11px] text-white">
+            <table className="w-full text-left text-xs text-white">
               <thead>
                 <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
                   <th className="pb-0.5 font-bold">Atributo</th>
@@ -250,7 +250,7 @@ export default function CenasApresentacao({
             </p>
             <InfoTooltip onOpen={onPausar} texto="Tonelagem recebida por dia útil. Meta diária: 330 toneladas (linha tracejada). Cada barra representa um dia de recebimento. Fonte: sistema de recebimento Focco. Período: 10/09 a 22/09/2026." />
           </div>
-          <p className="video-sobe mt-3 font-serif text-3xl text-white sm:text-5xl">
+          <p className="video-sobe mt-3 font-serif text-4xl text-white sm:text-6xl">
             {semana.total}
           </p>
           <div className="relative mt-10 flex h-48 items-end justify-between gap-2 sm:gap-4">
@@ -266,7 +266,7 @@ export default function CenasApresentacao({
             {semana.dias.map((d, i) => (
               <div key={d.data} className="flex h-full flex-1 flex-col justify-end">
                 <p
-                  className="video-sobe mb-1.5 text-center font-mono text-[11px] font-bold text-white/85"
+                  className="video-sobe mb-1.5 text-center font-mono text-xs font-bold text-white/85"
                   style={{ animationDelay: `${0.12 * i + 0.5}s` }}
                 >
                   {fmtTonCurto(d.ton)}
@@ -331,7 +331,7 @@ export default function CenasApresentacao({
                 />
               </svg>
               <div className="absolute text-center">
-                <p className="font-serif text-2xl text-white">
+                <p className="font-serif text-3xl sm:text-4xl text-white">
                   {fmtBrMax(turnoPrincipal.pct, 1)}%
                 </p>
                 <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">
@@ -347,7 +347,7 @@ export default function CenasApresentacao({
             <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
               Legenda
             </p>
-            <table className="w-full text-left text-[11px] text-white">
+            <table className="w-full text-left text-xs text-white">
               <thead>
                 <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
                   <th className="pb-0.5 font-bold">Turno</th>
@@ -398,15 +398,15 @@ export default function CenasApresentacao({
           {listaMes.length ? (
             <>
               <div className="video-sobe mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-1">
-                <p className="font-serif text-2xl text-white sm:text-4xl">
+                <p className="font-serif text-3xl text-white sm:text-5xl">
                   {fmtTonDec(totRecebido)}{" "}
                   <span className="text-sm text-white/60 sm:text-base">recebidas</span>
                 </p>
-                <p className="font-serif text-2xl text-brand-amber sm:text-4xl">
+                <p className="font-serif text-3xl text-brand-amber sm:text-5xl">
                   {fmtTonDec(totCarregado)}{" "}
                   <span className="text-sm text-white/60 sm:text-base">carregadas</span>
                 </p>
-                <p className="font-serif text-2xl sm:text-4xl">
+                <p className="font-serif text-3xl sm:text-5xl">
                   <span className={cn(totRecebido - totCarregado >= 0 ? "text-emerald-400" : "text-red-400")}>
                     {fmtTonDec(Math.abs(totRecebido - totCarregado))}
                   </span>{" "}
@@ -432,7 +432,7 @@ export default function CenasApresentacao({
                       <div className="flex h-full items-end justify-center gap-1.5">
                         <div className="flex h-full flex-1 flex-col items-center justify-end">
                           <p
-                            className="video-sobe mb-1 text-center font-mono text-[10px] font-bold text-white/85"
+                            className="video-sobe mb-1 text-center font-mono text-[11px] font-bold text-white/85"
                             style={{ animationDelay: `${0.12 * i + 0.5}s` }}
                           >
                             {fmtInt(m.recebido)}
@@ -450,7 +450,7 @@ export default function CenasApresentacao({
                         </div>
                         <div className="flex h-full flex-1 flex-col items-center justify-end">
                           <p
-                            className="video-sobe mb-1 text-center font-mono text-[10px] font-bold text-white/85"
+                            className="video-sobe mb-1 text-center font-mono text-[11px] font-bold text-white/85"
                             style={{ animationDelay: `${0.12 * i + 0.55}s` }}
                           >
                             {fmtInt(m.carregado)}
@@ -480,7 +480,7 @@ export default function CenasApresentacao({
                         {destaque && " ★"}
                       </p>
                       <p
-                        className="video-sobe mt-1 text-center font-mono text-[10px] font-bold text-white/85"
+                        className="video-sobe mt-1 text-center font-mono text-[11px] font-bold text-white/85"
                         style={{ animationDelay: `${0.12 * i + 0.65}s` }}
                       >
                         {fmtBrMax(pct, 0)}%
@@ -559,7 +559,7 @@ export default function CenasApresentacao({
           {avarias ? (
             <>
               <div className="video-sobe mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-1">
-                <p className="font-serif text-3xl text-white sm:text-5xl">
+                <p className="font-serif text-4xl text-white sm:text-6xl">
                   {fmtInt(avarias.total)}{" "}
                   <span className="text-base text-white/60 sm:text-lg">volumes</span>
                 </p>
@@ -756,7 +756,7 @@ export default function CenasApresentacao({
           </div>
           {pendentes ? (
             <>
-              <p className="video-sobe mt-3 font-serif text-3xl text-white sm:text-5xl">
+              <p className="video-sobe mt-3 font-serif text-4xl text-white sm:text-6xl">
                 {fmtBrMax(pendentes.totalTon, 1)} t{" "}
                 <span className="text-base text-white/60 sm:text-lg">
                   · {fmtInt(pendentes.itens)} ordens
@@ -893,7 +893,7 @@ export default function CenasApresentacao({
               />
             </svg>
             <div className="absolute text-center">
-              <p className="font-serif text-2xl text-white">
+              <p className="font-serif text-3xl sm:text-4xl text-white">
                 {fmtBrMax(reservados.pctValor, 1)}%
               </p>
               <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">
@@ -910,7 +910,7 @@ export default function CenasApresentacao({
             <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
               Legenda
             </p>
-            <table className="w-full text-left text-[11px] text-white">
+            <table className="w-full text-left text-xs text-white">
               <thead>
                 <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
                   <th className="pb-0.5 font-bold">Atributo</th>
@@ -978,16 +978,16 @@ export default function CenasApresentacao({
             </p>
             <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
           </div>
-          <p className="video-sobe mt-3 font-serif text-4xl text-primary sm:text-5xl" style={{ animationDelay: "0.15s" }}>
+          <p className="video-sobe mt-3 font-serif text-5xl text-primary sm:text-6xl" style={{ animationDelay: "0.15s" }}>
             {fmtMoeda(reservados.totalTon * valorFaturado)}
           </p>
           <div className="video-sobe mt-4 grid w-full max-w-sm grid-cols-3 gap-2 sm:gap-3" style={{ animationDelay: "0.3s" }}>
             <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-center">
-              <p className="font-serif text-lg text-white sm:text-xl">{fmtTonDec(reservados.totalTon)}</p>
+              <p className="font-serif text-xl text-white sm:text-2xl">{fmtTonDec(reservados.totalTon)}</p>
               <p className="text-[8px] font-bold tracking-widest text-white/50 uppercase">Ton. reserv.</p>
             </div>
             <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-center">
-              <p className="font-serif text-lg text-white sm:text-xl">× {fmtMoeda2(valorFaturado)}</p>
+              <p className="font-serif text-xl text-white sm:text-2xl">× {fmtMoeda2(valorFaturado)}</p>
               <p className="text-[8px] font-bold tracking-widest text-white/50 uppercase">R$/t faturado</p>
             </div>
             <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-center">
@@ -1107,7 +1107,7 @@ function KpiCenaCard({
       style={{ animationDelay: `${0.15 * (index + 1)}s` }}
     >
       <div className="flex items-start justify-between">
-        <p className="font-serif text-lg tracking-tight text-white sm:text-2xl">
+        <p className="font-serif text-xl tracking-tight text-white sm:text-3xl">
           {kpi.valor}
         </p>
         <span
@@ -1184,7 +1184,7 @@ function ForaDeLinhaCard({
       style={{ animationDelay: `${0.15 * (index + 1)}s` }}
     >
       <div className="flex items-start justify-between">
-        <p className="font-serif text-lg tracking-tight text-white sm:text-2xl">
+        <p className="font-serif text-xl tracking-tight text-white sm:text-3xl">
           {fmtPct(pctValor)}
         </p>
         <span

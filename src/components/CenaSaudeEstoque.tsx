@@ -86,7 +86,7 @@ export default function CenaSaudeEstoque({ anim, mensal }: Props) {
           />
         </svg>
         <div className="absolute text-center">
-          <p className="font-serif text-2xl text-white">
+          <p className="font-serif text-3xl sm:text-4xl text-white">
             {fmtBrMax(contagem, 1)}%
           </p>
           <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">
@@ -103,7 +103,7 @@ export default function CenaSaudeEstoque({ anim, mensal }: Props) {
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
           Resumo do período
         </p>
-        <table className="w-full text-left text-[11px] text-white">
+        <table className="w-full text-left text-xs text-white">
           <thead>
             <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
               <th className="pb-0.5 font-bold">Indicador</th>

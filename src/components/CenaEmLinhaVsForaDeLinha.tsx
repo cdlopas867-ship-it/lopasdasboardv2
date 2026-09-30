@@ -73,13 +73,13 @@ export default function CenaEmLinhaVsForaDeLinha({
               </div>
 
               {/* Destaque: peso tonelada */}
-              <p className="mt-1.5 font-serif text-2xl text-white sm:text-3xl">
+              <p className="mt-1.5 font-serif text-3xl text-white sm:text-4xl">
                 {fmtTonDec(l.pos.pesoTon)}
               </p>
               <p className="text-[9px] font-bold tracking-widest text-white/45 uppercase">peso total</p>
 
               {/* Métricas */}
-              <dl className="mt-3 space-y-1.5 text-[11px]">
+              <dl className="mt-3 space-y-1.5 text-xs">
                 <Linha rotulo="Itens" valor={fmtInt(l.pos.itens)} />
                 <Linha rotulo="Disponível" valor={`${fmtInt(l.pos.disponivel)} un`} />
                 <Linha rotulo="Reservados" valor={`${fmtInt(l.pos.reservas)} un`} />
@@ -115,7 +115,7 @@ export default function CenaEmLinhaVsForaDeLinha({
         style={{ animationDelay: "0.6s" }}
       >
         <p className="text-[10px] font-bold tracking-widest text-white/60 uppercase">Total geral</p>
-        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-0.5 text-[11px]">
+        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-0.5 text-xs">
           <Metrica rotulo="Itens" valor={fmtInt(total.itens)} />
           <Metrica rotulo="Peso" valor={fmtTonDec(total.pesoTon)} />
           <Metrica rotulo="Disponível" valor={`${fmtInt(total.disponivel)} un`} />

@@ -910,6 +910,14 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
 .video-conteudo {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 1px rgba(0, 0, 0, 0.3);
 }
+/* Valores em destaque — números grandes com brilho verde sobre o fundo */
+.video-conteudo .font-serif {
+  text-shadow: 0 0 24px rgba(126, 200, 150, 0.35), 0 2px 8px rgba(0, 0, 0, 0.65);
+}
+/* Valores numéricos em tabelas — brilho extra para legibilidade */
+.video-conteudo table .font-mono {
+  text-shadow: 0 0 10px rgba(126, 200, 150, 0.25), 0 1px 4px rgba(0, 0, 0, 0.6);
+}
 
 .tonelagem-card {
   box-sizing: border-box;
@@ -943,10 +951,11 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
   margin: 0;
   color: #fff;
   font-family: var(--font-serif);
-  font-size: 43px;
+  font-size: 52px;
   font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 1;
+  text-shadow: 0 0 28px rgba(126, 200, 150, 0.4), 0 2px 8px rgba(0, 0, 0, 0.7);
 }
 .tonelagem-unit {
   color: rgba(255, 255, 255, 0.5);
@@ -1063,11 +1072,12 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
 }
 .tonelagem-month-value {
   margin: 4px 0 0;
-  color: rgba(255, 255, 255, 0.85);
+  color: #fff;
   font-family: var(--font-sans);
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   line-height: 1.3;
+  text-shadow: 0 0 10px rgba(126, 200, 150, 0.3), 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 .tonelagem-ciclo-valor {
   animation: tonelagem-valor-destaque 4.5s linear infinite;
