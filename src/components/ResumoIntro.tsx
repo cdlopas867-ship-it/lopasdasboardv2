@@ -72,7 +72,7 @@ function prepararSlides(
     if (peso) linhas.push({ label: "Peso real", valor: peso.valor });
     linhas.push({ label: "Disponível", valor: `${fmtInt(posTotal.disponivel)} un` });
     if (reservados) {
-      linhas.push({ label: "Reservado", valor: fmtMoeda(reservados.totalValor) });
+      linhas.push({ label: "Reservado", valor: `R$ ${(reservados.totalValor / 1e6).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} mi` });
     }
     linhas.push({ label: "Em linha", valor: fmtPeso(posEmLinha.pesoTon * 1000) });
     if (previsto) {
@@ -279,16 +279,16 @@ export default function ResumoIntro({ kpis, avarias, semana, pendentes, reservad
 
         {/* Dados */}
         <div key={`data-${atual}`} className="resumo-slide-entra flex flex-col items-center">
-          {!slide.linhas && slide.titulo && (
+          {slide.titulo && (
             <p className="text-[10px] font-bold tracking-[0.3em] text-[#76A035] uppercase sm:text-[11px]">
               {slide.titulo}
             </p>
           )}
           {slide.linhas ? (
-            <div className="mt-3 w-full max-w-[18rem] space-y-2 sm:max-w-sm">
+            <div className="mt-4 w-full max-w-[20rem] overflow-hidden rounded-2xl border border-white/15 bg-black/40 px-5 py-4 backdrop-blur-md sm:max-w-md">
               {slide.linhas.map((l, i) => (
-                <div key={i} className="flex items-center justify-between border-b border-white/15 pb-1.5 last:border-0">
-                  <span className="text-xs font-medium text-white/50 sm:text-sm">{l.label}</span>
+                <div key={i} className={`flex items-center justify-between py-2 ${i < slide.linhas!.length - 1 ? "border-b border-white/10" : ""}`}>
+                  <span className="text-sm font-medium tracking-wide text-white/60">{l.label}</span>
                   <span className="font-mono text-lg font-bold text-[#9CCB4D] sm:text-xl" style={{ textShadow: "0 0 12px rgba(156,203,77,0.5)" }}>{l.valor}</span>
                 </div>
               ))}
