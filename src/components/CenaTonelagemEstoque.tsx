@@ -115,6 +115,7 @@ export default function CenaTonelagemEstoque({ anim }: Props) {
                   destaque && "tonelagem-dot-current",
                   !anim && "video-pausada",
                 )}
+                style={{ animationDelay: `${i * 0.15}s, ${i * 0.5}s` }}
                 cx={p.x}
                 cy={p.y}
                 r={destaque ? 6 : 4.5}
@@ -139,7 +140,15 @@ export default function CenaTonelagemEstoque({ anim }: Props) {
                 >
                   {d.mes.slice(0, 3)}
                 </p>
-                <p className="tonelagem-month-value">{fmtInt(d.ton)}</p>
+                <p
+                  className={cn(
+                    "tonelagem-month-value tonelagem-ciclo-valor",
+                    !anim && "video-pausada",
+                  )}
+                  style={{ animationDelay: `${i * 0.5}s` }}
+                >
+                  {fmtInt(d.ton)}
+                </p>
                 <p
                   className={cn(
                     "tonelagem-month-delta",
