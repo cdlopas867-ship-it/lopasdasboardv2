@@ -1,16 +1,19 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import { TONELAGEM_ESTOQUE_MENSAL } from "@/data/tonelagem-estoque";
+import { PENDENTES_RESUMO_FIXO } from "@/data/valores-fixos";
+import type { VideoPendentes } from "./VideoResumoDashboard";
 
-/* Cena — Tonelagem do estoque mês a mês (gráfico de área minimalista).
- * Linha suave com gradiente verde translúcido sob a curva, pontos por mês
- * e o mês atual destacado em âmbar. Card claro flutuando sobre o fundo escuro. */
+/* Cena — Tonelagem do estoque mês a mês com variação percentual.
+ * Barras por mês com o peso (PESO BRT) e a variação vs. mês anterior.
+ * Destaque adicional: tonelagem pendente e datas de cada mês. */
 
 type Props = {
   anim: boolean;
+  pendentes?: VideoPendentes | undefined;
 };
 
-export default function CenaTonelagemEstoque({ anim }: Props) {
+export default function CenaTonelagemEstoque({ anim, pendentes }: Props) {
   const dados = TONELAGEM_ESTOQUE_MENSAL;
   const ultimo = dados[dados.length - 1]!;
   const anterior = dados[dados.length - 2]!;
@@ -25,56 +28,49 @@ export default function CenaTonelagemEstoque({ anim }: Props) {
     { rotulo: "Máx.", valor: maxTon },
   ];
 
-  /* Geometria do SVG — viewBox 708×178, pontos calculados dinamicamente */
-  const vbW = 708;
-  const vbH = 178;
-  const plotTop = 28;
-  const plotBottom = 126;
-  const plotH = plotBottom - plotTop;
-  const startX = 24;
-  const endX = 684;
-  const stepX = (endX - startX) / (dados.length - 1);
-  const range = maxTon - minTon || 1;
-
-  const pts = dados.map((d, i) => ({
-    x: startX + i * stepX,
-    y: plotBottom - ((d.ton - minTon) / range) * plotH,
-  }));
-
-  const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x} ${p.y}`).join(" ");
-  const areaPath = `${linePath} L${pts[pts.length - 1]!.x} ${vbH - 20} L${pts[0]!.x} ${vbH - 20} Z`;
-  const gridPath = `M0 ${plotTop}H${vbW}M0 ${(plotTop + plotBottom) / 2}H${vbW}M0 ${plotBottom}H${vbW}`;
+  /* Mapa de pendências por mês (mesma chave "Jan/26") */
+  const pendMap = new Map<string, { ton: number; itens: number; dtInicial?: string; dtFinal?: string; lotes?: number }>();
+  const pendFonte = pendentes ?? PENDENTES_RESUMO_FIXO;
+  for (const m of pendFonte?.meses ?? []) {
+    pendMap.set(m.mes, { ton: m.ton, itens: m.itens, dtInicial: m.dtInicial, dtFinal: m.dtFinal, lotes: m.lotes });
+  }
 
   return (
-    <div className="tonelagem-card w-full pb-6">
-      <p className="video-sobe tonelagem-eyebrow">
+    <div className="w-full pb-6">
+      <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
         Toneladas do Estoque · Mês a Mês
       </p>
 
       {/* Cabeçalho — último mês, variação e resumo do período */}
-      <div className="video-sobe tonelagem-head" style={{ animationDelay: "0.1s" }}>
-        <div className="tonelagem-latest">
-          <p className="tonelagem-value">
-            {fmtInt(ultimo.ton)} <span className="tonelagem-unit">t</span>
+      <div
+        className="video-sobe mt-2 flex flex-wrap items-end justify-between gap-x-6 gap-y-2"
+        style={{ animationDelay: "0.1s" }}
+      >
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <p className="font-serif text-4xl leading-none text-white sm:text-5xl">
+            {fmtInt(ultimo.ton)} <span className="text-base text-white/50 sm:text-lg">t</span>
           </p>
           <span
             className={cn(
-              "tonelagem-change",
-              deltaUltimo >= 0 ? "tonelagem-change-up" : "tonelagem-change-down",
+              "font-mono text-base font-bold sm:text-xl",
+              deltaUltimo >= 0 ? "text-emerald-400" : "text-red-400",
             )}
           >
             {deltaUltimo >= 0 ? "▲" : "▼"} {fmtBrMax(Math.abs(deltaUltimo), 1)}%
           </span>
-          <span className="tonelagem-period">
+          <span className="text-xs text-white/45 sm:text-sm">
             {ultimo.mes} · vs. {anterior.mes}
           </span>
         </div>
 
-        <div className="tonelagem-pills">
+        <div className="flex flex-wrap items-center gap-2">
           {resumo.map((r) => (
-            <span key={r.rotulo} className="tonelagem-pill">
+            <span
+              key={r.rotulo}
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[9px] font-bold tracking-widest text-white/45 uppercase"
+            >
               {r.rotulo}{" "}
-              <span className="tonelagem-pill-value">
+              <span className="ml-0.5 font-mono text-[10px] tracking-normal text-white/80">
                 {fmtInt(r.valor)} t
               </span>
             </span>
@@ -82,86 +78,107 @@ export default function CenaTonelagemEstoque({ anim }: Props) {
         </div>
       </div>
 
-      {/* Gráfico — linha de área com gradiente verde */}
-      <div className="video-sobe tonelagem-chart" style={{ animationDelay: "0.2s" }}>
-        <svg
-          className="tonelagem-plot"
-          viewBox={`0 0 ${vbW} ${vbH}`}
-          role="img"
-          aria-label="Gráfico de área mensal de toneladas"
-        >
-          <defs>
-            <linearGradient id="tonelagemAreaFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#7ec896" stopOpacity=".3" />
-              <stop offset="100%" stopColor="#7ec896" stopOpacity=".02" />
-            </linearGradient>
-          </defs>
-          <path className="tonelagem-gridline" d={gridPath} />
-          <path
-            className={cn("tonelagem-area", !anim && "video-pausada")}
-            d={areaPath}
-          />
-          <path
-            className={cn("tonelagem-curve", !anim && "video-pausada")}
-            d={linePath}
-          />
-          {pts.map((p, i) => {
-            const destaque = i === dados.length - 1;
-            return (
-              <circle
-                key={i}
-                className={cn(
-                  "tonelagem-dot",
-                  destaque && "tonelagem-dot-current",
-                  !anim && "video-pausada",
-                )}
-                style={{ animationDelay: `${i * 0.15}s, ${i * 0.5}s` }}
-                cx={p.x}
-                cy={p.y}
-                r={destaque ? 6 : 4.5}
-              />
-            );
-          })}
-        </svg>
-
-        {/* Rótulos dos meses + variação vs. mês anterior */}
-        <div className="tonelagem-month-grid">
+      {/* Gráfico — barras de tonelagem por mês */}
+      <div className="video-sobe mt-3" style={{ animationDelay: "0.2s" }}>
+        <div className="flex h-32 items-end gap-1.5 sm:gap-3">
           {dados.map((d, i) => {
-            const prev = dados[i - 1];
-            const delta = prev ? ((d.ton - prev.ton) / prev.ton) * 100 : null;
             const destaque = i === dados.length - 1;
             return (
-              <div key={d.mes} className="tonelagem-month">
+              <div key={d.mes} className="flex h-full flex-1 flex-col items-center justify-end">
                 <p
                   className={cn(
-                    "tonelagem-month-name",
-                    destaque && "tonelagem-month-name-current",
-                  )}
-                >
-                  {d.mes.slice(0, 3)}
-                </p>
-                <p
-                  className={cn(
-                    "tonelagem-month-value tonelagem-ciclo-valor",
+                    "video-valor-sequencia mb-1 text-center font-mono text-[10px] font-bold text-white/85 sm:text-[11px]",
                     !anim && "video-pausada",
                   )}
                   style={{ animationDelay: `${i * 0.5}s` }}
                 >
                   {fmtInt(d.ton)}
                 </p>
+                <div
+                  className={cn(
+                    "video-barra-y mx-auto w-full max-w-[3rem] rounded-t-md",
+                    destaque
+                      ? "bg-gradient-to-t from-amber-500/80 to-amber-400 shadow-[0_0_18px_rgba(241,196,15,0.35)]"
+                      : "bg-gradient-to-t from-white/45 to-white/80",
+                    !anim && "video-pausada",
+                  )}
+                  style={{
+                    height: `${Math.max((d.ton / maxTon) * 100, 6)}%`,
+                    animationDelay: `${0.2 + 0.06 * i}s`,
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Rótulos dos meses + variação vs. mês anterior */}
+        <div className="mt-2 flex gap-1.5 border-t border-white/10 pt-2 sm:gap-3">
+          {dados.map((d, i) => {
+            const prev = dados[i - 1];
+            const delta = prev ? ((d.ton - prev.ton) / prev.ton) * 100 : null;
+            const destaque = i === dados.length - 1;
+            return (
+              <div key={d.mes} className="flex-1 text-center">
                 <p
                   className={cn(
-                    "tonelagem-month-delta",
-                    delta !== null && delta < 0 && "tonelagem-month-delta-down",
+                    "text-[10px] font-bold uppercase",
+                    destaque ? "text-amber-400" : "text-white/70",
                   )}
                 >
-                  {delta === null
-                    ? "—"
-                    : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
+                  {d.mes.slice(0, 3)}
+                </p>
+                <p
+                  className={cn(
+                    "mt-0.5 font-mono text-[9px] font-bold sm:text-[10px]",
+                    delta === null ? "text-white/30" : delta >= 0 ? "text-emerald-400" : "text-red-400",
+                  )}
+                >
+                  {delta === null ? "—" : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
                 </p>
               </div>
             );
           })}
+        </div>
+
+        {/* Destaque — volumes pendentes por mês (datas e quantidades) */}
+        <div className="mt-4 border-t border-white/10 pt-3">
+          <p className="text-[9px] font-bold tracking-[0.3em] text-brand-amber uppercase">
+            Volumes Pendentes · por mês
+          </p>
+          <div className="mt-2 flex gap-1.5 sm:gap-3">
+            {dados.map((d, i) => {
+              const pend = pendMap.get(d.mes);
+              return (
+                <div
+                  key={`pend-${d.mes}`}
+                  className={cn(
+                    "video-sobe flex-1 text-center",
+                    !anim && "video-pausada",
+                  )}
+                  style={{ animationDelay: `${0.3 + 0.06 * i}s` }}
+                >
+                  {pend ? (
+                    <>
+                      <p className="font-mono text-[10px] font-bold text-brand-amber">
+                        {fmtBrMax(pend.ton, 1)} t
+                      </p>
+                      <p className="mt-0.5 text-[8px] font-bold text-white/70">
+                        {fmtInt(pend.itens)} ord
+                      </p>
+                      <p className="mt-0.5 text-[7px] leading-tight text-white/45">
+                        {pend.dtFinal
+                          ? `${pend.dtInicial ? `${pend.dtInicial.slice(8, 10)}/${pend.dtInicial.slice(5, 7)}–` : ""}${pend.dtFinal.slice(8, 10)}/${pend.dtFinal.slice(5, 7)}`
+                          : "—"}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-[8px] text-white/25">—</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
