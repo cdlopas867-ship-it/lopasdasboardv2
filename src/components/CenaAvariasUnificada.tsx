@@ -47,7 +47,7 @@ export default function CenaAvariasUnificada({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto="Volumes avariados registrados no CD. Total de 3.276 volumes (Soma de Quantidade). Distribuição mensal conferida com a tabela oficial. Custos parciais (em apuração). Fonte: planilha de avarias + tabela de referência de motivos. Janeiro a setembro de 2026."
+          texto="Volumes avariados registrados no CD. Total de 3.312 volumes (Soma de Quantidade). Distribuição mensal conferida com a tabela oficial. Custos parciais (em apuração). Fonte: planilha de avarias + tabela de referência de motivos. Janeiro a setembro de 2026."
         />
       </div>
 
@@ -128,12 +128,7 @@ export default function CenaAvariasUnificada({
                   className="video-sobe group flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-left transition-all hover:border-primary/40 hover:bg-white/10"
                   style={{ animationDelay: `${0.06 * i + 0.4}s` }}
                 >
-                  {/* Dot colorido do tipo */}
-                  <span
-                    className="size-2 shrink-0 rounded-full"
-                    style={{ background: t.cor }}
-                  />
-                  {/* Nome + número */}
+                  <span className="size-2 shrink-0 rounded-full" style={{ background: t.cor }} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[9px] font-bold tracking-wide text-white/85 uppercase">
                       {t.tipo}
@@ -143,7 +138,6 @@ export default function CenaAvariasUnificada({
                       <span className="font-mono text-[8px] font-bold text-white/50">{fmtBrMax(t.pct, 1)}%</span>
                     </div>
                   </div>
-                  {/* Mini sparkline */}
                   <div className="flex h-5 w-8 shrink-0 items-stretch gap-px">
                     {t.meses.map((m, mi) => (
                       <div key={m.mes} className="flex h-full flex-1 flex-col items-center justify-end">
@@ -165,9 +159,6 @@ export default function CenaAvariasUnificada({
         </div>
       ) : null}
 
-
-
-      {/* Modal — gráfico mês a mês do tipo selecionado */}
       {tipoSel !== null && avarias.tipos?.[tipoSel] && (
         <GraficoMotivoMensal
           titulo={avarias.tipos[tipoSel].tipo}
