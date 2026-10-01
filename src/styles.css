@@ -1163,3 +1163,19 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
     transform: none;
   }
 }
+
+/* Sequência final: LOPAS surge e some */
+@keyframes lopas-fade {
+  0% { opacity: 0; transform: scale(0.8) translateY(20px); filter: blur(12px); }
+  25% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+  72% { opacity: 1; transform: scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: scale(1.06); filter: blur(10px); }
+}
+.fase-lopas { animation: lopas-fade 3.2s ease-in-out forwards; }
+
+/* MOVIDOS PELA FÉ surge suavemente */
+@keyframes movidos-rise {
+  0% { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(8px); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.fase-movidos { animation: movidos-rise 1s ease-out forwards; }

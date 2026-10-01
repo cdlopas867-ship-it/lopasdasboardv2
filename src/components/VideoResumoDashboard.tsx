@@ -221,10 +221,10 @@ export default function VideoResumoDashboard({
 
       {/* Dizeres da marca — watermark no canto inferior esquerdo */}
       <div className="pointer-events-none absolute bottom-8 left-4 z-[1] sm:bottom-10 sm:left-10">
-        <p className="font-serif text-xs tracking-tight text-white/85 sm:text-lg sm:tracking-tight">
+        <p className="font-serif text-xs tracking-tight text-white/12 sm:text-lg sm:tracking-tight">
           Controle de Estoque CD Lopas
         </p>
-        <p className="mt-0.5 text-[8px] font-semibold tracking-[0.3em] text-primary uppercase sm:text-[11px]">
+        <p className="mt-0.5 text-[8px] font-semibold tracking-[0.3em] text-primary/15 uppercase sm:text-[11px]">
           Movidos pela fé
         </p>
       </div>
@@ -282,12 +282,16 @@ export default function VideoResumoDashboard({
 
         {/* Cena atual + cena que sai como irmãos para evitar herança de filtros */}
         <div className="relative flex min-h-0 flex-grow items-center justify-center overflow-hidden px-4 py-2 sm:px-8">
-          <div key={cena} className="video-entra absolute inset-0 flex items-center justify-center overflow-y-auto px-4 py-2 sm:px-8">
-            <CenasApresentacao cena={cena} anim={anim} {...propsCena} />
+          <div key={cena} className="video-entra absolute inset-0 overflow-y-auto px-4 py-2 pb-20 sm:px-8">
+            <div className="flex min-h-full items-center justify-center">
+              <CenasApresentacao cena={cena} anim={anim} {...propsCena} />
+            </div>
           </div>
           {cenaSaindo !== null && (
-            <div key={`sai-${cenaSaindo}`} className="video-sai video-congelada absolute inset-0 flex items-center justify-center overflow-y-auto px-4 py-2 sm:px-8" aria-hidden>
-              <CenasApresentacao cena={cenaSaindo} anim {...propsCena} />
+            <div key={`sai-${cenaSaindo}`} className="video-sai video-congelada absolute inset-0 overflow-y-auto px-4 py-2 pb-20 sm:px-8" aria-hidden>
+              <div className="flex min-h-full items-center justify-center">
+                <CenasApresentacao cena={cenaSaindo} anim {...propsCena} />
+              </div>
             </div>
           )}
         </div>

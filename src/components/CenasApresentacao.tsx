@@ -502,37 +502,6 @@ export default function CenasApresentacao({
                 Média mensal: <span className="font-bold text-brand-amber">{fmtBrMax(pendentes.mediaTon, 1)} t</span>
               </p>
 
-              {/* Resumo por status (crítico = mês passado · no prazo = mês atual/futuro) */}
-              <div className="mt-5 space-y-3">
-                {pendentes.fatias.map((f, i) => {
-                  const max = Math.max(...pendentes.fatias.map((x) => x.ton), 1);
-                  return (
-                    <div
-                      key={f.rotulo}
-                      className="video-sobe flex items-center gap-3"
-                      style={{ animationDelay: `${0.12 * i}s` }}
-                    >
-                      <span className="w-16 shrink-0 text-[10px] font-bold tracking-wider text-white/70 uppercase sm:w-20">
-                        {f.rotulo}
-                      </span>
-                      <div className="h-6 flex-1 overflow-hidden rounded-lg bg-white/15">
-                        <div
-                          className={cn("video-barra-x h-full rounded-lg", !anim && "video-pausada")}
-                          style={{
-                            width: `${(f.ton / max) * 100}%`,
-                            background: f.cor,
-                            animationDelay: `${0.12 * i + 0.15}s`,
-                          }}
-                        />
-                      </div>
-                      <span className="w-14 text-right font-mono text-[11px] font-bold text-white">
-                        {fmtBrMax(f.ton, 1)} t
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
               {/* Saúde da produção — toneladas pendentes × recebidas no estoque */}
               {(() => {
                 const pendente = pendentes.totalTon;
@@ -543,7 +512,7 @@ export default function CenasApresentacao({
                 const CIRCs = 2 * Math.PI * Rs;
                 return (
                   <div
-                    className="video-sobe mt-6 flex items-center gap-5 rounded-xl border border-white/10 bg-white/5 p-4"
+                    className="video-sobe mt-4 flex items-center gap-5 rounded-xl border border-white/10 bg-white/5 p-3.5"
                     style={{ animationDelay: "0.4s" }}
                   >
                     <div className="relative flex shrink-0 items-center justify-center">
@@ -592,7 +561,7 @@ export default function CenasApresentacao({
 
               {/* Detalhe por mês — tonelagem, %, data final, lotes e ordens */}
               {pendentes.meses?.length > 0 && (
-                <div className="mt-6">
+                <div className="mt-4">
                   <p className="mb-2 text-[10px] font-bold tracking-[0.3em] text-white/50 uppercase">
                     Por mês
                   </p>
