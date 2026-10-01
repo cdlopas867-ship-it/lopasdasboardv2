@@ -42,7 +42,7 @@ export function calcularAvariasResumo(avarias: Avaria[] | undefined): VideoAvari
   }
   const mesesOrdenados = [...porMes.keys()].sort((a, b) => ordemMes(a) - ordemMes(b));
 
-  /* A tabela dinâmica oficial usa SOMA DE QUANTIDADE (total 3.276 volumes),
+  /* A tabela dinâmica oficial usa SOMA DE QUANTIDADE (total 3.312 volumes),
      não contagem de linhas. Linhas sem motivo não entram na soma.
      O custo continua calculado pelas quantidades de peças de cada lançamento. */
   const comMotivo = validas.filter((a) => a.motivo?.trim());
