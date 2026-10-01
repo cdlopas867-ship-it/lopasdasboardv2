@@ -91,42 +91,8 @@ export default function CenasApresentacao({
         <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
-      {/* Cena 2 — participação das unidades (barras) */}
-      {cena === 1 && (
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Valor por unidade
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Participação de cada unidade no valor total do estoque. Cálculo: (valor da unidade ÷ valor total) × 100. Guarda-Roupas = 53%, Salas = 22,7%, Complementos = 24,2%. Fonte: planilha de saldo de itens do Google Drive. Atualizado em 28/09/2026." />
-          </div>
-          <div className="mt-8 space-y-7">
-            {unidades.map((u, i) => (
-              <div key={u.nome} className="video-sobe" style={{ animationDelay: `${0.12 * i}s` }}>
-                <div className="mb-2 flex items-baseline justify-between">
-                  <span className="font-serif text-2xl text-white sm:text-3xl">{u.nome}</span>
-                  <span className="text-sm font-bold text-white">
-                    {u.valor}{" "}
-                    <span className="text-white/50">· {fmtBrMax(u.share, 1)}%</span>
-                  </span>
-                </div>
-                <div className="h-4 overflow-hidden rounded-full bg-white/15">
-                  <div
-                    className={cn(
-                      "video-barra-x h-full rounded-full bg-gradient-to-r from-white/85 to-white",
-                      !anim && "video-pausada",
-                    )}
-                    style={{ width: `${u.share}%`, animationDelay: `${0.12 * i + 0.2}s` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Cena 3 — ocupação (donut) */}
-      {cena === 2 && (
+      {cena === 1 && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -207,7 +173,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 4 — recebimento da semana (barras por dia) */}
-      {cena === 3 && semana && (
+      {cena === 2 && semana && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -259,7 +225,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 5 — recebimento por turno (formato ocupação do CD) */}
-      {cena === 4 && (
+      {cena === 3 && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -352,7 +318,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 6 — recebido × carregado por mês (destaque: agosto) */}
-      {cena === 5 && (
+      {cena === 4 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -513,7 +479,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 8 — avarias por mês (todos os meses, destaque: agosto) */}
-      {cena === 6 && (
+      {cena === 5 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -633,7 +599,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 9 — comparativo de tipos de avaria por mês */}
-      {cena === 7 && (
+      {cena === 6 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -711,7 +677,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 10 — pendências de produção */}
-      {cena === 8 && (
+      {cena === 7 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -820,7 +786,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 11 — itens reservados: cruzamento peso, quantidade e valor */}
-      {cena === 9 && reservados && (
+      {cena === 8 && reservados && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -917,7 +883,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 12 fallback — sem dados de reservados */}
-      {cena === 9 && !reservados && (
+      {cena === 8 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -935,7 +901,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 13 — valor previsto da reserva (faturado × toneladas) */}
-      {cena === 10 && reservados && valorFaturado ? (
+      {cena === 9 && reservados && valorFaturado ? (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -967,7 +933,7 @@ export default function CenasApresentacao({
       ) : null}
 
       {/* Cena 13 fallback — sem valor faturado ou reservados */}
-      {cena === 10 && (!reservados || !valorFaturado) && (
+      {cena === 9 && (!reservados || !valorFaturado) && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -985,22 +951,22 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 14 — Fora de linha por categoria */}
-      {cena === 11 && (
+      {cena === 10 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
       {/* Cena 14 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 12 && (
+      {cena === 11 && (
         <CenaTonelagemEstoque anim={anim} />
       )}
 
       {/* Cena 14 — Saúde do estoque (donut) */}
-      {cena === 13 && (
+      {cena === 12 && (
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
       {/* Cena 15 — encerramento */}
-      {cena === 14 && (
+      {cena === 13 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
