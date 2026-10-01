@@ -32,7 +32,6 @@ type Props = {
 type Metrica = {
   rotulo: string;
   valor: string;
-  cor: string;
 };
 
 export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }: Props) {
@@ -49,20 +48,21 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
   const pesoEmLinha = posEmLinha.pesoTon;
 
   const metricas: Metrica[] = [
-    { rotulo: "Peso em estoque", valor: fmtTonDec(pesoTotal), cor: "#ffffff" },
-    { rotulo: "Peso em linha", valor: fmtTonDec(pesoEmLinha), cor: "#ffffff" },
-    { rotulo: "Valor total", valor: fmtMoeda(valorTotal), cor: "#ffffff" },
-    { rotulo: "Valor previsto", valor: fmtMoeda(previsto), cor: "#ffffff" },
-    { rotulo: "Valor reservado", valor: fmtMoeda(valorReservado), cor: "#ffffff" },
-    { rotulo: "Peso reservado", valor: fmtTonDec(pesoReservado), cor: "#ffffff" },
-    { rotulo: "Valor disponível", valor: fmtMoeda(valorDisponivel), cor: "#ffffff" },
-    { rotulo: "Peso disponível", valor: fmtTonDec(pesoDisponivel), cor: "#ffffff" },
+    { rotulo: "Peso em estoque", valor: fmtTonDec(pesoTotal) },
+    { rotulo: "Peso em linha", valor: fmtTonDec(pesoEmLinha) },
+    { rotulo: "Valor total", valor: fmtMoeda(valorTotal) },
+    { rotulo: "Valor previsto", valor: fmtMoeda(previsto) },
+    { rotulo: "Valor reservado", valor: fmtMoeda(valorReservado) },
+    { rotulo: "Peso reservado", valor: fmtTonDec(pesoReservado) },
+    { rotulo: "Valor disponível", valor: fmtMoeda(valorDisponivel) },
+    { rotulo: "Peso disponível", valor: fmtTonDec(pesoDisponivel) },
   ];
 
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2">
-        <p className="video-sobe text-[10px] font-semibold tracking-[0.3em] text-white/70 uppercase">
+      {/* Cabeçalho */}
+      <div className="video-sobe flex items-center gap-2">
+        <p className="text-[10px] font-semibold tracking-[0.3em] text-white/70 uppercase">
           Resumo Total do Estoque
         </p>
         <InfoTooltip
@@ -71,24 +71,44 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
         />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-2.5">
-        {metricas.map((m, i) => (
-          <div
-            key={m.rotulo}
-            className="video-sobe group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] px-3.5 py-3 backdrop-blur-md transition-colors hover:border-white/20 hover:bg-white/[0.07]"
-            style={{ animationDelay: `${0.08 * i}s` }}
-          >
-            <p className="text-[8.5px] font-medium tracking-[0.18em] text-white/45 uppercase">
-              {m.rotulo}
-            </p>
-            <p
-              className="mt-1.5 text-base font-semibold tabular-nums tracking-tight sm:text-lg"
-              style={{ color: m.cor }}
-            >
-              {m.valor}
-            </p>
+      {/* Card único glassmorphism */}
+      <div
+        className="video-sobe mt-3 overflow-hidden rounded-3xl border border-white/15 bg-white/[0.06] backdrop-blur-xl"
+        style={{ animationDelay: "0.1s" }}
+      >
+        {/* Valor principal em destaque */}
+        <div className="px-5 pt-5 pb-4 text-center">
+          <div className="flex items-baseline justify-center gap-1">
+            <span className="font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              {fmtMoeda(valorTotal)}
+            </span>
           </div>
-        ))}
+          <p className="mt-1.5 text-[9px] font-medium tracking-[0.25em] text-[#98c679] uppercase">
+            Valor em Estoque
+          </p>
+          <p className="mx-auto mt-2 max-w-[14rem] text-center text-[10px] leading-relaxed text-white/55">
+            De {fmtTonDec(pesoTotal)}, {fmtTonDec(pesoEmLinha)} estão em linha de produção.
+            {fmtTonDec(pesoReservado)} reservados e {fmtTonDec(pesoDisponivel)} disponíveis.
+          </p>
+        </div>
+
+        {/* Lista de métricas */}
+        <div className="border-t border-white/10">
+          {metricas.map((m, i) => (
+            <div
+              key={m.rotulo}
+              className="video-sobe flex items-center justify-between px-5 py-2.5"
+              style={{ animationDelay: `${0.15 + 0.06 * i}s` }}
+            >
+              <span className="text-[10px] font-medium tracking-wide text-white/55 uppercase">
+                {m.rotulo}
+              </span>
+              <span className="text-[13px] font-semibold tabular-nums text-white">
+                {m.valor}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Barra de proporção reservado × disponível */}
