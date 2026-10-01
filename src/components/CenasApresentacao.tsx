@@ -1023,7 +1023,7 @@ function CenaKpisFoco({
       </div>
 
       {/* Apenas o card aberto aparece, centralizado e em destaque */}
-      <div className="relative mt-8 flex min-h-[300px] w-full max-w-md items-center justify-center sm:min-h-[340px]">
+      <div className="relative mt-4 flex min-h-[160px] w-full max-w-[19rem] items-center justify-center sm:min-h-[190px]">
         {/* halo suave atrás do card para destacar sem peso */}
         <div className="card-foco-halo pointer-events-none absolute inset-0" aria-hidden />
         <div key={foco} className="card-foco-entra relative w-full">
@@ -1059,7 +1059,7 @@ function CenaKpisFoco({
 
 /* Vidro refinado compartilhado pelos cards de destaque */
 const cardFocoBase =
-  "group block w-full cursor-pointer rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-7 text-center backdrop-blur-xl shadow-[0_28px_70px_-36px_rgba(0,0,0,0.7)] transition-all duration-500 hover:border-white/20 hover:bg-white/[0.06] sm:p-10";
+  "group block w-full cursor-pointer rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4 text-center backdrop-blur-xl shadow-[0_20px_50px_-36px_rgba(0,0,0,0.7)] transition-all duration-500 hover:border-white/20 hover:bg-white/[0.06] sm:p-5";
 
 /* Card de KPI em destaque — centralizado, grande, com o resumo sempre aberto */
 function CardFocoKpi({
@@ -1071,21 +1071,21 @@ function CardFocoKpi({
 }) {
   return (
     <button type="button" onClick={onTogglePausar} className={cardFocoBase}>
-      <p className="font-serif text-[2.75rem] leading-none tracking-tight text-white sm:text-[3.25rem]">
+      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
         {kpi.valor}
       </p>
-      <p className="mt-3 text-[10px] font-medium tracking-[0.4em] text-primary/80 uppercase">
+      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-primary/80 uppercase">
         {kpi.rotulo}
       </p>
       {kpi.detalhe && (
-        <p className="mt-6 text-left text-[13px] leading-relaxed text-white/60 sm:text-sm">
+        <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
           {kpi.detalhe}
         </p>
       )}
       {kpi.extra?.length ? (
-        <dl className="mt-5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
+        <dl className="mt-3 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
           {kpi.extra.map(([k, v], ki) => (
-            <div key={`${k}-${ki}`} className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+            <div key={`${k}-${ki}`} className="flex items-baseline justify-between py-1.5 text-[10px] sm:text-[11px]">
               <dt className="text-white/45">{k}</dt>
               <dd className="font-medium text-white/90">{v}</dd>
             </div>
@@ -1113,43 +1113,43 @@ function CardFocoForaDeLinha({
       onClick={onTogglePausar}
       className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
     >
-      <p className="font-serif text-[2.75rem] leading-none tracking-tight text-white sm:text-[3.25rem]">
+      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
         {fmtPct(pctValor)}
       </p>
-      <p className="mt-3 text-[10px] font-medium tracking-[0.4em] text-brand-amber/80 uppercase">
+      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-brand-amber/80 uppercase">
         Fora de linha
       </p>
-      <p className="mt-6 text-left text-[13px] leading-relaxed text-white/60 sm:text-sm">
+      <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
         {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtMoeda(pos.valorEstoque)} em
         custo ({fmtPct(pctValor)} do valor total) e {fmtPeso(pos.pesoTon * 1000)} de massa
         ({fmtPct(pos.pesoTon / total.pesoTon)} do peso total).
       </p>
-      <dl className="mt-5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
-        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+      <dl className="mt-2.5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
           <dt className="text-white/45">Itens fora de linha</dt>
           <dd className="font-medium text-white/90">{fmtInt(pos.itens)}</dd>
         </div>
-        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
           <dt className="text-white/45">Valor em estoque</dt>
           <dd className="font-medium text-white/90">{fmtMoeda(pos.valorEstoque)}</dd>
         </div>
-        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
           <dt className="text-white/45">Valor reservado</dt>
           <dd className="font-medium text-white/90">{fmtMoeda(pos.valorReservado)}</dd>
         </div>
-        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
           <dt className="text-white/45">Massa total</dt>
           <dd className="font-medium text-brand-amber">{fmtPeso(pos.pesoTon * 1000)}</dd>
         </div>
-        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
           <dt className="text-white/45">Massa reservada</dt>
           <dd className="font-medium text-brand-amber">{fmtPeso(pos.pesoReservadoTon * 1000)}</dd>
         </div>
-        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
           <dt className="text-white/45">Saldo físico</dt>
           <dd className="font-medium text-white/90">{fmtInt(pos.saldoFocco)} un</dd>
         </div>
-        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
           <dt className="text-white/45">Disponível</dt>
           <dd className="font-medium text-white/90">{fmtInt(pos.disponivel)} un</dd>
         </div>
