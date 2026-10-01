@@ -93,10 +93,14 @@ export default function IntroTexto(props: Props) {
       className="fixed inset-0 z-[120] flex flex-col items-center justify-center overflow-hidden"
     >
       {/* Fundo */}
-      <div
-        className="video-kenburns absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${faseFinal ? "/fundo-lopas-final.webp" : "/fundo-satelite-real.jpg?v=1"})` }}
-      />
+      {faseFinal ? (
+        <div
+          className="video-kenburns absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url("/fundo-lopas-final.webp")` }}
+        />
+      ) : (
+        <ResumoBg />
+      )}
       {!faseFinal && (
         <>
           <div className="absolute inset-0 bg-gradient-to-b from-[#4a6b20]/82 via-[#3a521a]/68 to-[#2e3f14]/92" />
