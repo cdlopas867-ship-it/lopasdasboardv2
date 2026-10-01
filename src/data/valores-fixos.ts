@@ -19,9 +19,10 @@ export const PENDENTES_RESUMO_FIXO: VideoPendentes = {
   itens: 115,
   totalTon: 67.0,
   mediaTon: 16.7,
+  produzidoTon: 42.5,
   fatias: [
-    { rotulo: "Crítico", ton: 67.0, cor: "#c0473a" },
-    { rotulo: "No prazo", ton: 0, cor: "#6B8E23" },
+    { rotulo: "Crítico", ton: 9.3, cor: "#c0473a" },
+    { rotulo: "No prazo", ton: 57.7, cor: "#6B8E23" },
   ],
   meses: [
     { mes: "Jun/26", ton: 1.0, pct: 2, itens: 6, dtFinal: "2026-06-30", lotes: 3 },
