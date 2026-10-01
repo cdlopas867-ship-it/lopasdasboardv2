@@ -55,7 +55,7 @@ export function alertaPorData(dtFinal: string): AlertaPendente {
   const diffMeses =
     (agora.getFullYear() - data.getFullYear()) * 12 +
     (agora.getMonth() - data.getMonth());
-  if (diffMeses >= 3) return "critico";
+  if (diffMeses >= 2) return "critico";
   return "prazo";
 }
 
