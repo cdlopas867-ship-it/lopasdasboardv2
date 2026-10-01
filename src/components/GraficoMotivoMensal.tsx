@@ -63,9 +63,9 @@ export function GraficoMotivoMensal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Cabeçalho com imagem do tipo */}
-        <div className="relative h-44 overflow-hidden bg-black/60">
-          {imagem && <img src={imagem} alt={titulo} className="h-full w-full object-contain object-center" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+        <div className="relative h-32 overflow-hidden">
+          {imagem && <img src={imagem} alt={titulo} className="h-full w-full object-cover" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
           <button
             type="button"
             onClick={onClose}

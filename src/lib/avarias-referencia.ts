@@ -1,41 +1,40 @@
 import type { VideoAvarias } from "@/components/VideoResumoDashboard";
 import { imagemAvaria } from "@/data/avarias-imagens";
 
-/* Matriz de contagem de Motivo conferida na tabela dinâmica oficial do
-   usuário (2.324 ocorrências · jan–set 2026) — usada para o detalhamento
-   por tipo e para o motivo predominante de cada mês.
+/* Matriz de Soma de Quantidade por Motivo conferida na tabela dinâmica
+   oficial do usuário (3.312 volumes · jan–set 2026) — usada para o
+   detalhamento por tipo e para o motivo predominante de cada mês.
 
-   Fontes da matriz:
-   - Jan: detalhe por motivo da tabela dinâmica (365).
-   - Fev–Ago: lançamentos das planilhas do Drive (batem exatamente com os
-     totais mensais da tabela: 336, 370, 270, 292, 149, 212, 173).
-   - Set: resto aritmético da tabela (157 no mês) — total por motivo menos
-     jan (tabela) e fev–ago (planilhas).
+   Totais por tipo (Soma de Quantidade):
+     PREGO NO PALETE 1287 · DANIFICADO 773 · ESPELHO QUEBRADO 568
+     MOLHADO 580 · ETIQUETA TROCADA 56 · SEPARAÇÃO 28
+     EMPILHADEIRA 11 · CONFERENTE CARGA 9  → Total Geral 3.312
+
    A matriz confere com os totais por motivo e por mês da tabela dinâmica. */
 const MESES_REF = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set"] as const;
 
 const REFERENCIA: ReadonlyArray<readonly [string, ...readonly number[]]> = [
-  //                Jan  Fev  Mar  Abr  Mai  Jun  Jul  Ago  Set
-  ["PREGO NO PALETE", 189, 97, 143, 113, 119, 56, 82, 74, 92], // 965
-  ["DANIFICADO",       79, 101, 113, 75, 70, 52, 73, 53, 32], // 648
-  ["ESPELHO QUEBRADO", 46, 52, 60, 70, 85, 37, 56, 30, 17], // 453
-  ["MOLHADO",          36, 85, 54, 12, 9, 1, 0, 6, 10], // 213
-  ["SEPARAÇÃO",        10, 0, 0, 0, 9, 3, 1, 0, 1], // 24
-  ["EMPILHADEIRA",     0, 0, 0, 0, 0, 0, 0, 8, 1], // 9
-  ["CONFERENTE CARGA", 1, 0, 0, 0, 0, 0, 0, 2, 4], // 7
-  ["ETIQUETA TROCADA", 4, 1, 0, 0, 0, 0, 0, 0, 0], // 5
+  //                   Jan  Fev  Mar  Abr  Mai  Jun  Jul  Ago  Set
+  ["PREGO NO PALETE",  252, 129, 191, 151, 159, 74, 109, 99, 123], // 1287
+  ["DANIFICADO",        94, 121, 135, 89, 84, 62, 87, 63, 38],     // 773
+  ["ESPELHO QUEBRADO",  58, 65, 75, 88, 107, 46, 70, 38, 21],      // 568
+  ["MOLHADO",           98, 231, 147, 33, 25, 3, 0, 16, 27],       // 580
+  ["SEPARAÇÃO",         12, 0, 0, 0, 11, 3, 1, 0, 1],              // 28
+  ["EMPILHADEIRA",      0, 0, 0, 0, 0, 0, 0, 10, 1],               // 11
+  ["CONFERENTE CARGA",  1, 0, 0, 0, 0, 0, 0, 3, 5],                // 9
+  ["ETIQUETA TROCADA",  45, 11, 0, 0, 0, 0, 0, 0, 0],              // 56
 ] as const;
 
-/* Total de contagem (ocorrências) da matriz — base do % por tipo. */
+/* Total de Soma de Quantidade da matriz — base do % por tipo. */
 const TOTAL_CONTAGEM_REF = REFERENCIA.reduce(
   (s, [, ...meses]) => s + meses.reduce((a, b) => a + b, 0),
   0,
 );
 
 /* Soma de Quantidade por mês — tabela dinâmica oficial do usuário
-   (total geral 3.276 volumes avariados · jan–set 2026). */
-const MESES_QTD_OFICIAL: readonly number[] = [771, 540, 494, 321, 338, 172, 244, 211, 185];
-const TOTAL_QTD_OFICIAL = 3276;
+   (total geral 3.312 volumes avariados · jan–set 2026). */
+const MESES_QTD_OFICIAL: readonly number[] = [560, 557, 548, 361, 386, 188, 267, 229, 216];
+const TOTAL_QTD_OFICIAL = 3312;
 
 export function aplicarReferenciaMotivos(avarias: VideoAvarias): VideoAvarias {
   if (!avarias || avarias.total >= TOTAL_QTD_OFICIAL) return avarias;
