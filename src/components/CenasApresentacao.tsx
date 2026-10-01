@@ -798,6 +798,16 @@ function CenaKpisFoco({
     return () => clearTimeout(t);
   }, [foco, pausado, total]);
 
+  /* Navegação por teclado: seta direita = próximo, seta esquerda = anterior */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") setFoco((f) => (f + 1) % total);
+      else if (e.key === "ArrowLeft") setFoco((f) => (f - 1 + total) % total);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [total]);
+
   const ehForaDeLinha = foco >= kpis.length;
   const kpi = !ehForaDeLinha ? kpis[foco] : null;
   const togglePausar = () => {
@@ -805,6 +815,7 @@ function CenaKpisFoco({
     setPausado(next);
     if (next) onPausar?.();
   };
+  const avancar = () => setFoco((f) => (f + 1) % total);
 
   return (
     <div className="flex flex-col items-center">
@@ -819,13 +830,31 @@ function CenaKpisFoco({
       <div className="relative mt-10 flex w-full max-w-[19rem] items-center justify-center">
         {/* halo suave atrás do card para destacar sem peso */}
         <div className="card-foco-halo pointer-events-none absolute inset-0" aria-hidden />
+        {/* Seta esquerda */}
+        <button
+          type="button"
+          onClick={() => setFoco((f) => (f - 1 + total) % total)}
+          className="absolute -left-10 z-10 flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white sm:-left-12"
+          aria-label="Card anterior"
+        >
+          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
         <div key={foco} className="card-foco-entra relative w-full">
           {kpi ? (
-            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} />
+            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} onAvancar={avancar} />
           ) : (
-            <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} />
+            <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} onAvancar={avancar} />
           )}
         </div>
+        {/* Seta direita */}
+        <button
+          type="button"
+          onClick={avancar}
+          className="absolute -right-10 z-10 flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white sm:-right-12"
+          aria-label="Próximo card"
+        >
+          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
       </div>
 
       {/* Indicadores — pílulas delicadas, a ativa alonga-se */}
@@ -844,7 +873,7 @@ function CenaKpisFoco({
         ))}
       </div>
       <p className="mt-4 text-[8px] font-medium tracking-[0.4em] text-white/30 uppercase">
-        {pausado ? "Pausado · toque no card para retomar" : "Toque no card para pausar"}
+        Clique no card ou use as setas ← →
       </p>
     </div>
   );
@@ -858,12 +887,14 @@ const cardFocoBase =
 function CardFocoKpi({
   kpi,
   onTogglePausar,
+  onAvancar,
 }: {
   kpi: VideoKpi;
   onTogglePausar: () => void;
+  onAvancar: () => void;
 }) {
   return (
-    <button type="button" onClick={onTogglePausar} className={cardFocoBase}>
+    <button type="button" onClick={onAvancar} className={cardFocoBase}>
       <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
         {kpi.valor}
       </p>
@@ -893,9 +924,11 @@ function CardFocoKpi({
 function CardFocoForaDeLinha({
   foraDeLinha,
   onTogglePausar,
+  onAvancar,
 }: {
   foraDeLinha?: VideoForaDeLinha | undefined;
   onTogglePausar: () => void;
+  onAvancar: () => void;
 }) {
   const pos = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const total = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
@@ -903,7 +936,7 @@ function CardFocoForaDeLinha({
   return (
     <button
       type="button"
-      onClick={onTogglePausar}
+      onClick={onAvancar}
       className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
     >
       <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
