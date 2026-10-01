@@ -32,7 +32,6 @@ type Props = {
 type Metrica = {
   rotulo: string;
   valor: string;
-  unidade: string;
   cor: string;
 };
 
@@ -50,20 +49,20 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
   const pesoEmLinha = posEmLinha.pesoTon;
 
   const metricas: Metrica[] = [
-    { rotulo: "Peso em estoque", valor: fmtTonDec(pesoTotal), unidade: "t", cor: "#ffffff" },
-    { rotulo: "Peso em linha", valor: fmtTonDec(pesoEmLinha), unidade: "t", cor: "#34d399" },
-    { rotulo: "Valor total", valor: fmtMoeda(valorTotal), unidade: "R$", cor: "#ffffff" },
-    { rotulo: "Valor previsto", valor: fmtMoeda(previsto), unidade: "R$", cor: "#fbbf24" },
-    { rotulo: "Valor reservado", valor: fmtMoeda(valorReservado), unidade: "R$", cor: "#f87171" },
-    { rotulo: "Peso reservado", valor: fmtTonDec(pesoReservado), unidade: "t", cor: "#f87171" },
-    { rotulo: "Valor disponível", valor: fmtMoeda(valorDisponivel), unidade: "R$", cor: "#60a5fa" },
-    { rotulo: "Peso disponível", valor: fmtTonDec(pesoDisponivel), unidade: "t", cor: "#60a5fa" },
+    { rotulo: "Peso em estoque", valor: fmtTonDec(pesoTotal), cor: "#e2e8f0" },
+    { rotulo: "Peso em linha", valor: fmtTonDec(pesoEmLinha), cor: "#34d399" },
+    { rotulo: "Valor total", valor: fmtMoeda(valorTotal), cor: "#e2e8f0" },
+    { rotulo: "Valor previsto", valor: fmtMoeda(previsto), cor: "#fbbf24" },
+    { rotulo: "Valor reservado", valor: fmtMoeda(valorReservado), cor: "#f87171" },
+    { rotulo: "Peso reservado", valor: fmtTonDec(pesoReservado), cor: "#f87171" },
+    { rotulo: "Valor disponível", valor: fmtMoeda(valorDisponivel), cor: "#60a5fa" },
+    { rotulo: "Peso disponível", valor: fmtTonDec(pesoDisponivel), cor: "#60a5fa" },
   ];
 
   return (
     <div className="w-full">
       <div className="flex items-center gap-2">
-        <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
+        <p className="video-sobe text-[10px] font-semibold tracking-[0.3em] text-white/70 uppercase">
           Resumo Total do Estoque
         </p>
         <InfoTooltip
@@ -72,20 +71,25 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-2.5">
         {metricas.map((m, i) => (
           <div
             key={m.rotulo}
-            className="video-sobe rounded-xl border border-white/15 bg-white/5 px-3 py-2.5"
+            className="video-sobe group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] px-3.5 py-3 backdrop-blur-md transition-colors hover:border-white/20 hover:bg-white/[0.07]"
             style={{ animationDelay: `${0.08 * i}s` }}
           >
-            <div className="flex items-center gap-1.5">
-              <span className="size-2 rounded-full" style={{ background: m.cor }} />
-              <p className="text-[9px] font-bold tracking-widest text-white/55 uppercase">
-                {m.rotulo}
-              </p>
-            </div>
-            <p className="mt-1 font-serif text-lg text-white sm:text-xl" style={{ color: m.cor }}>
+            {/* Acento de cor superior */}
+            <div
+              className="absolute inset-x-0 top-0 h-px opacity-60"
+              style={{ background: `linear-gradient(90deg, transparent, ${m.cor}, transparent)` }}
+            />
+            <p className="text-[8.5px] font-medium tracking-[0.18em] text-white/45 uppercase">
+              {m.rotulo}
+            </p>
+            <p
+              className="mt-1.5 text-base font-semibold tabular-nums tracking-tight sm:text-lg"
+              style={{ color: m.cor }}
+            >
               {m.valor}
             </p>
           </div>
@@ -93,20 +97,26 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
       </div>
 
       {/* Barra de proporção reservado × disponível */}
-      <div className="video-sobe mt-3" style={{ animationDelay: "0.7s" }}>
-        <div className="flex h-3 overflow-hidden rounded-full">
+      <div className="video-sobe mt-3.5" style={{ animationDelay: "0.7s" }}>
+        <div className="flex h-2 overflow-hidden rounded-full bg-white/5">
           <div
-            className={cn("video-barra-x h-full", !anim && "video-pausada")}
-            style={{ width: `${(valorReservado / valorTotal) * 100}%`, background: "#f87171", animationDelay: "0.75s" }}
+            className={cn("video-barra-x h-full rounded-l-full", !anim && "video-pausada")}
+            style={{ width: `${(valorReservado / valorTotal) * 100}%`, background: "linear-gradient(90deg, #ef4444, #f87171)", animationDelay: "0.75s" }}
           />
           <div
-            className={cn("video-barra-x h-full", !anim && "video-pausada")}
-            style={{ width: `${(valorDisponivel / valorTotal) * 100}%`, background: "#60a5fa", animationDelay: "0.8s" }}
+            className={cn("video-barra-x h-full rounded-r-full", !anim && "video-pausada")}
+            style={{ width: `${(valorDisponivel / valorTotal) * 100}%`, background: "linear-gradient(90deg, #3b82f6, #60a5fa)", animationDelay: "0.8s" }}
           />
         </div>
-        <div className="mt-1 flex justify-between text-[9px] font-bold text-white/50">
-          <span className="text-white">{fmtBrMax((valorReservado / valorTotal) * 100, 1)}% reservado</span>
-          <span className="text-white">{fmtBrMax((valorDisponivel / valorTotal) * 100, 1)}% disponível</span>
+        <div className="mt-1.5 flex justify-between text-[9px] font-medium text-white/40">
+          <span className="flex items-center gap-1.5">
+            <span className="size-1.5 rounded-full bg-red-400" />
+            {fmtBrMax((valorReservado / valorTotal) * 100, 1)}% reservado
+          </span>
+          <span className="flex items-center gap-1.5">
+            {fmtBrMax((valorDisponivel / valorTotal) * 100, 1)}% disponível
+            <span className="size-1.5 rounded-full bg-blue-400" />
+          </span>
         </div>
       </div>
     </div>
