@@ -28,15 +28,6 @@ export function calcularPendentesResumo(
   const itens = comAlerta.length;
   const totalTon = comAlerta.reduce((s, p) => s + p.pesoPendente, 0) / 1000;
 
-  /* Toneladas já produzidas/recebidas no estoque — calcula o peso entregue
-     de cada ordem: pesoEntregue = pesoPendente × entregue ÷ pendente. */
-  const produzidoTon = comAlerta.reduce((s, p) => {
-    if (p.pendente > 0 && p.entregue > 0) {
-      return s + (p.pesoPendente * p.entregue) / p.pendente;
-    }
-    return s;
-  }, 0) / 1000;
-
   /* Fatias por alerta */
   const pesosAlerta: Record<AlertaPendente, number> = {
     critico: 0, prazo: 0,
@@ -88,7 +79,6 @@ export function calcularPendentesResumo(
     itens,
     totalTon: +totalTon.toFixed(1),
     mediaTon: +mediaTon.toFixed(1),
-    produzidoTon: +produzidoTon.toFixed(1),
     fatias,
     meses,
   };

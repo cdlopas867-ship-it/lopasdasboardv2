@@ -35,7 +35,6 @@ export type VideoPendentes = {
   itens: number;
   totalTon: number;
   mediaTon: number;
-  produzidoTon: number;
   fatias: { rotulo: string; ton: number; cor: string }[];
   meses: { mes: string; ton: number; pct: number; itens: number; dtInicial?: string; dtFinal?: string; lotes?: number }[];
 } | null;

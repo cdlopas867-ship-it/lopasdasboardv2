@@ -488,7 +488,7 @@ export default function CenasApresentacao({
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Pendências de produção
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Saúde da produção = toneladas já produzidas ÷ (produzidas + pendentes). Crítico = ordens com data final 3 meses ou mais antes do mês atual. No prazo = ordens com até 2 meses de atraso, mês atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
+            <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Saúde da produção = toneladas recebidas no estoque ÷ (recebidas + pendentes). Toneladas recebidas vêm do recebimento do CD. Crítico = ordens com data final 3 meses ou mais antes do mês atual. No prazo = ordens com até 2 meses de atraso, mês atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
           </div>
           {pendentes ? (
             <>
@@ -533,10 +533,10 @@ export default function CenasApresentacao({
                 })}
               </div>
 
-              {/* Saúde da produção — toneladas pendentes × produzidas/recebidas */}
+              {/* Saúde da produção — toneladas pendentes × recebidas no estoque */}
               {(() => {
                 const pendente = pendentes.totalTon;
-                const produzido = pendentes.produzidoTon ?? 0;
+                const produzido = totRecebido;
                 const total = pendente + produzido;
                 const saudePct = total > 0 ? (produzido / total) * 100 : 0;
                 const Rs = 70;
@@ -578,7 +578,7 @@ export default function CenasApresentacao({
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1.5 text-[11px] text-white/70">
                           <span className="size-2.5 rounded-sm bg-white" />
-                          Toneladas produzidas/recebidas
+                          Toneladas recebidas no estoque
                         </span>
                         <span className="font-mono text-sm font-bold text-white">{fmtBrMax(produzido, 1)} t</span>
                       </div>
