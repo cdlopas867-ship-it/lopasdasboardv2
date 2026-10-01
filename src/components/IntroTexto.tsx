@@ -52,6 +52,18 @@ export default function IntroTexto(props: Props) {
 
   const togglePausar = useCallback(() => setPausado((p) => !p), []);
   const pular = useCallback(() => concluir(), [concluir]);
+
+  // Barra de espaço pausa/continua
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        e.preventDefault();
+        setPausado((p) => !p);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const msg = mensagens[Math.min(idx, mensagens.length - 1)] ?? [];
 
   return (
@@ -68,23 +80,14 @@ export default function IntroTexto(props: Props) {
       <div className="absolute inset-0 bg-gradient-to-b from-[#4a6b20]/82 via-[#3a521a]/68 to-[#2e3f14]/92" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.45)_100%)]" />
 
-      {/* Botões Pausar / Pular */}
-      <div className="absolute top-4 right-4 z-20 flex gap-2 sm:top-6 sm:right-6">
-        <button
-          type="button"
-          onClick={togglePausar}
-          className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/20"
-        >
-          {pausado ? "Continuar" : "Pausar"}
-        </button>
-        <button
-          type="button"
-          onClick={pular}
-          className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/20"
-        >
-          Pular resumo
-        </button>
-      </div>
+      {/* Botão Pular */}
+      <button
+        type="button"
+        onClick={pular}
+        className="absolute top-4 right-4 z-20 cursor-pointer rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/20 sm:top-6 sm:right-6"
+      >
+        Pular resumo
+      </button>
 
       {/* Watermark */}
       <div className="pointer-events-none absolute bottom-6 left-4 z-[1] sm:bottom-10 sm:left-10">
