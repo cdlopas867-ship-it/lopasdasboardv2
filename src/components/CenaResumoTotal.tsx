@@ -105,8 +105,8 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
           />
         </div>
         <div className="mt-1 flex justify-between text-[9px] font-bold text-white/50">
-          <span className="text-red-400">{fmtBrMax((valorReservado / valorTotal) * 100, 1)}% reservado</span>
-          <span className="text-blue-400">{fmtBrMax((valorDisponivel / valorTotal) * 100, 1)}% disponível</span>
+          <span className="text-white">{fmtBrMax((valorReservado / valorTotal) * 100, 1)}% reservado</span>
+          <span className="text-white">{fmtBrMax((valorDisponivel / valorTotal) * 100, 1)}% disponível</span>
         </div>
       </div>
     </div>
