@@ -512,7 +512,7 @@ export default function CenasApresentacao({
                 const CIRCs = 2 * Math.PI * Rs;
                 return (
                   <div
-                    className="video-sobe mt-6 flex items-center gap-5 rounded-xl border border-white/10 bg-white/5 p-4"
+                    className="video-sobe mt-4 flex items-center gap-5 rounded-xl border border-white/10 bg-white/5 p-3.5"
                     style={{ animationDelay: "0.4s" }}
                   >
                     <div className="relative flex shrink-0 items-center justify-center">
@@ -561,7 +561,7 @@ export default function CenasApresentacao({
 
               {/* Detalhe por mês — tonelagem, %, data final, lotes e ordens */}
               {pendentes.meses?.length > 0 && (
-                <div className="mt-6">
+                <div className="mt-4">
                   <p className="mb-2 text-[10px] font-bold tracking-[0.3em] text-white/50 uppercase">
                     Por mês
                   </p>

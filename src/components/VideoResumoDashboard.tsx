@@ -282,12 +282,16 @@ export default function VideoResumoDashboard({
 
         {/* Cena atual + cena que sai como irmãos para evitar herança de filtros */}
         <div className="relative flex min-h-0 flex-grow items-center justify-center overflow-hidden px-4 py-2 sm:px-8">
-          <div key={cena} className="video-entra absolute inset-0 flex items-center justify-center overflow-y-auto px-4 py-2 pb-24 sm:px-8">
-            <CenasApresentacao cena={cena} anim={anim} {...propsCena} />
+          <div key={cena} className="video-entra absolute inset-0 overflow-y-auto px-4 py-2 pb-20 sm:px-8">
+            <div className="flex min-h-full items-center justify-center">
+              <CenasApresentacao cena={cena} anim={anim} {...propsCena} />
+            </div>
           </div>
           {cenaSaindo !== null && (
-            <div key={`sai-${cenaSaindo}`} className="video-sai video-congelada absolute inset-0 flex items-center justify-center overflow-y-auto px-4 py-2 pb-24 sm:px-8" aria-hidden>
-              <CenasApresentacao cena={cenaSaindo} anim {...propsCena} />
+            <div key={`sai-${cenaSaindo}`} className="video-sai video-congelada absolute inset-0 overflow-y-auto px-4 py-2 pb-20 sm:px-8" aria-hidden>
+              <div className="flex min-h-full items-center justify-center">
+                <CenasApresentacao cena={cenaSaindo} anim {...propsCena} />
+              </div>
             </div>
           )}
         </div>
