@@ -17,6 +17,7 @@ import { Route as ApiAutoImportRouteImport } from './routes/api/auto-import'
 import { Route as ApiCarregamentoRouteImport } from './routes/api/carregamento'
 import { Route as ApiCarregamentoMensalRouteImport } from './routes/api/carregamento-mensal'
 import { Route as ApiImportarDriveRouteImport } from './routes/api/importar-drive'
+import { Route as ApiInterpretarEstoqueRouteImport } from './routes/api/interpretar-estoque'
 import { Route as ApiSyncDataRouteImport } from './routes/api/sync-data'
 import { Route as ApiSyncEventsRouteImport } from './routes/api/sync-events'
 import { Route as ApiSyncReloadRouteImport } from './routes/api/sync-reload'
@@ -63,6 +64,11 @@ const ApiImportarDriveRoute = ApiImportarDriveRouteImport.update({
   path: '/api/importar-drive',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInterpretarEstoqueRoute = ApiInterpretarEstoqueRouteImport.update({
+  id: '/api/interpretar-estoque',
+  path: '/api/interpretar-estoque',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSyncDataRoute = ApiSyncDataRouteImport.update({
   id: '/api/sync-data',
   path: '/api/sync-data',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
+  '/api/interpretar-estoque': typeof ApiInterpretarEstoqueRoute
   '/api/sync-data': typeof ApiSyncDataRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
   '/api/sync-reload': typeof ApiSyncReloadRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
+  '/api/interpretar-estoque': typeof ApiInterpretarEstoqueRoute
   '/api/sync-data': typeof ApiSyncDataRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
   '/api/sync-reload': typeof ApiSyncReloadRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
+  '/api/interpretar-estoque': typeof ApiInterpretarEstoqueRoute
   '/api/sync-data': typeof ApiSyncDataRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
   '/api/sync-reload': typeof ApiSyncReloadRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/api/carregamento'
     | '/api/carregamento-mensal'
     | '/api/importar-drive'
+    | '/api/interpretar-estoque'
     | '/api/sync-data'
     | '/api/sync-events'
     | '/api/sync-reload'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/api/carregamento'
     | '/api/carregamento-mensal'
     | '/api/importar-drive'
+    | '/api/interpretar-estoque'
     | '/api/sync-data'
     | '/api/sync-events'
     | '/api/sync-reload'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/api/carregamento'
     | '/api/carregamento-mensal'
     | '/api/importar-drive'
+    | '/api/interpretar-estoque'
     | '/api/sync-data'
     | '/api/sync-events'
     | '/api/sync-reload'
@@ -192,6 +204,7 @@ export interface RootRouteChildren {
   ApiCarregamentoRoute: typeof ApiCarregamentoRoute
   ApiCarregamentoMensalRoute: typeof ApiCarregamentoMensalRoute
   ApiImportarDriveRoute: typeof ApiImportarDriveRoute
+  ApiInterpretarEstoqueRoute: typeof ApiInterpretarEstoqueRoute
   ApiSyncDataRoute: typeof ApiSyncDataRoute
   ApiSyncEventsRoute: typeof ApiSyncEventsRoute
   ApiSyncReloadRoute: typeof ApiSyncReloadRoute
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiImportarDriveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/interpretar-estoque': {
+      id: '/api/interpretar-estoque'
+      path: '/api/interpretar-estoque'
+      fullPath: '/api/interpretar-estoque'
+      preLoaderRoute: typeof ApiInterpretarEstoqueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/sync-data': {
       id: '/api/sync-data'
       path: '/api/sync-data'
@@ -304,6 +324,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCarregamentoRoute: ApiCarregamentoRoute,
   ApiCarregamentoMensalRoute: ApiCarregamentoMensalRoute,
   ApiImportarDriveRoute: ApiImportarDriveRoute,
+  ApiInterpretarEstoqueRoute: ApiInterpretarEstoqueRoute,
   ApiSyncDataRoute: ApiSyncDataRoute,
   ApiSyncEventsRoute: ApiSyncEventsRoute,
   ApiSyncReloadRoute: ApiSyncReloadRoute,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { VideoKpi, VideoUnidade, VideoOcupacao, VideoMes, VideoAvarias, VideoPendentes, VideoReservados } from "./VideoResumoDashboard";
 import type { VideoForaDeLinha } from "./CenasApresentacao";
 import { fmtBr, fmtInt, fmtTonDec, fmtBrMax } from "@/lib/format";
@@ -28,15 +28,14 @@ type Props = {
 const num = (v: number | string): Segmento => ({ t: String(v), n: true });
 const txt = (s: string): Segmento => ({ t: s });
 
-/** Constrói as frases interpretando todos os dados do estoque. */
+/* ── Fallback estático (usado quando a IA não está disponível) ── */
+
 function construirMensagens(p: Props): Mensagem[] {
   const msgs: Mensagem[] = [];
   const { resumo, ocupacao, unidades, semana, mensal, avarias, pendentes, reservados, foraDeLinha, valorFaturado } = p;
 
-  // 1 — Saudação
   msgs.push([txt("Olá, seja bem-vindo ao painel do estoque Lopas.")]);
 
-  // 2 — Massa total e valor
   if (resumo) {
     msgs.push([
       txt("Nosso estoque hoje soma "), num(fmtTonDec(resumo.ton)),
@@ -49,7 +48,6 @@ function construirMensagens(p: Props): Mensagem[] {
     ]);
   }
 
-  // 3 — Ocupação
   const pctTxt = `${fmtBr(ocupacao.pct * 100, 1)}%`;
   msgs.push([
     txt("A ocupação do CD está em "), num(pctTxt),
@@ -57,7 +55,6 @@ function construirMensagens(p: Props): Mensagem[] {
     num(fmtInt(ocupacao.ocupados + ocupacao.livres)), txt(" posições totais."),
   ]);
 
-  // 4 — Em linha vs Fora de linha
   if (foraDeLinha) {
     const em = foraDeLinha.posicaoEmLinha;
     const fora = foraDeLinha.posicaoForaDeLinha;
@@ -67,11 +64,10 @@ function construirMensagens(p: Props): Mensagem[] {
     ]);
     msgs.push([
       txt("Fora de linha: "), num(fmtTonDec(fora.pesoTon)), txt(" em "),
-      num(fmtInt(fora.itens)), txt(" itens — Opportunity de revisão para giro ou baixa."),
+      num(fmtInt(fora.itens)), txt(" itens — opportunity de revisão para giro ou baixa."),
     ]);
   }
 
-  // 5 — Recebimento da semana
   if (semana) {
     const aceitos = semana.dias.filter((d) => d.ton >= d.meta).length;
     const tonSemana = semana.dias.reduce((s, d) => s + d.ton, 0);
@@ -82,7 +78,6 @@ function construirMensagens(p: Props): Mensagem[] {
     ]);
   }
 
-  // 6 — Recebido vs carregado (mensal)
   if (mensal?.length) {
     const totRec = mensal.reduce((s, m) => s + m.recebido, 0);
     const totCar = mensal.reduce((s, m) => s + m.carregado, 0);
@@ -94,7 +89,6 @@ function construirMensagens(p: Props): Mensagem[] {
     ]);
   }
 
-  // 7 — Estoque reservado
   if (reservados) {
     msgs.push([
       txt("Estoque reservado: "), num(fmtTonDec(reservados.totalTon)),
@@ -104,7 +98,6 @@ function construirMensagens(p: Props): Mensagem[] {
     ]);
   }
 
-  // 8 — Avarias
   if (avarias?.total) {
     msgs.push([
       txt("Avarias registradas: "), num(fmtInt(avarias.total)),
@@ -113,7 +106,6 @@ function construirMensagens(p: Props): Mensagem[] {
     ].flat() as Mensagem);
   }
 
-  // 9 — Pendentes
   if (pendentes?.itens) {
     msgs.push([
       txt("Pendentes de produção: "), num(fmtInt(pendentes.itens)),
@@ -123,7 +115,6 @@ function construirMensagens(p: Props): Mensagem[] {
     ]);
   }
 
-  // 10 — Unidade destaque
   if (unidades.length) {
     const top = [...unidades].sort((a, b) => b.share - a.share)[0];
     msgs.push([
@@ -132,7 +123,6 @@ function construirMensagens(p: Props): Mensagem[] {
     ]);
   }
 
-  // 11 — Valor faturado
   if (valorFaturado) {
     msgs.push([
       txt("Já carregamos "), num(`R$ ${fmtBr(valorFaturado / 1e6, 2)} mi`),
@@ -140,43 +130,138 @@ function construirMensagens(p: Props): Mensagem[] {
     ]);
   }
 
-  // 12 — Encerramento
-  msgs.push([
-    txt("Tudo pronto para acompanhar o painel. Bom trabalho."),
-  ]);
+  msgs.push([txt("Tudo pronto para acompanhar o painel. Bom trabalho.")]);
 
   return msgs;
+}
+
+/* ── Resumo de dados para enviar à IA ── */
+
+function buildDataSummary(p: Props): string {
+  const partes: string[] = [];
+  const { resumo, ocupacao, unidades, semana, mensal, avarias, pendentes, reservados, foraDeLinha, valorFaturado } = p;
+
+  if (resumo) {
+    partes.push(`Massa total: ${fmtTonDec(resumo.ton)}`);
+    partes.push(`Valor investido: R$ ${fmtBr(resumo.valor / 1e6, 2)} mi`);
+    partes.push(`Peças em saldo: ${fmtInt(resumo.saldo)}`);
+    partes.push(`Itens ativos: ${fmtInt(resumo.itens)}`);
+  }
+  if (ocupacao) {
+    partes.push(`Ocupação do CD: ${fmtBr(ocupacao.pct * 100, 1)}%`);
+    partes.push(`Endereços: ${fmtInt(ocupacao.ocupados)} ocupados de ${fmtInt(ocupacao.ocupados + ocupacao.livres)} totais`);
+  }
+  if (foraDeLinha) {
+    partes.push(`Em linha: ${fmtTonDec(foraDeLinha.posicaoEmLinha.pesoTon)} em ${fmtInt(foraDeLinha.posicaoEmLinha.itens)} itens`);
+    partes.push(`Fora de linha: ${fmtTonDec(foraDeLinha.posicaoForaDeLinha.pesoTon)} em ${fmtInt(foraDeLinha.posicaoForaDeLinha.itens)} itens`);
+  }
+  if (semana) {
+    const aceitos = semana.dias.filter((d) => d.ton >= d.meta).length;
+    const tonSemana = semana.dias.reduce((s, d) => s + d.ton, 0);
+    partes.push(`Recebimento da semana: ${fmtTonDec(tonSemana)}`);
+    partes.push(`Dias batendo meta: ${aceitos} de ${semana.dias.length}`);
+  }
+  if (mensal?.length) {
+    const totRec = mensal.reduce((s, m) => s + m.recebido, 0);
+    const totCar = mensal.reduce((s, m) => s + m.carregado, 0);
+    const eficiencia = fmtBrMax((totCar / Math.max(totRec, 1)) * 100, 1);
+    partes.push(`Recebido no ano: ${fmtTonDec(totRec)}`);
+    partes.push(`Carregado no ano: ${fmtTonDec(totCar)}`);
+    partes.push(`Eficiência do fluxo: ${eficiencia}%`);
+  }
+  if (reservados) {
+    partes.push(`Estoque reservado: ${fmtTonDec(reservados.totalTon)} em ${fmtInt(reservados.totalQtd)} peças`);
+    partes.push(`Valor reservado: R$ ${fmtBr(reservados.totalValor / 1e6, 2)} mi`);
+  }
+  if (avarias?.total) {
+    partes.push(`Avarias no ano: ${fmtInt(avarias.total)} volumes`);
+    if (avarias.custo) partes.push(`Custo de avarias: ${avarias.custo}`);
+  }
+  if (pendentes?.itens) {
+    partes.push(`Pendentes de produção: ${fmtInt(pendentes.itens)} lotes, ${fmtTonDec(pendentes.totalTon)} no total`);
+    partes.push(`Média por lote: ${fmtTonDec(pendentes.mediaTon)}`);
+  }
+  if (unidades.length) {
+    const top = [...unidades].sort((a, b) => b.share - a.share)[0];
+    partes.push(`Categoria líder: ${top.nome} com ${fmtBr(top.share, 1)}% de participação`);
+  }
+  if (valorFaturado) {
+    partes.push(`Faturamento carregado: R$ ${fmtBr(valorFaturado / 1e6, 2)} mi`);
+  }
+
+  return partes.join("\n");
+}
+
+/* ── Parser de mensagens da IA: destaca números em verde ── */
+
+function parseMensagem(str: string): Mensagem {
+  const regex = /R\$\s*[\d.,]+(?:\s*(?:mi|milhões?))?|[\d][\d.,]*(?:\s*%)?/g;
+  const segments: Mensagem = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(str)) !== null) {
+    if (match.index > lastIndex) segments.push(txt(str.slice(lastIndex, match.index)));
+    segments.push(num(match[0]));
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < str.length) segments.push(txt(str.slice(lastIndex)));
+  return segments;
 }
 
 const TEMPO_POR_MSG = 4600;
 
 export default function IntroTexto(props: Props) {
-  const mensagens = useMemo(
-    () => construirMensagens(props),
-    [props],
-  );
-
+  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [carregando, setCarregando] = useState(true);
   const [idx, setIdx] = useState(0);
   const [visivel, setVisivel] = useState(true);
 
   const concluir = useCallback(() => props.onConcluir(), [props]);
 
-  // Avança as mensagens com fade suave.
+  // Busca interpretação da IA ao montar — fallback estático se indisponível
   useEffect(() => {
-    if (idx >= mensagens.length) return;
+    let cancelled = false;
+    const resumo = buildDataSummary(props);
+    fetch("/api/interpretar-estoque", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resumo }),
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data.mensagens) && data.mensagens.length) {
+          setMensagens(data.mensagens.map(parseMensagem));
+        } else {
+          setMensagens(construirMensagens(props));
+        }
+        setCarregando(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setMensagens(construirMensagens(props));
+        setCarregando(false);
+      });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Avança as mensagens com fade suave
+  useEffect(() => {
+    if (carregando || idx >= mensagens.length) return;
     setVisivel(true);
     const tOut = setTimeout(() => setVisivel(false), TEMPO_POR_MSG - 700);
     const tNext = setTimeout(() => setIdx((i) => i + 1), TEMPO_POR_MSG);
     return () => { clearTimeout(tOut); clearTimeout(tNext); };
-  }, [idx, mensagens.length]);
+  }, [idx, mensagens.length, carregando]);
 
-  // Quando chega ao fim, conclui.
+  // Quando chega ao fim, conclui
   useEffect(() => {
-    if (idx >= mensagens.length) {
+    if (!carregando && mensagens.length > 0 && idx >= mensagens.length) {
       const t = setTimeout(concluir, 600);
       return () => clearTimeout(t);
     }
-  }, [idx, mensagens.length, concluir]);
+  }, [idx, mensagens.length, carregando, concluir]);
 
   const pular = useCallback(() => concluir(), [concluir]);
   const msg = mensagens[Math.min(idx, mensagens.length - 1)] ?? [];
@@ -216,33 +301,35 @@ export default function IntroTexto(props: Props) {
 
       {/* Mensagem central */}
       <div className="relative z-10 flex w-full max-w-2xl flex-col items-center px-6">
-        <div
-          className="flex items-center justify-center text-center transition-all duration-700 ease-out"
-          style={{
-            opacity: visivel ? 1 : 0,
-            transform: visivel ? "translateY(0) scale(1)" : "translateY(-16px) scale(0.97)",
-            filter: visivel ? "blur(0px)" : "blur(8px)",
-          }}
-        >
-          <p className="font-serif italic text-xl leading-relaxed text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)] sm:text-3xl sm:leading-relaxed">
-            {msg.map((seg, i) =>
-              seg.n ? (
-                <span
-                  key={i}
-                  className="font-bold text-primary drop-shadow-[0_0_16px_rgba(142,181,90,0.5)] sm:text-4xl"
-                >
-                  {seg.t}
-                </span>
-              ) : (
-                <span key={i}>{seg.t}</span>
-              ),
-            )}
+        {carregando ? (
+          <p className="font-serif italic text-lg leading-relaxed text-white/60 drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)] sm:text-2xl">
+            Preparando análise de estoque...
           </p>
-        </div>
-
-        <p className="mt-10 font-mono text-[9px] tracking-widest text-white/40 uppercase italic">
-          {Math.min(idx + 1, mensagens.length)} / {mensagens.length}
-        </p>
+        ) : (
+          <div
+            className="flex items-center justify-center text-center transition-all duration-700 ease-out"
+            style={{
+              opacity: visivel ? 1 : 0,
+              transform: visivel ? "translateY(0) scale(1)" : "translateY(-16px) scale(0.97)",
+              filter: visivel ? "blur(0px)" : "blur(8px)",
+            }}
+          >
+            <p className="font-serif italic text-xl leading-relaxed text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)] sm:text-3xl sm:leading-relaxed">
+              {msg.map((seg, i) =>
+                seg.n ? (
+                  <span
+                    key={i}
+                    className="font-bold text-primary drop-shadow-[0_0_16px_rgba(142,181,90,0.5)] sm:text-4xl"
+                  >
+                    {seg.t}
+                  </span>
+                ) : (
+                  <span key={i}>{seg.t}</span>
+                ),
+              )}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

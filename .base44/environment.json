@@ -11,7 +11,13 @@
     },
     {
       "name": "SUPABASE_SERVICE_ROLE_KEY",
-      "description": "Supabase service-role key for live data (historico/sync/valor-faturado stores). Without it the dashboard shows built-in sample data.",
+      "description": "Supabase service-role key for live data (historico/sync/valor-faturado stores). Without it, the dashboard shows built-in sample data.",
+      "requiredAtBoot": false,
+      "generatedForDevelopment": false
+    },
+    {
+      "name": "OPENAI_API_KEY",
+      "description": "Chave da API OpenAI (GPT-4o) para o auxilio IA que interpreta os dados de estoque na tela de boas-vindas. Obter em https://platform.openai.com/api-keys. Sem ela, a intro usa mensagens estaticas.",
       "requiredAtBoot": false,
       "generatedForDevelopment": false
     }
