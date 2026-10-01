@@ -16,8 +16,8 @@
       "generatedForDevelopment": false
     },
     {
-      "name": "OPENAI_API_KEY",
-      "description": "Chave da API OpenAI (GPT-4o) para o auxilio IA que interpreta os dados de estoque na tela de boas-vindas. Obter em https://platform.openai.com/api-keys. Sem ela, a intro usa mensagens estaticas.",
+      "name": "ANTHROPIC_API_KEY",
+      "description": "Chave da API Anthropic (Claude) para o auxilio IA que interpreta os dados de estoque na tela de boas-vindas. Obter em https://console.anthropic.com/settings/keys. Sem ela, a intro usa mensagens estaticas.",
       "requiredAtBoot": false,
       "generatedForDevelopment": false
     }

@@ -14,7 +14,7 @@ REGRAS:
 - NÃO use formatação markdown (sem **, *, #, etc.)
 - Seja conciso mas informativo
 
-Responda SEMPRE com um JSON válido neste formato exato:
+Responda SEMPRE com um JSON válido neste formato exato, sem texto adicional antes ou depois:
 {"mensagens": ["primeira mensagem", "segunda mensagem", ...]}`;
 
 export const Route = createFileRoute("/api/interpretar-estoque")({
@@ -24,10 +24,10 @@ export const Route = createFileRoute("/api/interpretar-estoque")({
         const denied = await requireApiAccess();
         if (denied) return denied;
 
-        const apiKey = process.env.OPENAI_API_KEY;
+        const apiKey = process.env.ANTHROPIC_API_KEY;
         if (!apiKey) {
           return Response.json(
-            { error: "Chave OpenAI não configurada", semChave: true },
+            { error: "Chave Anthropic não configurada", semChave: true },
             { status: 503 },
           );
         }
@@ -44,41 +44,43 @@ export const Route = createFileRoute("/api/interpretar-estoque")({
         }
 
         try {
-          const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          const response = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
+              "x-api-key": apiKey,
+              "anthropic-version": "2023-06-01",
             },
             body: JSON.stringify({
-              model: "gpt-4o",
+              model: "claude-sonnet-4-20250514",
+              max_tokens: 1000,
+              system: SYSTEM_PROMPT,
               messages: [
-                { role: "system", content: SYSTEM_PROMPT },
                 { role: "user", content: `Aqui estão os dados atuais do estoque do CD Lopas:\n\n${body.resumo}` },
               ],
-              temperature: 1.1,
-              max_tokens: 1000,
-              response_format: { type: "json_object" },
+              temperature: 1,
             }),
           });
 
           if (!response.ok) {
             const errText = await response.text();
-            console.error("[interpretar-estoque] OpenAI error:", response.status, errText);
-            return Response.json({ error: "Falha na API OpenAI" }, { status: 502 });
+            console.error("[interpretar-estoque] Anthropic error:", response.status, errText);
+            return Response.json({ error: "Falha na API Anthropic" }, { status: 502 });
           }
 
           const data = await response.json();
-          const content = data.choices?.[0]?.message?.content;
+          const content = data.content?.[0]?.text ?? "";
 
           let mensagens: string[] = [];
           try {
-            const parsed = JSON.parse(content);
+            // Tenta extrair JSON da resposta (pode vir com texto ao redor)
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : content);
             mensagens = Array.isArray(parsed)
               ? parsed
               : (parsed.mensagens ?? parsed.messages ?? []);
           } catch {
-            mensagens = String(content)
+            mensagens = content
               .split("\n")
               .map((s: string) => s.trim())
               .filter(Boolean);
