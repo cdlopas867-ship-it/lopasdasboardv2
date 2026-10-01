@@ -1053,7 +1053,7 @@ function CenaKpisFoco({
 
   useEffect(() => {
     if (pausado) return;
-    const t = setTimeout(() => setFoco((f) => (f + 1) % total), 4200);
+    const t = setTimeout(() => setFoco((f) => (f + 1) % total), 4800);
     return () => clearTimeout(t);
   }, [foco, pausado, total]);
 
@@ -1068,25 +1068,27 @@ function CenaKpisFoco({
   return (
     <div className="flex flex-col items-center">
       <div className="flex items-center justify-center gap-2">
-        <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
+        <p className="video-sobe text-[11px] font-medium tracking-[0.4em] text-white/70 uppercase">
           Resumo do CD · {new Date().getFullYear()}
         </p>
         <InfoTooltip onOpen={onPausar} texto="Indicadores principais do CD Lopas. Valor em estoque = custo médio × saldo de cada item. Peças e massa somadas de todos os itens ativos. Ocupação = posições ocupadas ÷ total de endereços (5.970). Fonte: planilha de saldo de itens do Google Drive. Atualizado em 28/09/2026." />
       </div>
 
       {/* Apenas o card aberto aparece, centralizado e em destaque */}
-      <div className="relative mt-6 flex min-h-[300px] w-full max-w-md items-center justify-center sm:min-h-[340px]">
-        <div key={foco} className="card-foco-entra w-full">
+      <div className="relative mt-8 flex min-h-[300px] w-full max-w-md items-center justify-center sm:min-h-[340px]">
+        {/* halo suave atrás do card para destacar sem peso */}
+        <div className="card-foco-halo pointer-events-none absolute inset-0" aria-hidden />
+        <div key={foco} className="card-foco-entra relative w-full">
           {kpi ? (
-            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} pausado={pausado} />
+            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} />
           ) : (
-            <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} pausado={pausado} />
+            <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} />
           )}
         </div>
       </div>
 
-      {/* Indicadores — um ponto por card, o ativo cresce */}
-      <div className="mt-6 flex items-center gap-2">
+      {/* Indicadores — pílulas delicadas, a ativa alonga-se */}
+      <div className="mt-8 flex items-center gap-1.5">
         {Array.from({ length: total }).map((_, i) => (
           <button
             key={i}
@@ -1094,74 +1096,65 @@ function CenaKpisFoco({
             onClick={() => setFoco(i)}
             aria-label={`Card ${i + 1}`}
             className={cn(
-              "size-2.5 rounded-full border transition-all duration-300",
-              i === foco
-                ? "scale-125 border-primary bg-primary"
-                : "border-white/30 bg-transparent hover:border-white/50",
+              "h-1 rounded-full transition-all duration-500",
+              i === foco ? "w-7 bg-primary" : "w-3 bg-white/20 hover:bg-white/40",
             )}
           />
         ))}
       </div>
-      <p className="mt-3 text-[9px] font-bold tracking-[0.3em] text-white/40 uppercase">
-        {pausado ? "Pausado · clique no card para retomar" : "Abrindo um a um · clique no card para pausar"}
+      <p className="mt-4 text-[8px] font-medium tracking-[0.4em] text-white/30 uppercase">
+        {pausado ? "Pausado · toque no card para retomar" : "Toque no card para pausar"}
       </p>
     </div>
   );
 }
 
+/* Vidro refinado compartilhado pelos cards de destaque */
+const cardFocoBase =
+  "group block w-full cursor-pointer rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-7 text-center backdrop-blur-xl shadow-[0_28px_70px_-36px_rgba(0,0,0,0.7)] transition-all duration-500 hover:border-white/20 hover:bg-white/[0.06] sm:p-10";
+
 /* Card de KPI em destaque — centralizado, grande, com o resumo sempre aberto */
 function CardFocoKpi({
   kpi,
   onTogglePausar,
-  pausado,
 }: {
   kpi: VideoKpi;
   onTogglePausar: () => void;
-  pausado: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onTogglePausar}
-      className="block w-full cursor-pointer rounded-2xl border border-[#889988]/50 bg-white/10 p-6 text-center backdrop-blur-md transition-colors hover:border-[#889988]/70 hover:bg-white/15 sm:p-8"
-    >
-      <p className="font-serif text-4xl tracking-tight text-white sm:text-5xl">
+    <button type="button" onClick={onTogglePausar} className={cardFocoBase}>
+      <p className="font-serif text-[2.75rem] leading-none tracking-tight text-white sm:text-[3.25rem]">
         {kpi.valor}
       </p>
-      <p className="mt-2 text-[11px] font-bold tracking-[0.3em] text-primary uppercase sm:text-xs">
+      <p className="mt-3 text-[10px] font-medium tracking-[0.4em] text-primary/80 uppercase">
         {kpi.rotulo}
       </p>
       {kpi.detalhe && (
-        <p className="mt-5 text-left text-sm leading-relaxed text-white/70 sm:text-base">
+        <p className="mt-6 text-left text-[13px] leading-relaxed text-white/60 sm:text-sm">
           {kpi.detalhe}
         </p>
       )}
       {kpi.extra?.length ? (
-        <dl className="mt-4 space-y-2 border-t border-white/20 pt-4 text-left">
+        <dl className="mt-5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
           {kpi.extra.map(([k, v], ki) => (
-            <div key={`${k}-${ki}`} className="flex justify-between text-xs sm:text-sm">
-              <dt className="text-white/50">{k}</dt>
-              <dd className="font-semibold text-white">{v}</dd>
+            <div key={`${k}-${ki}`} className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+              <dt className="text-white/45">{k}</dt>
+              <dd className="font-medium text-white/90">{v}</dd>
             </div>
           ))}
         </dl>
       ) : null}
-      <span className="mt-5 block text-[10px] font-medium tracking-widest text-primary uppercase">
-        {pausado ? "Retomar" : "Pausar"}
-      </span>
     </button>
   );
 }
 
-/* Card de "fora de linha" em destaque — mesmo visual do KPI, amber, resumo aberto */
+/* Card de "fora de linha" em destaque — acento âmbar, resumo aberto */
 function CardFocoForaDeLinha({
   foraDeLinha,
   onTogglePausar,
-  pausado,
 }: {
   foraDeLinha?: VideoForaDeLinha | undefined;
   onTogglePausar: () => void;
-  pausado: boolean;
 }) {
   const pos = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const total = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
@@ -1170,52 +1163,49 @@ function CardFocoForaDeLinha({
     <button
       type="button"
       onClick={onTogglePausar}
-      className="block w-full cursor-pointer rounded-2xl border border-brand-amber/50 bg-brand-amber/10 p-6 text-center backdrop-blur-md transition-colors hover:border-brand-amber/70 hover:bg-brand-amber/15 sm:p-8"
+      className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
     >
-      <p className="font-serif text-4xl tracking-tight text-white sm:text-5xl">
+      <p className="font-serif text-[2.75rem] leading-none tracking-tight text-white sm:text-[3.25rem]">
         {fmtPct(pctValor)}
       </p>
-      <p className="mt-2 text-[11px] font-bold tracking-[0.3em] text-brand-amber uppercase sm:text-xs">
+      <p className="mt-3 text-[10px] font-medium tracking-[0.4em] text-brand-amber/80 uppercase">
         Fora de linha
       </p>
-      <p className="mt-5 text-left text-sm leading-relaxed text-white/70 sm:text-base">
+      <p className="mt-6 text-left text-[13px] leading-relaxed text-white/60 sm:text-sm">
         {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtMoeda(pos.valorEstoque)} em
         custo ({fmtPct(pctValor)} do valor total) e {fmtPeso(pos.pesoTon * 1000)} de massa
         ({fmtPct(pos.pesoTon / total.pesoTon)} do peso total).
       </p>
-      <dl className="mt-4 space-y-2 border-t border-white/20 pt-4 text-left">
-        <div className="flex justify-between text-xs sm:text-sm">
-          <dt className="text-white/50">Itens fora de linha</dt>
-          <dd className="font-semibold text-white">{fmtInt(pos.itens)}</dd>
+      <dl className="mt-5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
+        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+          <dt className="text-white/45">Itens fora de linha</dt>
+          <dd className="font-medium text-white/90">{fmtInt(pos.itens)}</dd>
         </div>
-        <div className="flex justify-between text-xs sm:text-sm">
-          <dt className="text-white/50">Valor em estoque</dt>
-          <dd className="font-semibold text-white">{fmtMoeda(pos.valorEstoque)}</dd>
+        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+          <dt className="text-white/45">Valor em estoque</dt>
+          <dd className="font-medium text-white/90">{fmtMoeda(pos.valorEstoque)}</dd>
         </div>
-        <div className="flex justify-between text-xs sm:text-sm">
-          <dt className="text-white/50">Valor reservado</dt>
-          <dd className="font-semibold text-white">{fmtMoeda(pos.valorReservado)}</dd>
+        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+          <dt className="text-white/45">Valor reservado</dt>
+          <dd className="font-medium text-white/90">{fmtMoeda(pos.valorReservado)}</dd>
         </div>
-        <div className="flex justify-between text-xs sm:text-sm">
-          <dt className="text-white/50">Massa total</dt>
-          <dd className="font-bold text-brand-amber">{fmtPeso(pos.pesoTon * 1000)}</dd>
+        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+          <dt className="text-white/45">Massa total</dt>
+          <dd className="font-medium text-brand-amber">{fmtPeso(pos.pesoTon * 1000)}</dd>
         </div>
-        <div className="flex justify-between text-xs sm:text-sm">
-          <dt className="text-white/50">Massa reservada</dt>
-          <dd className="font-bold text-brand-amber">{fmtPeso(pos.pesoReservadoTon * 1000)}</dd>
+        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+          <dt className="text-white/45">Massa reservada</dt>
+          <dd className="font-medium text-brand-amber">{fmtPeso(pos.pesoReservadoTon * 1000)}</dd>
         </div>
-        <div className="flex justify-between text-xs sm:text-sm">
-          <dt className="text-white/50">Saldo físico</dt>
-          <dd className="font-semibold text-white">{fmtInt(pos.saldoFocco)} un</dd>
+        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+          <dt className="text-white/45">Saldo físico</dt>
+          <dd className="font-medium text-white/90">{fmtInt(pos.saldoFocco)} un</dd>
         </div>
-        <div className="flex justify-between text-xs sm:text-sm">
-          <dt className="text-white/50">Disponível</dt>
-          <dd className="font-semibold text-white">{fmtInt(pos.disponivel)} un</dd>
+        <div className="flex items-baseline justify-between py-2.5 text-xs sm:text-sm">
+          <dt className="text-white/45">Disponível</dt>
+          <dd className="font-medium text-white/90">{fmtInt(pos.disponivel)} un</dd>
         </div>
       </dl>
-      <span className="mt-5 block text-[10px] font-medium tracking-widest text-primary uppercase">
-        {pausado ? "Retomar" : "Pausar"}
-      </span>
     </button>
   );
 }
