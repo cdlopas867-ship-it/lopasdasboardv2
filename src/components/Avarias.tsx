@@ -110,10 +110,14 @@ export default function Avarias({ avarias, atualizadoEm }: { avarias?: Avaria[] 
   }
   const meses = [...porMes.keys()].sort((a, b) => ordemMes(a) - ordemMes(b));
 
+  const totalVolumesComMotivo = (avarias ?? [])
+    .filter((a) => a.motivo?.trim())
+    .reduce((soma, a) => soma + a.quantidade, 0);
+
   const motivosMap = new Map<string, number>();
   for (const a of avarias ?? []) {
-    const m = a.motivo || "Sem motivo";
-    motivosMap.set(m, (motivosMap.get(m) ?? 0) + 1);
+    const m = a.motivo?.trim() || "Sem motivo";
+    motivosMap.set(m, (motivosMap.get(m) ?? 0) + a.quantidade);
   }
   const motivosSorted = [...motivosMap.entries()].sort((a, b) => b[1] - a[1]);
 
@@ -172,7 +176,7 @@ export default function Avarias({ avarias, atualizadoEm }: { avarias?: Avaria[] 
               const [motivo, count] = motivosSorted[idxAvaria] ?? ["", 0];
               const tipo = resolverTipoAvaria(motivo);
               const imagem = motivo ? imagemAvaria(motivo) : "";
-              const pct = ((count / (avarias?.length ?? 1)) * 100).toFixed(1);
+              const pct = totalVolumesComMotivo > 0 ? ((count / totalVolumesComMotivo) * 100).toFixed(1) : "0.0";
               return (
                 <>
                   <img
@@ -186,7 +190,7 @@ export default function Avarias({ avarias, atualizadoEm }: { avarias?: Avaria[] 
                     type="button"
                     onClick={anteriorAvaria}
                     aria-label="Anterior"
-                    className="absolute top-1/2 left-4 z-20 flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/30 text-2xl text-white backdrop-blur-sm"
+                    className="absolute top-1/2 left-4 z-20 flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/30 text-2xl text-white backdrop-blur-sm hover:bg-black/50"
                   >
                     ‹
                   </button>
@@ -194,7 +198,7 @@ export default function Avarias({ avarias, atualizadoEm }: { avarias?: Avaria[] 
                     type="button"
                     onClick={proximoAvaria}
                     aria-label="Próximo"
-                    className="absolute top-1/2 right-4 z-20 flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/30 text-2xl text-white backdrop-blur-sm"
+                    className="absolute top-1/2 right-4 z-20 flex size-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-black/30 text-2xl text-white backdrop-blur-sm hover:bg-black/50"
                   >
                     ›
                   </button>
@@ -298,13 +302,14 @@ export default function Avarias({ avarias, atualizadoEm }: { avarias?: Avaria[] 
 
                 const motivosMes = new Map<string, number>();
                 for (const a of items) {
-                  const mot = a.motivo || "Sem motivo";
-                  motivosMes.set(mot, (motivosMes.get(mot) ?? 0) + 1);
+                  const mot = a.motivo?.trim() || "Sem motivo";
+                  motivosMes.set(mot, (motivosMes.get(mot) ?? 0) + a.quantidade);
                 }
                 const motivoPred = [...motivosMes.entries()]
                   .sort((a, b) => b[1] - a[1])
                   .find(([mot]) => resolverTipoAvaria(mot))?.[0];
                 const tipoPred = motivoPred ? resolverTipoAvaria(motivoPred) : undefined;
+                const totalMes = items.filter((a) => a.motivo?.trim()).reduce((soma, a) => soma + a.quantidade, 0);
 
                 return (
                   <div
@@ -349,9 +354,9 @@ export default function Avarias({ avarias, atualizadoEm }: { avarias?: Avaria[] 
                             +
                           </span>
                         </div>
-                        <p className="mt-2 text-lg font-bold text-white" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>{fmtInt(items.length)}</p>
+                        <p className="mt-2 text-lg font-bold text-white" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>{fmtInt(totalMes)}</p>
                         <p className="text-[10px] font-semibold tracking-widest text-white/70 uppercase">
-                          movimentações
+                          volumes
                         </p>
                         {motivoPred && tipoPred && (
                           <p className="mt-2 text-[9px] font-medium tracking-wider text-primary uppercase">
