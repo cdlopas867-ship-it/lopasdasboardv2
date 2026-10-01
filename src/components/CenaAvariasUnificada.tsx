@@ -165,35 +165,7 @@ export default function CenaAvariasUnificada({
         </div>
       ) : null}
 
-      {/* ── Motivo mais frequente por mês ── */}
-      <div className="mt-4">
-        <p className="mb-1.5 text-[9px] font-bold tracking-[0.3em] text-white/50 uppercase">
-          Motivo mais frequente
-        </p>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-          {avarias.motivoMes.map((m, i) => {
-            const destaque = m.mes.toUpperCase().startsWith("AGO");
-            return (
-              <div
-                key={m.mes}
-                className="video-sobe flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2 py-1"
-                style={{ animationDelay: `${0.05 * i + 0.6}s` }}
-              >
-                <span
-                  className={cn(
-                    "w-7 shrink-0 text-[8px] font-bold uppercase",
-                    destaque ? "text-brand-amber" : "text-white/50",
-                  )}
-                >
-                  {m.mes.slice(0, 3)}
-                </span>
-                <span className="flex-1 truncate text-[9px] text-white/75">{m.motivo}</span>
-                <span className="font-mono text-[9px] font-bold text-white">{fmtInt(m.qtd)}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+
 
       {/* Modal — gráfico mês a mês do tipo selecionado */}
       {tipoSel !== null && avarias.tipos?.[tipoSel] && (
