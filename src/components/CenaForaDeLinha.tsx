@@ -181,31 +181,6 @@ export default function CenaForaDeLinha({ anim, foraDeLinha, onPausar }: { anim:
         </div>
       </div>
 
-      {/* Cards por categoria */}
-      <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
-        {cats.map((c, i) => (
-          <div
-            key={c.nome}
-            className="video-sobe rounded-xl border border-white/15 bg-white/5 px-2 py-2 text-center sm:px-3"
-            style={{ animationDelay: `${0.15 * (i + 1)}s` }}
-          >
-            <div className="flex items-center justify-center gap-1.5">
-              <span className="size-2 rounded-full" style={{ background: c.cor }} />
-              <p className="truncate text-[9px] font-bold tracking-widest text-white/60 uppercase sm:text-[10px]">
-                {c.curto}
-              </p>
-            </div>
-            <p className="mt-1 font-serif text-lg text-white sm:text-xl">
-              {fmtInt(c.itens)} <span className="text-[9px] text-white/45">itens</span>
-            </p>
-            <div className="mt-1 flex items-baseline justify-center gap-2">
-              <span className="font-mono text-[12px] font-bold text-white sm:text-sm">{fmtMoeda(c.valorEstoque)}</span>
-              <span className="font-mono text-[10px] text-white/55">{fmtPeso(c.pesoKg)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
       {/* Tabela resumo — barras inline no valor */}
       <div className="video-sobe mt-3 overflow-x-auto" style={{ animationDelay: "0.6s" }}>
         <table className="w-full min-w-[34rem] text-left text-[11px] text-white">
