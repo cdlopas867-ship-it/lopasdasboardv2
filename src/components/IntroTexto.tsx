@@ -224,7 +224,7 @@ export default function IntroTexto(props: Props) {
             filter: visivel ? "blur(0px)" : "blur(8px)",
           }}
         >
-          <p className="font-serif text-xl leading-relaxed text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)] sm:text-3xl sm:leading-relaxed">
+          <p className="font-serif italic text-xl leading-relaxed text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)] sm:text-3xl sm:leading-relaxed">
             {msg.map((seg, i) =>
               seg.n ? (
                 <span
