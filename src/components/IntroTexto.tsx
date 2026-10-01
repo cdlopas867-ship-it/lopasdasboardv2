@@ -179,7 +179,6 @@ export default function IntroTexto(props: Props) {
   }, [idx, mensagens.length, concluir]);
 
   const pular = useCallback(() => concluir(), [concluir]);
-  const progresso = Math.min((idx / mensagens.length) * 100, 100);
   const msg = mensagens[Math.min(idx, mensagens.length - 1)] ?? [];
 
   return (
@@ -241,14 +240,7 @@ export default function IntroTexto(props: Props) {
           </p>
         </div>
 
-        {/* Barra de progresso */}
-        <div className="mt-10 h-1 w-48 overflow-hidden rounded-full bg-white/15 sm:w-64">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
-            style={{ width: `${progresso}%` }}
-          />
-        </div>
-        <p className="mt-3 font-mono text-[9px] font-bold tracking-widest text-white/40 uppercase">
+        <p className="mt-10 font-mono text-[9px] tracking-widest text-white/40 uppercase italic">
           {Math.min(idx + 1, mensagens.length)} / {mensagens.length}
         </p>
       </div>
