@@ -60,10 +60,10 @@ export function interpretarLocal(p: InterpretadorProps): Mensagem[] {
   if (p.resumo) {
     const vEst = `R$ ${fmtBr(p.resumo.previsto / 1e6, 2)} mi`;
     blocos.push(pick([
-      [txt("Nosso estoque hoje soma "), num(fmtTonDec(p.resumo.ton)), txt(", com valor estimado de "), num(vEst), txt(" em potencial de venda.")],
-      [txt("A massa total do CD é de "), num(fmtTonDec(p.resumo.ton)), txt(" — um valor estimado de "), num(vEst), txt(" em mercadoria.")],
+      [txt("Nosso estoque hoje soma "), num(fmtTonDec(p.resumo.ton)), txt(", com valor previsto de "), num(vEst), txt(" em potencial de venda.")],
+      [txt("A massa total do CD é de "), num(fmtTonDec(p.resumo.ton)), txt(" — um valor previsto de "), num(vEst), txt(" em mercadoria.")],
       [txt("Somando "), num(fmtTonDec(p.resumo.ton)), txt(" em estoque, o potencial de venda chega a "), num(vEst), txt(".")],
-      [txt("Hoje o CD acumula "), num(fmtTonDec(p.resumo.ton)), txt(" de produto, valendo estimados "), num(vEst), txt(" em venda.")],
+      [txt("Hoje o CD acumula "), num(fmtTonDec(p.resumo.ton)), txt(" de produto, valendo previstos "), num(vEst), txt(" em venda.")],
     ]));
 
     blocos.push(pick([
