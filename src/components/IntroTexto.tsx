@@ -123,13 +123,6 @@ function construirMensagens(p: Props): Mensagem[] {
     ]);
   }
 
-  if (valorFaturado) {
-    msgs.push([
-      txt("Já carregamos "), num(`R$ ${fmtBr(valorFaturado / 1e6, 2)} mi`),
-      txt(" em faturamento — a engrenagem girando forte."),
-    ]);
-  }
-
   msgs.push([txt("Tudo pronto para acompanhar o painel. Bom trabalho.")]);
 
   return msgs;
