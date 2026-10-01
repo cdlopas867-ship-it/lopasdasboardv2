@@ -5,7 +5,7 @@ import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
 import VideoResumoDashboard, { type VideoAbc, type VideoAvarias, type VideoDia, type VideoKpi, type VideoMes, type VideoOcupacao, type VideoPendentes, type VideoReservados, type VideoSaidasCD, type VideoTurno, type VideoUnidade } from "@/components/VideoResumoDashboard";
 import type { VideoForaDeLinha } from "@/components/CenasApresentacao";
-import ResumoIntro from "@/components/ResumoIntro";
+import ResumoTotalIntro from "@/components/ResumoTotalIntro";
 import LoadingApresentacao from "@/components/LoadingApresentacao";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
@@ -72,6 +72,6 @@ function DashboardHome() {
   }, [dados]);
   if (!pronto || !autenticado) return null;
   if (!loaded) return <LoadingApresentacao />;
-  if (fase === "resumo") return <ResumoIntro kpis={presentation.kpis} avarias={presentation.avarias} semana={presentation.semana} pendentes={presentation.pendentes} onConcluir={() => setFase("video")} />;
+  if (fase === "resumo") return <ResumoTotalIntro resumo={presentation.resumo} foraDeLinha={presentation.foraDeLinha} onConcluir={() => setFase("video")} />;
   return <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />;
 }
