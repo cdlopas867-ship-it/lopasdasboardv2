@@ -5,9 +5,8 @@ import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
 import VideoResumoDashboard, { type VideoAbc, type VideoAvarias, type VideoDia, type VideoKpi, type VideoMes, type VideoOcupacao, type VideoPendentes, type VideoReservados, type VideoSaidasCD, type VideoTurno, type VideoUnidade } from "@/components/VideoResumoDashboard";
 import type { VideoForaDeLinha } from "@/components/CenasApresentacao";
-import ResumoTotalIntro from "@/components/ResumoTotalIntro";
-import LoadingApresentacao from "@/components/LoadingApresentacao";
-import { calcularAvariasResumo } from "@/lib/avarias-resumo";
+
+import LoadingApresentacao from "@/components/LoadingApresentacao";import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
 import { normalizarDiasExibicao } from "@/lib/recebimento";
 import { calcularPendentesResumo } from "@/lib/pendentes-resumo";
@@ -21,7 +20,6 @@ function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();
   const { dados, loaded } = useDadosSync<Painel>(initialSyncData as Painel);
   const [valorFaturado, setValorFaturado] = useState<number>();
-  const [fase, setFase] = useState<"resumo" | "video">("resumo");
   useEffect(() => { if (pronto && !autenticado) navigate({ to: "/login", replace: true }); }, [pronto, autenticado, navigate]);
   useEffect(() => { if (autenticado) fetch("/api/valor-faturado").then(r => r.json()).then(d => setValorFaturado(d.valor)).catch(() => {}); }, [autenticado]);
   const presentation = useMemo(() => {
@@ -72,6 +70,5 @@ function DashboardHome() {
   }, [dados]);
   if (!pronto || !autenticado) return null;
   if (!loaded) return <LoadingApresentacao />;
-  if (fase === "resumo") return <ResumoTotalIntro resumo={presentation.resumo} foraDeLinha={presentation.foraDeLinha} onConcluir={() => setFase("video")} />;
   return <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />;
 }
