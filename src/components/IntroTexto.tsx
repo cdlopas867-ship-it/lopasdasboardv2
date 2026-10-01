@@ -23,7 +23,7 @@ type Props = {
   onConcluir: () => void;
 };
 
-const TEMPO_POR_MSG = 4600;
+const TEMPO_POR_MSG = 7000;
 
 export default function IntroTexto(props: Props) {
   const [mensagens] = useState<Mensagem[]>(() => interpretarLocal(props));
