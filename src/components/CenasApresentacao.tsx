@@ -879,6 +879,38 @@ export default function CenasApresentacao({
               * Valores em milhões de reais. Toneladas com 1 casa decimal.
             </p>
           </div>
+
+          {/* Valor previsto da reserva — integrado na mesma cena */}
+          {valorFaturado && (
+            <div className="video-sobe mt-5 w-full max-w-sm mx-auto border-t border-white/10 pt-5" style={{ animationDelay: "0.7s" }}>
+              <div className="flex items-center justify-center gap-2">
+                <p className="text-[10px] font-bold tracking-[0.3em] text-white/60 uppercase">
+                  Valor Previsto da Reserva
+                </p>
+                <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
+              </div>
+              <p className="mt-2 text-center font-serif text-3xl text-primary sm:text-4xl">
+                {fmtMoeda(reservados.totalTon * valorFaturado)}
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 text-center">
+                  <p className="font-serif text-base text-white sm:text-lg">{fmtTonDec(reservados.totalTon)}</p>
+                  <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">Ton. reserv.</p>
+                </div>
+                <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 text-center">
+                  <p className="font-serif text-base text-white sm:text-lg">× {fmtMoeda2(valorFaturado)}</p>
+                  <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">R$/t faturado</p>
+                </div>
+                <div className="rounded-xl border border-primary/30 bg-primary/10 p-2.5 text-center">
+                  <p className="font-serif text-base text-primary sm:text-lg">{fmtBrMax(reservados.pctValor, 1)}%</p>
+                  <p className="text-[7px] font-bold tracking-widest text-primary uppercase">do valor</p>
+                </div>
+              </div>
+              <p className="mt-2 text-center text-[9px] text-white/40">
+                Toneladas reservadas × valor faturado = valor previsto da reserva
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -900,73 +932,23 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 13 — valor previsto da reserva (faturado × toneladas) */}
-      {cena === 9 && reservados && valorFaturado ? (
-        <div className="flex w-full flex-col items-center">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Valor Previsto da Reserva
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
-          </div>
-          <p className="video-sobe mt-3 font-serif text-4xl text-primary sm:text-5xl" style={{ animationDelay: "0.15s" }}>
-            {fmtMoeda(reservados.totalTon * valorFaturado)}
-          </p>
-          <div className="video-sobe mt-4 grid w-full max-w-sm grid-cols-3 gap-2 sm:gap-3" style={{ animationDelay: "0.3s" }}>
-            <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-center">
-              <p className="font-serif text-lg text-white sm:text-xl">{fmtTonDec(reservados.totalTon)}</p>
-              <p className="text-[8px] font-bold tracking-widest text-white/50 uppercase">Ton. reserv.</p>
-            </div>
-            <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-center">
-              <p className="font-serif text-lg text-white sm:text-xl">× {fmtMoeda2(valorFaturado)}</p>
-              <p className="text-[8px] font-bold tracking-widest text-white/50 uppercase">R$/t faturado</p>
-            </div>
-            <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-center">
-              <p className="font-serif text-lg text-primary sm:text-xl">{fmtBrMax(reservados.pctValor, 1)}%</p>
-              <p className="text-[8px] font-bold tracking-widest text-primary uppercase">do valor</p>
-            </div>
-          </div>
-          <p className="video-sobe mt-3 text-[10px] text-white/45" style={{ animationDelay: "0.45s" }}>
-            Toneladas reservadas × valor faturado = valor previsto da reserva
-          </p>
-        </div>
-      ) : null}
-
-      {/* Cena 13 fallback — sem valor faturado ou reservados */}
-      {cena === 9 && (!reservados || !valorFaturado) && (
-        <div className="flex flex-col items-center py-6 text-center">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Valor Previsto da Reserva
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
-          </div>
-          <p className="video-sobe font-serif text-3xl text-white/70">
-            Valor previsto indisponível.
-          </p>
-          <p className="video-sobe mt-2 text-sm text-white/50" style={{ animationDelay: "0.15s" }}>
-            Configure o valor faturado e importe os dados de reservados.
-          </p>
-        </div>
-      )}
-
       {/* Cena 14 — Fora de linha por categoria */}
-      {cena === 10 && (
+      {cena === 9 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
       {/* Cena 14 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 11 && (
+      {cena === 10 && (
         <CenaTonelagemEstoque anim={anim} />
       )}
 
       {/* Cena 14 — Saúde do estoque (donut) */}
-      {cena === 12 && (
+      {cena === 11 && (
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
       {/* Cena 15 — encerramento */}
-      {cena === 13 && (
+      {cena === 12 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
