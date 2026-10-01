@@ -6,6 +6,7 @@ import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
+import CenaResumoTotal, { type ResumoTotalProp } from "@/components/CenaResumoTotal";
 import { POSICAO_FORA_DE_LINHA, POSICAO_EM_LINHA, POSICAO_TOTAL, ITENS_FORA_DE_LINHA, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
 export type VideoForaDeLinha = {
@@ -47,6 +48,7 @@ type Props = {
   valorFaturado?: number | undefined;
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
+  resumo?: ResumoTotalProp | null;
   onReiniciar: () => void;
   onPausar?: (() => void) | undefined;
 };
@@ -67,6 +69,7 @@ export default function CenasApresentacao({
   valorFaturado,
   saidasCD,
   foraDeLinha,
+  resumo,
   onReiniciar,
   onPausar,
 }: Props) {
@@ -751,8 +754,13 @@ export default function CenasApresentacao({
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
-      {/* Cena 12 — encerramento */}
+      {/* Cena 12 — Resumo total do estoque */}
       {cena === 11 && (
+        <CenaResumoTotal anim={anim} resumo={resumo} foraDeLinha={foraDeLinha} onPausar={onPausar} />
+      )}
+
+      {/* Cena 13 — encerramento */}
+      {cena === 12 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.

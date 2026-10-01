@@ -86,13 +86,14 @@ type Props = {
   valorFaturado?: number | undefined;
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
+  resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   onFechar?: () => void;
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 12;
-const DURACOES = [130000, 5000, 6500, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 12000];
+const TOTAL_CENAS = 13;
+const DURACOES = [130000, 5000, 6500, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 8000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
@@ -108,6 +109,7 @@ export default function VideoResumoDashboard({
   valorFaturado,
   saidasCD,
   foraDeLinha,
+  resumo,
   sincronizacao,
   onFechar,
   onLogout,
@@ -189,6 +191,7 @@ export default function VideoResumoDashboard({
     valorFaturado,
     saidasCD,
     foraDeLinha,
+    resumo,
     onReiniciar: () => setCena(0),
     onPausar: () => setPausado(true),
   };
