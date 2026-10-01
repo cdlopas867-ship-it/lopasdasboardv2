@@ -39,8 +39,8 @@ function construirMensagens(p: Props): Mensagem[] {
   if (resumo) {
     msgs.push([
       txt("Nosso estoque hoje soma "), num(fmtTonDec(resumo.ton)),
-      txt(", com "), num(`R$ ${fmtBr(resumo.valor / 1e6, 2)} mi`),
-      txt(" investidos em mercadoria."),
+      txt(", com valor estimado de "), num(`R$ ${fmtBr(resumo.previsto / 1e6, 2)} mi`),
+      txt(" em potencial de venda."),
     ]);
     msgs.push([
       txt("São "), num(fmtInt(resumo.saldo)), txt(" peças distribuídas em "),
@@ -136,7 +136,7 @@ function buildDataSummary(p: Props): string {
 
   if (resumo) {
     partes.push(`Massa total: ${fmtTonDec(resumo.ton)}`);
-    partes.push(`Valor investido: R$ ${fmtBr(resumo.valor / 1e6, 2)} mi`);
+    partes.push(`Valor estimado do estoque: R$ ${fmtBr(resumo.previsto / 1e6, 2)} mi`);
     partes.push(`Peças em saldo: ${fmtInt(resumo.saldo)}`);
     partes.push(`Itens ativos: ${fmtInt(resumo.itens)}`);
   }
