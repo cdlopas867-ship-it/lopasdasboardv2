@@ -146,9 +146,9 @@ export function interpretarLocal(p: InterpretadorProps): Mensagem[] {
   // ── Pendentes ──
   if (p.pendentes?.itens) {
     blocos.push(pick([
-      [txt("Pendentes de produção: "), num(fmtInt(p.pendentes.itens)), txt(" lotes somando "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — média de "), num(fmtTonDec(p.pendentes.mediaTon)), txt(" por lote.")],
-      [txt("Há "), num(fmtInt(p.pendentes.itens)), txt(" lotes pendentes, totalizando "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — média de "), num(fmtTonDec(p.pendentes.mediaTon)), txt(".")],
-      [txt("Produção pendente: "), num(fmtInt(p.pendentes.itens)), txt(" lotes com "), num(fmtTonDec(p.pendentes.totalTon)), txt(" no total, "), num(fmtTonDec(p.pendentes.mediaTon)), txt(" por lote em média.")],
+      [txt("Pendentes de produção: "), num(fmtInt(p.pendentes.itens)), txt(" lotes somando "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — meses anteriores em estado crítico, o mês atual no prazo.")],
+      [txt("Há "), num(fmtInt(p.pendentes.itens)), txt(" lotes pendentes totalizando "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — os meses anteriores estão críticos, mas o atual segue no prazo.")],
+      [txt("Produção pendente: "), num(fmtInt(p.pendentes.itens)), txt(" lotes com "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — meses anteriores críticos, mês atual dentro do prazo.")],
     ]));
   }
 

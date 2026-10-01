@@ -163,13 +163,13 @@ export default function IntroTexto(props: Props) {
         <div className="relative z-10 flex flex-col items-center justify-center">
           {fase === "lopas" && (
             <h1
-              className="fase-lopas font-serif text-5xl font-bold italic tracking-[0.2em] text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)] sm:text-8xl"
+              className="fase-lopas font-serif text-5xl font-light italic tracking-[0.35em] text-white/90 drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)] sm:text-7xl"
             >
               LOPAS 2026
             </h1>
           )}
           {fase === "movidos" && (
-            <p className="fase-movidos font-serif text-2xl italic tracking-[0.15em] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.7)] sm:text-4xl">
+            <p className="fase-movidos font-serif text-xl font-light italic tracking-[0.25em] text-white/80 drop-shadow-[0_2px_14px_rgba(0,0,0,0.4)] sm:text-3xl">
               Movidos pela fé
             </p>
           )}
