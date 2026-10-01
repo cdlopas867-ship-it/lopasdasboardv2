@@ -130,7 +130,7 @@ export default function PendentesProducao({
         <h2 className="font-serif text-3xl sm:text-4xl">Pendências de Produção</h2>
         <div className="mt-2 flex items-center gap-3">
           <p className="text-muted-foreground">
-            Peso pendente por mês — crítico (meses passados) e no prazo.
+            Peso pendente por mês — crítico (3+ meses de atraso) e no prazo.
           </p>
           {atualizadoEm && (
             <span className="rounded-full border border-border bg-card px-3 py-1 text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">
