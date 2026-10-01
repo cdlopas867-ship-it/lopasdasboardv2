@@ -146,9 +146,9 @@ export function interpretarLocal(p: InterpretadorProps): Mensagem[] {
   // ── Pendentes ──
   if (p.pendentes?.itens) {
     blocos.push(pick([
-      [txt("Pendentes de produção: "), num(fmtInt(p.pendentes.itens)), txt(" lotes somando "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — meses anteriores em estado crítico, o mês atual no prazo.")],
-      [txt("Há "), num(fmtInt(p.pendentes.itens)), txt(" lotes pendentes totalizando "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — os meses anteriores estão críticos, mas o atual segue no prazo.")],
-      [txt("Produção pendente: "), num(fmtInt(p.pendentes.itens)), txt(" lotes com "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — meses anteriores críticos, mês atual dentro do prazo.")],
+      [txt("Pendentes de produção: "), num(fmtInt(p.pendentes.itens)), txt(" lotes somando "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — junho, julho, agosto e setembro até o dia 21 em estado crítico; do dia 21 até agora no prazo.")],
+      [txt("Há "), num(fmtInt(p.pendentes.itens)), txt(" lotes pendentes totalizando "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — junho a setembro (até dia 21) críticos, do dia 21 até hoje no prazo.")],
+      [txt("Produção pendente: "), num(fmtInt(p.pendentes.itens)), txt(" lotes com "), num(fmtTonDec(p.pendentes.totalTon)), txt(" — junho, julho, agosto e setembro até o dia 21 críticos; do dia 21 em diante dentro do prazo.")],
     ]));
   }
 
