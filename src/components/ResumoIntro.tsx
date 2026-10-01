@@ -74,11 +74,11 @@ function prepararSlides(
     if (reservados) {
       linhas.push({ label: "Reservado", valor: `R$ ${(reservados.totalValor / 1e6).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} mi` });
     }
+    if (reservados && valorFaturado) {
+      linhas.push({ label: "Prev. reserva", valor: `R$ ${((reservados.totalTon * valorFaturado) / 1e6).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} mi` });
+    }
     if (previsto) {
       linhas.push({ label: "Prev. estoque", valor: previsto.valor });
-    }
-    if (reservados && valorFaturado) {
-      linhas.push({ label: "Prev. reserva", valor: fmtMoeda(reservados.totalTon * valorFaturado) });
     }
     if (linhas.length >= 3) {
       slides.push({
