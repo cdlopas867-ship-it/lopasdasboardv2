@@ -4,10 +4,12 @@
    Layout enxuto para caber na tela sem cortar. */
 
 import { cn } from "@/lib/utils";
-import { fmtInt, fmtMoeda, fmtPct, fmtPeso } from "@/lib/format";
+import { fmtInt, fmtMoeda, fmtPct, fmtPeso, fmtBrMax } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import {
   ITENS_FORA_DE_LINHA,
+  POSICAO_EM_LINHA,
+  POSICAO_FORA_DE_LINHA,
   POSICAO_TOTAL,
   type ItemForaDeLinha,
   type PosicaoEstoque,
@@ -84,6 +86,8 @@ export function calcularForaDeLinhaPorCategoria(itens: ItemForaDeLinha[] = ITENS
 
 export default function CenaForaDeLinha({ anim, foraDeLinha, onPausar }: { anim: boolean; foraDeLinha?: ForaDeLinhaProp | null; onPausar?: () => void }) {
   const itens = foraDeLinha?.itens ?? ITENS_FORA_DE_LINHA;
+  const posicaoEmLinha = foraDeLinha?.posicaoEmLinha ?? POSICAO_EM_LINHA;
+  const posicaoFora = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const posicaoTotal = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
   const cats = calcularForaDeLinhaPorCategoria(itens);
   const totalValor = cats.reduce((s, c) => s + c.valorEstoque, 0);
@@ -95,54 +99,86 @@ export default function CenaForaDeLinha({ anim, foraDeLinha, onPausar }: { anim:
   const totalPesoReservadoKg = cats.reduce((s, c) => s + c.pesoReservadoKg, 0);
   const maxValor = Math.max(...cats.map((c) => c.valorEstoque), 1);
 
+  /* Dados para comparação Em Linha × Fora de Linha */
+  const grupos = [
+    { pos: posicaoEmLinha, cor: "#34d399", rotulo: "Em Linha" },
+    { pos: posicaoFora, cor: "#fbbf24", rotulo: "Fora de Linha" },
+  ];
+
   return (
     <div className="w-full">
       <div className="flex items-center gap-2">
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-          Fora de Linha · por categoria
+          Em Linha × Fora de Linha
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Itens descontinuados que ainda ocupam espaço no CD. Percentual do valor e peso que estes itens representam do total do estoque. Fonte: planilha de itens fora de linha. Atualizado em 24/09/2026." />
+        <InfoTooltip onOpen={onPausar} texto="Comparativo entre itens em linha (ativos) e fora de linha (descontinuados). Inclui itens, saldo, valor em estoque, reservas e massa. Fonte: planilha 'Estoque Em Linha x Fora de Linha'. Atualizado em 24/09/2026." />
       </div>
 
-      {/* Destaque — itens, valor e participação no total */}
-      <div className="video-sobe mt-2 flex flex-wrap items-baseline gap-x-6 gap-y-1" style={{ animationDelay: "0.1s" }}>
-        <p className="font-serif text-2xl text-white sm:text-3xl">
-          {fmtInt(totalItens)} <span className="text-sm text-white/60 sm:text-base">itens</span>
-        </p>
-        <p className="font-serif text-xl text-brand-amber sm:text-2xl">
-          {fmtMoeda(totalValor)}
-        </p>
-        <p className="text-xs text-white/50 sm:text-sm">
-          {fmtPct(totalValor / posicaoTotal.valorEstoque)} do valor total
-        </p>
-        <span className="rounded-full border border-brand-amber/40 bg-brand-amber/15 px-2.5 py-0.5 text-xs font-semibold text-brand-amber sm:text-sm">
-          {fmtPeso(totalPesoReservadoKg)} reservados
-        </span>
-      </div>
-
-      {/* Cards por categoria */}
-      <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
-        {cats.map((c, i) => (
-          <div
-            key={c.nome}
-            className="video-sobe rounded-xl border border-white/15 bg-white/5 px-2 py-2 text-center sm:px-3"
-            style={{ animationDelay: `${0.15 * (i + 1)}s` }}
-          >
-            <div className="flex items-center justify-center gap-1.5">
-              <span className="size-2 rounded-full" style={{ background: c.cor }} />
-              <p className="truncate text-[9px] font-bold tracking-widest text-white/60 uppercase sm:text-[10px]">
-                {c.curto}
+      {/* Comparação Em Linha × Fora de Linha */}
+      <div className="video-sobe mt-3 grid grid-cols-2 gap-2.5" style={{ animationDelay: "0.1s" }}>
+        {grupos.map((g) => {
+          const pctValor = g.pos.valorEstoque / posicaoTotal.valorEstoque;
+          const pctItens = g.pos.itens / posicaoTotal.itens;
+          return (
+            <div
+              key={g.rotulo}
+              className="rounded-xl border border-white/15 bg-white/5 p-2.5"
+              style={{ borderColor: `${g.cor}40` }}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full" style={{ background: g.cor }} />
+                <p className="text-[10px] font-bold tracking-widest text-white/70 uppercase">{g.rotulo}</p>
+              </div>
+              <p className="mt-1.5 font-serif text-xl text-white sm:text-2xl">
+                {fmtInt(g.pos.itens)} <span className="text-[10px] text-white/50">itens</span>
               </p>
+              <div className="mt-1.5 space-y-0.5 text-[10px] text-white/70">
+                <div className="flex justify-between">
+                  <span className="text-white/45">Valor</span>
+                  <span className="font-mono font-semibold text-white">{fmtMoeda(g.pos.valorEstoque)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/45">Saldo</span>
+                  <span className="font-mono font-semibold text-white">{fmtInt(g.pos.saldoFocco)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/45">Reservado</span>
+                  <span className="font-mono font-semibold text-white">{fmtMoeda(g.pos.valorReservado)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/45">Massa</span>
+                  <span className="font-mono font-semibold text-white">{fmtBrMax(g.pos.pesoTon, 1)} t</span>
+                </div>
+                <div className="flex justify-between border-t border-white/10 pt-0.5">
+                  <span className="text-white/45">% valor</span>
+                  <span className="font-mono font-bold" style={{ color: g.cor }}>{fmtPct(pctValor)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/45">% itens</span>
+                  <span className="font-mono font-bold" style={{ color: g.cor }}>{fmtPct(pctItens)}</span>
+                </div>
+              </div>
             </div>
-            <p className="mt-1 font-serif text-lg text-white sm:text-xl">
-              {fmtInt(c.itens)} <span className="text-[9px] text-white/45">itens</span>
-            </p>
-            <div className="mt-1 flex items-baseline justify-center gap-2">
-              <span className="font-mono text-[12px] font-bold text-white sm:text-sm">{fmtMoeda(c.valorEstoque)}</span>
-              <span className="font-mono text-[10px] text-white/55">{fmtPeso(c.pesoKg)}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
+      </div>
+
+      {/* Barra de proporção do valor */}
+      <div className="video-sobe mt-2" style={{ animationDelay: "0.2s" }}>
+        <div className="flex h-3 overflow-hidden rounded-full">
+          <div
+            className={cn("video-barra-x h-full", !anim && "video-pausada")}
+            style={{ width: `${(posicaoEmLinha.valorEstoque / posicaoTotal.valorEstoque) * 100}%`, background: "#34d399", animationDelay: "0.3s" }}
+          />
+          <div
+            className={cn("video-barra-x h-full", !anim && "video-pausada")}
+            style={{ width: `${(posicaoFora.valorEstoque / posicaoTotal.valorEstoque) * 100}%`, background: "#fbbf24", animationDelay: "0.4s" }}
+          />
+        </div>
+        <div className="mt-1 flex justify-between text-[9px] font-bold text-white/50">
+          <span className="text-emerald-400">{fmtPct(posicaoEmLinha.valorEstoque / posicaoTotal.valorEstoque)} em linha</span>
+          <span className="text-brand-amber">{fmtPct(posicaoFora.valorEstoque / posicaoTotal.valorEstoque)} fora de linha</span>
+        </div>
       </div>
 
       {/* Tabela resumo — barras inline no valor */}

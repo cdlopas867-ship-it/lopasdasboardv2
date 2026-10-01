@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtTonDec, fmtMoeda, fmtMoeda2, fmtPct, fmtPeso } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { GraficoMotivoMensal } from "@/components/GraficoMotivoMensal";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
-import { imagemAvaria, temImagemAvaria } from "@/data/avarias-imagens";
+import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
+
 import { POSICAO_FORA_DE_LINHA, POSICAO_EM_LINHA, POSICAO_TOTAL, ITENS_FORA_DE_LINHA, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
 export type VideoForaDeLinha = {
@@ -71,28 +71,6 @@ export default function CenasApresentacao({
   onReiniciar,
   onPausar,
 }: Props) {
-  const [tipoSel, setTipoSel] = useState<number | null>(null);
-  /* Auto-abertura dos cards da Cena 1: cards surgem fechados, abrem um por um
-     (2 s entre cada) e fecham todos após 2 minutos. */
-  const [autoOpenCount, setAutoOpenCount] = useState(0);
-  const [autoCloseAll, setAutoCloseAll] = useState(false);
-
-  useEffect(() => {
-    if (cena !== 0) return;
-    setAutoOpenCount(0);
-    setAutoCloseAll(false);
-    const totalCards = kpis.length + 1; // +1 = card Fora de linha
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    for (let i = 1; i <= totalCards; i++) {
-      timers.push(setTimeout(() => setAutoOpenCount(i), i * 2000));
-    }
-    timers.push(setTimeout(() => {
-      setAutoCloseAll(true);
-      setAutoOpenCount(0);
-    }, 120000));
-    return () => timers.forEach(clearTimeout);
-  }, [cena, kpis.length]);
-
   const maxDia = semana ? Math.max(...semana.dias.map((d) => d.ton), 1) : 1;
   const totalTurnoTon = turnos.reduce((s, t) => s + (t.ton ?? 0), 0);
   const turnoPrincipal = turnos.length ? turnos.reduce((a, b) => (b.pct > a.pct ? b : a)) : null;
@@ -106,61 +84,13 @@ export default function CenasApresentacao({
 
   return (
     <>
-      {/* Cena 1 — KPIs de abertura (clique para ver o resumo) */}
+      {/* Cena 1 — KPIs de abertura em destaque (um card por vez, centralizado) */}
       {cena === 0 && (
-        <div>
-          <div className="flex items-center justify-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Resumo do CD · {new Date().getFullYear()}
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Indicadores principais do CD Lopas. Valor em estoque = custo médio × saldo de cada item. Peças e massa somadas de todos os itens ativos. Ocupação = posições ocupadas ÷ total de endereços (5.970). Fonte: planilha de saldo de itens do Google Drive. Atualizado em 28/09/2026." />
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-            {kpis.map((k, i) => (
-              <KpiCenaCard key={k.rotulo} kpi={k} index={i} onPausar={onPausar} autoOpen={!autoCloseAll && i < autoOpenCount} />
-            ))}
-            {/* Fora de linha — card expansível no mesmo estilo dos KPIs */}
-            <ForaDeLinhaCard index={kpis.length} onPausar={onPausar} foraDeLinha={foraDeLinha} autoOpen={!autoCloseAll && kpis.length < autoOpenCount} />
-          </div>
-        </div>
-      )}
-
-      {/* Cena 2 — participação das unidades (barras) */}
-      {cena === 1 && (
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Valor por unidade
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Participação de cada unidade no valor total do estoque. Cálculo: (valor da unidade ÷ valor total) × 100. Guarda-Roupas = 53%, Salas = 22,7%, Complementos = 24,2%. Fonte: planilha de saldo de itens do Google Drive. Atualizado em 28/09/2026." />
-          </div>
-          <div className="mt-8 space-y-7">
-            {unidades.map((u, i) => (
-              <div key={u.nome} className="video-sobe" style={{ animationDelay: `${0.12 * i}s` }}>
-                <div className="mb-2 flex items-baseline justify-between">
-                  <span className="font-serif text-2xl text-white sm:text-3xl">{u.nome}</span>
-                  <span className="text-sm font-bold text-white">
-                    {u.valor}{" "}
-                    <span className="text-white/50">· {fmtBrMax(u.share, 1)}%</span>
-                  </span>
-                </div>
-                <div className="h-4 overflow-hidden rounded-full bg-white/15">
-                  <div
-                    className={cn(
-                      "video-barra-x h-full rounded-full bg-gradient-to-r from-white/85 to-white",
-                      !anim && "video-pausada",
-                    )}
-                    style={{ width: `${u.share}%`, animationDelay: `${0.12 * i + 0.2}s` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
       {/* Cena 3 — ocupação (donut) */}
-      {cena === 2 && (
+      {cena === 1 && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -241,7 +171,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 4 — recebimento da semana (barras por dia) */}
-      {cena === 3 && semana && (
+      {cena === 2 && semana && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -293,7 +223,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 5 — recebimento por turno (formato ocupação do CD) */}
-      {cena === 4 && (
+      {cena === 3 && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -386,7 +316,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 6 — recebido × carregado por mês (destaque: agosto) */}
-      {cena === 5 && (
+      {cena === 4 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -546,212 +476,19 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 8 — avarias por mês (todos os meses, destaque: agosto) */}
+      {/* Cena 6 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
+      {cena === 5 && (
+        <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
+      )}
+
+      {/* Cena 7 — pendências de produção */}
       {cena === 6 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Avarias
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Volumes avariados registrados no CD. Total de 3.276 volumes (Soma de Quantidade). Distribuição mensal conferida com a tabela oficial. Custos parciais (em apuração). Fonte: planilha de avarias + tabela de referência de motivos. Janeiro a setembro de 2026." />
-          </div>
-          {avarias ? (
-            <>
-              <div className="video-sobe mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-1">
-                <p className="font-serif text-3xl text-white sm:text-5xl">
-                  {fmtInt(avarias.total)}{" "}
-                  <span className="text-base text-white/60 sm:text-lg">volumes</span>
-                </p>
-              </div>
-              {avarias.referenciaParcial && <p className="mt-1 text-xs text-white/60">Distribuição mensal conferida na tabela oficial · custos parciais.</p>}
-              <div className="mt-5 flex h-32 items-end justify-between gap-2 sm:gap-4">
-                {avarias.meses.map((m, i) => {
-                  const max = Math.max(...avarias.meses.map((x) => x.qtd), 1);
-                  const destaque = m.mes.toUpperCase().startsWith("AGO");
-                  return (
-                    <div key={m.mes} className="flex h-full flex-1 flex-col justify-end">
-                      <p
-                        className={cn(
-                          "video-sobe mb-1.5 text-center font-mono text-[11px] font-bold",
-                          destaque ? "text-brand-amber" : "text-white/85",
-                        )}
-                        style={{ animationDelay: `${0.12 * i + 0.5}s` }}
-                      >
-                        {fmtInt(m.qtd)}
-                      </p>
-                      <div
-                        className={cn(
-                          "video-barra-y w-full rounded-t-lg",
-                          destaque
-                            ? "bg-gradient-to-t from-brand-amber/80 to-brand-amber shadow-[0_0_18px_rgba(241,196,15,0.35)]"
-                            : "bg-gradient-to-t from-red-500/60 to-red-400",
-                          !anim && "video-pausada",
-                        )}
-                        style={{
-                          height: `${Math.max((m.qtd / max) * 100, 4)}%`,
-                          animationDelay: `${0.12 * i + 0.2}s`,
-                        }}
-                      />
-                      <p
-                        className={cn(
-                          "mt-2 truncate text-center text-[10px] font-bold uppercase",
-                          destaque ? "text-brand-amber" : "text-white/70",
-                        )}
-                      >
-                        {m.mes.slice(0, 3)}
-                        {destaque && " ★"}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-5">
-                <p className="text-[10px] font-bold tracking-[0.3em] text-white/50 uppercase">
-                  Motivo mais frequente por mês
-                </p>
-                <div className="mt-3 flex h-32 items-end justify-between gap-2 sm:gap-4">
-                  {avarias.motivoMes.map((m, i) => {
-                    const max = Math.max(...avarias.motivoMes.map((x) => x.qtd), 1);
-                    const destaque = m.mes.toUpperCase().startsWith("AGO");
-                    return (
-                      <div key={m.mes} className="flex h-full flex-1 flex-col justify-end">
-                        <p
-                          className={cn(
-                            "video-sobe mb-1.5 text-center font-mono text-[11px] font-bold",
-                            destaque ? "text-brand-amber" : "text-white/85",
-                          )}
-                          style={{ animationDelay: `${0.12 * i + 0.5}s` }}
-                        >
-                          {fmtInt(m.qtd)}
-                        </p>
-                        <div
-                          className={cn(
-                            "video-barra-y w-full rounded-t-lg",
-                            destaque
-                              ? "bg-gradient-to-t from-brand-amber/80 to-brand-amber shadow-[0_0_18px_rgba(241,196,15,0.35)]"
-                              : "bg-gradient-to-t from-white/25 to-white/55",
-                            !anim && "video-pausada",
-                          )}
-                          style={{
-                            height: `${Math.max((m.qtd / max) * 100, 4)}%`,
-                            animationDelay: `${0.12 * i + 0.3}s`,
-                          }}
-                        />
-                        <p
-                          className={cn(
-                            "mt-1 truncate text-center text-[10px] font-bold uppercase",
-                            destaque ? "text-brand-amber" : "text-white/70",
-                          )}
-                        >
-                          {m.mes.slice(0, 3)}
-                          {destaque && " ★"}
-                        </p>
-                        <p
-                          className="line-clamp-2 text-center text-[9px] leading-tight break-words text-white/50"
-                          title={m.motivo}
-                        >
-                          {m.motivo}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          ) : (
-            <p className="video-sobe mt-8 font-serif text-3xl text-white/70">
-              Sem registros de avarias.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Cena 9 — comparativo de tipos de avaria por mês */}
-      {cena === 7 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Avarias por tipo · mês a mês
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Detalhamento das avarias por tipo, com evolução mês a mês. Percentual = ocorrências do tipo ÷ total de avarias. Clique em um tipo para ver o gráfico detalhado. Fonte: planilha de avarias do CD. Janeiro a setembro de 2026." />
-          </div>
-          {avarias?.tipos?.length ? (
-            <>
-            {avarias.referenciaParcial && <p className="mt-1 text-xs text-white/60">Totais e distribuição mensal conferidos · custo parcial.</p>}
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-              {avarias.tipos.map((t, i) => {
-                const maxMes = Math.max(...t.meses.map((m) => m.qtd), 1);
-                const imagem = imagemAvaria(t.tipo);
-                const temImg = temImagemAvaria(t.tipo);
-                return (
-                  <button
-                    type="button"
-                    key={t.tipo}
-                    onClick={() => {
-                      setTipoSel(i);
-                      onPausar?.();
-                    }}
-                    className="video-sobe group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-white/20 bg-white/5 text-left transition-all hover:border-primary/50 hover:bg-white/10"
-                    style={{ animationDelay: `${0.12 * i}s` }}
-                  >
-                    {temImg ? (
-                      <div className="relative h-10 overflow-hidden sm:h-12">
-                        <img src={imagem} alt={t.tipo} className="h-full w-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                        <p className="absolute bottom-0.5 left-1.5 right-1.5 truncate text-[8px] font-bold tracking-wider text-white uppercase sm:text-[9px]">
-                          {t.tipo}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="px-1.5 pt-1.5">
-                        <p className="truncate text-[8px] font-bold tracking-wider text-white uppercase sm:text-[9px]">
-                          {t.tipo}
-                        </p>
-                      </div>
-                    )}
-                    <div className="p-1.5 sm:p-2">
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-serif text-base text-white sm:text-lg">{fmtInt(t.total)}</span>
-                        <span className="font-mono text-[9px] font-bold text-white/60">{fmtBrMax(t.pct, 1)}%</span>
-                      </div>
-                      <div className="my-1 h-1 rounded-full" style={{ background: t.cor }} />
-                      <div className="flex h-7 items-stretch gap-0.5 sm:gap-1">
-                        {t.meses.map((m, mi) => (
-                          <div key={m.mes} className="flex h-full flex-1 flex-col items-center justify-end gap-0.5">
-                            <div
-                              className={cn("video-barra-y w-full rounded-t-full", !anim && "video-pausada")}
-                              style={{
-                                height: `${Math.max((m.qtd / maxMes) * 100, 6)}%`,
-                                background: t.cor,
-                                animationDelay: `${0.12 * i + 0.3 + 0.08 * mi}s`,
-                              }}
-                            />
-                            <span className="text-[6px] font-bold tracking-wider text-white/40 uppercase">{m.mes}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            </>
-          ) : (
-            <p className="video-sobe mt-8 font-serif text-3xl text-white/70">
-              Sem dados de tipos de avaria.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Cena 10 — pendências de produção */}
-      {cena === 8 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Pendências de produção
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Crítico = ordens com data final no mês passado. No prazo = mês atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
+            <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Crítico = ordens com data final em qualquer mês anterior ao atual. No prazo = apenas ordens do mês atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
           </div>
           {pendentes ? (
             <>
@@ -853,8 +590,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 11 — itens reservados: cruzamento peso, quantidade e valor */}
-      {cena === 9 && reservados && (
+      {/* Cena 8 — itens reservados: cruzamento peso, quantidade e valor */}
+      {cena === 7 && reservados && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -947,11 +684,43 @@ export default function CenasApresentacao({
               * Valores em milhões de reais. Toneladas com 1 casa decimal.
             </p>
           </div>
+
+          {/* Valor previsto da reserva — integrado na mesma cena */}
+          {valorFaturado && (
+            <div className="video-sobe mt-5 w-full max-w-sm mx-auto border-t border-white/10 pt-5" style={{ animationDelay: "0.7s" }}>
+              <div className="flex items-center justify-center gap-2">
+                <p className="text-[10px] font-bold tracking-[0.3em] text-white/60 uppercase">
+                  Valor Previsto da Reserva
+                </p>
+                <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
+              </div>
+              <p className="mt-2 text-center font-serif text-3xl text-primary sm:text-4xl">
+                {fmtMoeda(reservados.totalTon * valorFaturado)}
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 text-center">
+                  <p className="font-serif text-base text-white sm:text-lg">{fmtTonDec(reservados.totalTon)}</p>
+                  <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">Ton. reserv.</p>
+                </div>
+                <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 text-center">
+                  <p className="font-serif text-base text-white sm:text-lg">× {fmtMoeda2(valorFaturado)}</p>
+                  <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">R$/t faturado</p>
+                </div>
+                <div className="rounded-xl border border-primary/30 bg-primary/10 p-2.5 text-center">
+                  <p className="font-serif text-base text-primary sm:text-lg">{fmtBrMax(reservados.pctValor, 1)}%</p>
+                  <p className="text-[7px] font-bold tracking-widest text-primary uppercase">do valor</p>
+                </div>
+              </div>
+              <p className="mt-2 text-center text-[9px] text-white/40">
+                Toneladas reservadas × valor faturado = valor previsto da reserva
+              </p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Cena 12 fallback — sem dados de reservados */}
-      {cena === 9 && !reservados && (
+      {/* Cena 8 fallback — sem dados de reservados */}
+      {cena === 7 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -968,73 +737,23 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 13 — valor previsto da reserva (faturado × toneladas) */}
-      {cena === 10 && reservados && valorFaturado ? (
-        <div className="flex w-full flex-col items-center">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Valor Previsto da Reserva
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
-          </div>
-          <p className="video-sobe mt-3 font-serif text-4xl text-primary sm:text-5xl" style={{ animationDelay: "0.15s" }}>
-            {fmtMoeda(reservados.totalTon * valorFaturado)}
-          </p>
-          <div className="video-sobe mt-4 grid w-full max-w-sm grid-cols-3 gap-2 sm:gap-3" style={{ animationDelay: "0.3s" }}>
-            <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-center">
-              <p className="font-serif text-lg text-white sm:text-xl">{fmtTonDec(reservados.totalTon)}</p>
-              <p className="text-[8px] font-bold tracking-widest text-white/50 uppercase">Ton. reserv.</p>
-            </div>
-            <div className="rounded-xl border border-white/15 bg-white/5 p-3 text-center">
-              <p className="font-serif text-lg text-white sm:text-xl">× {fmtMoeda2(valorFaturado)}</p>
-              <p className="text-[8px] font-bold tracking-widest text-white/50 uppercase">R$/t faturado</p>
-            </div>
-            <div className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-center">
-              <p className="font-serif text-lg text-primary sm:text-xl">{fmtBrMax(reservados.pctValor, 1)}%</p>
-              <p className="text-[8px] font-bold tracking-widest text-primary uppercase">do valor</p>
-            </div>
-          </div>
-          <p className="video-sobe mt-3 text-[10px] text-white/45" style={{ animationDelay: "0.45s" }}>
-            Toneladas reservadas × valor faturado = valor previsto da reserva
-          </p>
-        </div>
-      ) : null}
-
-      {/* Cena 13 fallback — sem valor faturado ou reservados */}
-      {cena === 10 && (!reservados || !valorFaturado) && (
-        <div className="flex flex-col items-center py-6 text-center">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Valor Previsto da Reserva
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
-          </div>
-          <p className="video-sobe font-serif text-3xl text-white/70">
-            Valor previsto indisponível.
-          </p>
-          <p className="video-sobe mt-2 text-sm text-white/50" style={{ animationDelay: "0.15s" }}>
-            Configure o valor faturado e importe os dados de reservados.
-          </p>
-        </div>
-      )}
-
-      {/* Cena 14 — Fora de linha por categoria */}
-      {cena === 11 && (
+      {/* Cena 9 — Fora de linha por categoria */}
+      {cena === 8 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
-      {/* Cena 14 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 12 && (
+      {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 9 && (
         <CenaTonelagemEstoque anim={anim} />
       )}
 
-      {/* Cena 14 — Saúde do estoque (donut) */}
-      {cena === 13 && (
+      {/* Cena 11 — Saúde do estoque (donut) */}
+      {cena === 10 && (
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
-      {/* Cena 15 — encerramento */}
-      {cena === 14 && (
+      {/* Cena 12 — encerramento */}
+      {cena === 11 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -1053,188 +772,214 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Modal — gráfico mês a mês do tipo de avaria selecionado */}
-      {tipoSel !== null && avarias?.tipos?.[tipoSel] && (
-        <GraficoMotivoMensal
-          titulo={avarias.tipos[tipoSel].tipo}
-          imagem={imagemAvaria(avarias.tipos[tipoSel].tipo)}
-          cor={avarias.tipos[tipoSel].cor}
-          meses={avarias.tipos[tipoSel].meses}
-          total={avarias.tipos[tipoSel].total}
-          pct={avarias.tipos[tipoSel].pct}
-          onClose={() => setTipoSel(null)}
-        />
-      )}
     </>
   );
 }
 
-/* Card de KPI da Cena 1 — clica para expandir o resumo com detalhe e breakdown */
-function KpiCenaCard({
-  kpi,
-  index,
+/* Cena 1 — carrossel de destaque: os cards abrem um a um e só o card aberto
+   aparece centralizado na tela, ganhando todo o destaque. Avança sozinho e
+   também por clique nos indicadores; clicar no card pausa/retoma o ciclo. */
+function CenaKpisFoco({
+  kpis,
+  foraDeLinha,
   onPausar,
-  autoOpen,
+}: {
+  kpis: VideoKpi[];
+  foraDeLinha?: VideoForaDeLinha | undefined;
+  onPausar?: (() => void) | undefined;
+}) {
+  const total = kpis.length + 1; // +1 = card Fora de linha
+  const [foco, setFoco] = useState(0);
+  const [pausado, setPausado] = useState(false);
+
+  useEffect(() => {
+    if (pausado) return;
+    const t = setTimeout(() => setFoco((f) => (f + 1) % total), 4800);
+    return () => clearTimeout(t);
+  }, [foco, pausado, total]);
+
+  /* Navegação por teclado: seta direita = próximo, seta esquerda = anterior */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") setFoco((f) => (f + 1) % total);
+      else if (e.key === "ArrowLeft") setFoco((f) => (f - 1 + total) % total);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [total]);
+
+  const ehForaDeLinha = foco >= kpis.length;
+  const kpi = !ehForaDeLinha ? kpis[foco] : null;
+  const togglePausar = () => {
+    const next = !pausado;
+    setPausado(next);
+    if (next) onPausar?.();
+  };
+  const avancar = () => setFoco((f) => (f + 1) % total);
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="flex items-center justify-center gap-2">
+        <p className="video-sobe text-[11px] font-medium tracking-[0.4em] text-white/70 uppercase">
+          Resumo do CD · {new Date().getFullYear()}
+        </p>
+        <InfoTooltip onOpen={onPausar} texto="Indicadores principais do CD Lopas. Valor em estoque = custo médio × saldo de cada item. Peças e massa somadas de todos os itens ativos. Ocupação = posições ocupadas ÷ total de endereços (5.970). Fonte: planilha de saldo de itens do Google Drive. Atualizado em 28/09/2026." />
+      </div>
+
+      {/* Apenas o card aberto aparece, centralizado e em destaque */}
+      <div className="relative mt-10 flex w-full max-w-[19rem] items-center justify-center">
+        {/* halo suave atrás do card para destacar sem peso */}
+        <div className="card-foco-halo pointer-events-none absolute inset-0" aria-hidden />
+        {/* Seta esquerda */}
+        <button
+          type="button"
+          onClick={() => setFoco((f) => (f - 1 + total) % total)}
+          className="absolute -left-10 z-10 flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white sm:-left-12"
+          aria-label="Card anterior"
+        >
+          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <div key={foco} className="card-foco-entra relative w-full">
+          {kpi ? (
+            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} onAvancar={avancar} />
+          ) : (
+            <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} onAvancar={avancar} />
+          )}
+        </div>
+        {/* Seta direita */}
+        <button
+          type="button"
+          onClick={avancar}
+          className="absolute -right-10 z-10 flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white sm:-right-12"
+          aria-label="Próximo card"
+        >
+          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
+      </div>
+
+      {/* Indicadores — pílulas delicadas, a ativa alonga-se */}
+      <div className="mt-8 flex items-center gap-1.5">
+        {Array.from({ length: total }).map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setFoco(i)}
+            aria-label={`Card ${i + 1}`}
+            className={cn(
+              "h-1 rounded-full transition-all duration-500",
+              i === foco ? "w-7 bg-primary" : "w-3 bg-white/20 hover:bg-white/40",
+            )}
+          />
+        ))}
+      </div>
+      <p className="mt-4 text-[8px] font-medium tracking-[0.4em] text-white/30 uppercase">
+        Clique no card ou use as setas ← →
+      </p>
+    </div>
+  );
+}
+
+/* Vidro refinado compartilhado pelos cards de destaque */
+const cardFocoBase =
+  "group block w-full cursor-pointer rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4 text-center backdrop-blur-xl shadow-[0_20px_50px_-36px_rgba(0,0,0,0.7)] transition-all duration-500 hover:border-white/20 hover:bg-white/[0.06] sm:p-5";
+
+/* Card de KPI em destaque — centralizado, grande, com o resumo sempre aberto */
+function CardFocoKpi({
+  kpi,
+  onTogglePausar,
+  onAvancar,
 }: {
   kpi: VideoKpi;
-  index: number;
-  onPausar?: (() => void) | undefined;
-  autoOpen?: boolean;
+  onTogglePausar: () => void;
+  onAvancar: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (autoOpen !== undefined) setOpen(autoOpen);
-  }, [autoOpen]);
   return (
-    <button
-      type="button"
-      onClick={() => {
-        const next = !open;
-        setOpen(next);
-        if (next) onPausar?.();
-      }}
-      aria-expanded={open}
-      className={cn(
-        "video-sobe cursor-pointer rounded-xl border p-3 text-center transition-colors sm:p-4",
-        open ? "border-[#889988]/60 bg-white/10" : "border-[#889988]/40 bg-white/5 hover:border-[#889988]/60 hover:bg-white/10",
-      )}
-      style={{ animationDelay: `${0.15 * (index + 1)}s` }}
-    >
-      <div className="flex items-start justify-between">
-        <p className="font-serif text-lg tracking-tight text-white sm:text-2xl">
-          {kpi.valor}
-        </p>
-        <span
-          className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-full border border-[#889988]/50 text-xs text-white transition-transform duration-300",
-            open && "rotate-45 border-white bg-white text-brand-dark",
-          )}
-        >
-          +
-        </span>
-      </div>
-      <p className="mt-2 text-[10px] font-bold tracking-widest text-white/55 uppercase">
+    <button type="button" onClick={onAvancar} className={cardFocoBase}>
+      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
+        {kpi.valor}
+      </p>
+      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-primary/80 uppercase">
         {kpi.rotulo}
       </p>
       {kpi.detalhe && (
-        <div className={cn("expand-grid", open && "expand-grid-open")}>
-          <div>
-            <p className="pt-4 text-left text-sm leading-relaxed text-white/70">
-              {kpi.detalhe}
-            </p>
-            {kpi.extra?.length ? (
-              <dl className="mt-3 space-y-1.5 border-t border-white/20 pt-3 text-left">
-                {kpi.extra.map(([k, v], ki) => (
-                  <div key={`${k}-${ki}`} className="flex justify-between text-xs">
-                    <dt className="text-white/50">{k}</dt>
-                    <dd className="font-semibold text-white">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : null}
-          </div>
-        </div>
+        <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
+          {kpi.detalhe}
+        </p>
       )}
-      <span className="mt-2 block text-[10px] font-medium tracking-widest text-primary uppercase">
-        {open ? "Recolher" : "Ver resumo"}
-      </span>
+      {kpi.extra?.length ? (
+        <dl className="mt-3 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
+          {kpi.extra.map(([k, v], ki) => (
+            <div key={`${k}-${ki}`} className="flex items-baseline justify-between py-1.5 text-[10px] sm:text-[11px]">
+              <dt className="text-white/45">{k}</dt>
+              <dd className="font-medium text-white/90">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
     </button>
   );
 }
 
-/* Card de "fora de linha" — mesmo visual do KpiCenaCard, com dados de itens
-   descontinuados que ainda ocupam o CD. */
-function ForaDeLinhaCard({
-  index,
-  onPausar,
+/* Card de "fora de linha" em destaque — acento âmbar, resumo aberto */
+function CardFocoForaDeLinha({
   foraDeLinha,
-  autoOpen,
+  onTogglePausar,
+  onAvancar,
 }: {
-  index: number;
-  onPausar?: (() => void) | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
-  autoOpen?: boolean;
+  onTogglePausar: () => void;
+  onAvancar: () => void;
 }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (autoOpen !== undefined) setOpen(autoOpen);
-  }, [autoOpen]);
   const pos = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const total = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
   const pctValor = pos.valorEstoque / total.valorEstoque;
   return (
     <button
       type="button"
-      onClick={() => {
-        const next = !open;
-        setOpen(next);
-        if (next) onPausar?.();
-      }}
-      aria-expanded={open}
-      className={cn(
-        "video-sobe cursor-pointer rounded-xl border p-3 text-center transition-colors sm:p-4",
-        open ? "border-brand-amber/60 bg-brand-amber/10" : "border-brand-amber/30 bg-brand-amber/5 hover:border-brand-amber/50 hover:bg-brand-amber/10",
-      )}
-      style={{ animationDelay: `${0.15 * (index + 1)}s` }}
+      onClick={onAvancar}
+      className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
     >
-      <div className="flex items-start justify-between">
-        <p className="font-serif text-lg tracking-tight text-white sm:text-2xl">
-          {fmtPct(pctValor)}
-        </p>
-        <span
-          className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-full border border-brand-amber/50 text-xs text-white transition-transform duration-300",
-            open && "rotate-45 border-white bg-white text-brand-dark",
-          )}
-        >
-          +
-        </span>
-      </div>
-      <p className="mt-2 text-[10px] font-bold tracking-widest text-brand-amber uppercase">
+      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
+        {fmtPct(pctValor)}
+      </p>
+      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-brand-amber/80 uppercase">
         Fora de linha
       </p>
-      <div className={cn("expand-grid", open && "expand-grid-open")}>
-        <div>
-          <p className="pt-4 text-left text-sm leading-relaxed text-white/70">
-            {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtMoeda(pos.valorEstoque)} em
-            custo ({fmtPct(pctValor)} do valor total) e {fmtPeso(pos.pesoTon * 1000)} de massa
-            ({fmtPct(pos.pesoTon / total.pesoTon)} do peso total).
-          </p>
-          <dl className="mt-3 space-y-1.5 border-t border-white/20 pt-3 text-left">
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Itens fora de linha</dt>
-              <dd className="font-semibold text-white">{fmtInt(pos.itens)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Valor em estoque</dt>
-              <dd className="font-semibold text-white">{fmtMoeda(pos.valorEstoque)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Valor reservado</dt>
-              <dd className="font-semibold text-white">{fmtMoeda(pos.valorReservado)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Massa total</dt>
-              <dd className="font-bold text-brand-amber text-sm">{fmtPeso(pos.pesoTon * 1000)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Massa reservada</dt>
-              <dd className="font-bold text-brand-amber text-sm">{fmtPeso(pos.pesoReservadoTon * 1000)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Saldo físico</dt>
-              <dd className="font-semibold text-white">{fmtInt(pos.saldoFocco)} un</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Disponível</dt>
-              <dd className="font-semibold text-white">{fmtInt(pos.disponivel)} un</dd>
-            </div>
-          </dl>
+      <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
+        {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtMoeda(pos.valorEstoque)} em
+        custo ({fmtPct(pctValor)} do valor total) e {fmtPeso(pos.pesoTon * 1000)} de massa
+        ({fmtPct(pos.pesoTon / total.pesoTon)} do peso total).
+      </p>
+      <dl className="mt-2.5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Itens fora de linha</dt>
+          <dd className="font-medium text-white/90">{fmtInt(pos.itens)}</dd>
         </div>
-      </div>
-      <span className="mt-2 block text-[10px] font-medium tracking-widest text-primary uppercase">
-        {open ? "Recolher" : "Ver resumo"}
-      </span>
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Valor em estoque</dt>
+          <dd className="font-medium text-white/90">{fmtMoeda(pos.valorEstoque)}</dd>
+        </div>
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Valor reservado</dt>
+          <dd className="font-medium text-white/90">{fmtMoeda(pos.valorReservado)}</dd>
+        </div>
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Massa total</dt>
+          <dd className="font-medium text-brand-amber">{fmtPeso(pos.pesoTon * 1000)}</dd>
+        </div>
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Massa reservada</dt>
+          <dd className="font-medium text-brand-amber">{fmtPeso(pos.pesoReservadoTon * 1000)}</dd>
+        </div>
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Saldo físico</dt>
+          <dd className="font-medium text-white/90">{fmtInt(pos.saldoFocco)} un</dd>
+        </div>
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Disponível</dt>
+          <dd className="font-medium text-white/90">{fmtInt(pos.disponivel)} un</dd>
+        </div>
+      </dl>
     </button>
   );
 }

@@ -590,6 +590,46 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
   animation: video-entra 0.5s ease-out both;
 }
 
+/* Cena 1 — card em destaque: surge centralizado com escala e desfoque,
+   como se "abrisse" ganhasse foco na tela. */
+@keyframes card-foco-entra {
+  0% {
+    opacity: 0;
+    transform: scale(0.97) translateY(10px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+.card-foco-entra {
+  animation: card-foco-entra 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Halo suave atrás do card de destaque — um brilho difuso que o levanta do fundo
+   sem adicionar peso visual. */
+.card-foco-halo {
+  background: radial-gradient(
+    ellipse 60% 55% at 50% 50%,
+    rgba(118, 160, 53, 0.16) 0%,
+    transparent 70%
+  );
+  filter: blur(24px);
+  animation: card-foco-halo 0.9s ease-out both;
+}
+@keyframes card-foco-halo {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* Cópia da cena que sai: animações internas congeladas, só o fade de saída */
 .video-congelada * {
   animation: none !important;

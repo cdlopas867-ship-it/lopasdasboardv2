@@ -46,14 +46,16 @@ function serialToIso(v: unknown): string {
   return s;
 }
 
-/* Classifica a pendência pelo mês da DT FINAL: CRÍTICO quando cai em um
-   mês já encerrado, NO PRAZO quando cai no mês atual ou futuro. */
+/* Classifica a pendência pelo mês da DT FINAL: CRÍTICO quando a data final
+   é de um mês anterior ao atual, NO PRAZO apenas no mês atual ou futuro. */
 export function alertaPorData(dtFinal: string): AlertaPendente {
   const data = parseDate(dtFinal);
   if (!data) return "prazo";
   const agora = new Date();
-  if (data.getFullYear() < agora.getFullYear()) return "critico";
-  if (data.getFullYear() === agora.getFullYear() && data.getMonth() < agora.getMonth()) return "critico";
+  const diffMeses =
+    (agora.getFullYear() - data.getFullYear()) * 12 +
+    (agora.getMonth() - data.getMonth());
+  if (diffMeses >= 1) return "critico";
   return "prazo";
 }
 
