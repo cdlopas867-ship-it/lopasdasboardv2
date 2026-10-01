@@ -6,9 +6,12 @@ import { GraficoMotivoMensal } from "@/components/GraficoMotivoMensal";
 import { imagemAvaria, temImagemAvaria } from "@/data/avarias-imagens";
 import type { VideoAvarias } from "./VideoResumoDashboard";
 
-/* Cena única de Avarias — junta total, gráfico mensal, cards de tipos com
-   imagens e motivo mais frequente por mês em uma só tela. Clicar num tipo
-   abre o modal com o gráfico detalhado mês a mês. */
+/* Cena única de Avarias — layout limpo e organizado:
+   1. Cabeçalho com total de volumes
+   2. Gráfico mensal de barras
+   3. Tipos de avaria em lista compacta (imagens só no modal)
+   4. Motivo mais frequente por mês em 2 colunas
+   Clicar num tipo abre o modal com imagem + gráfico detalhado. */
 export default function CenaAvariasUnificada({
   anim,
   avarias,
@@ -34,11 +37,10 @@ export default function CenaAvariasUnificada({
   }
 
   const maxMes = Math.max(...avarias.meses.map((m) => m.qtd), 1);
-  const maxMotivo = Math.max(...avarias.motivoMes.map((m) => m.qtd), 1);
 
   return (
-    <div className="w-full">
-      {/* Cabeçalho — título + total + custo */}
+    <div className="flex w-full flex-col">
+      {/* ── Cabeçalho ── */}
       <div className="flex items-center gap-2">
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Avarias
@@ -49,22 +51,22 @@ export default function CenaAvariasUnificada({
         />
       </div>
 
-      <div className="video-sobe mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-0.5">
-        <p className="font-serif text-2xl text-white sm:text-3xl">
-          {fmtInt(avarias.total)}{" "}
-          <span className="text-sm text-white/60 sm:text-base">volumes</span>
+      <div className="video-sobe mt-2 flex items-baseline gap-3">
+        <p className="font-serif text-3xl text-white sm:text-4xl">
+          {fmtInt(avarias.total)}
         </p>
+        <span className="text-sm text-white/60">volumes</span>
         {avarias.referenciaParcial && (
-          <span className="text-[10px] text-white/50">custos parciais · em apuração</span>
+          <span className="text-[10px] text-white/45">· custos parciais em apuração</span>
         )}
       </div>
 
-      {/* Gráfico mensal — barras compactas */}
+      {/* ── Gráfico mensal ── */}
       <div className="mt-4">
         <p className="mb-1.5 text-[9px] font-bold tracking-[0.3em] text-white/50 uppercase">
           Por mês
         </p>
-        <div className="flex h-20 items-end justify-between gap-1 sm:gap-1.5">
+        <div className="flex h-20 items-end justify-between gap-1.5 sm:gap-2">
           {avarias.meses.map((m, i) => {
             const destaque = m.mes.toUpperCase().startsWith("AGO");
             return (
@@ -106,17 +108,15 @@ export default function CenaAvariasUnificada({
         </div>
       </div>
 
-      {/* Tipos de avaria — grid com imagens */}
+      {/* ── Tipos de avaria — lista compacta ── */}
       {avarias.tipos?.length ? (
         <div className="mt-4">
           <p className="mb-1.5 text-[9px] font-bold tracking-[0.3em] text-white/50 uppercase">
             Por tipo · clique para detalhar
           </p>
-          <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1">
             {avarias.tipos.map((t, i) => {
               const maxTMes = Math.max(...t.meses.map((m) => m.qtd), 1);
-              const imagem = imagemAvaria(t.tipo);
-              const temImg = temImagemAvaria(t.tipo);
               return (
                 <button
                   type="button"
@@ -125,44 +125,38 @@ export default function CenaAvariasUnificada({
                     setTipoSel(i);
                     onPausar?.();
                   }}
-                  className="video-sobe group flex cursor-pointer flex-col overflow-hidden rounded-lg border border-white/15 bg-white/5 text-left transition-all hover:border-primary/50 hover:bg-white/10"
-                  style={{ animationDelay: `${0.1 * i + 0.4}s` }}
+                  className="video-sobe group flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-left transition-all hover:border-primary/40 hover:bg-white/10"
+                  style={{ animationDelay: `${0.06 * i + 0.4}s` }}
                 >
-                  {temImg ? (
-                    <div className="relative h-8 overflow-hidden sm:h-10">
-                      <img src={imagem} alt={t.tipo} className="h-full w-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                      <p className="absolute bottom-0 left-1 right-1 truncate text-[7px] font-bold tracking-wider text-white uppercase">
-                        {t.tipo}
-                      </p>
+                  {/* Dot colorido do tipo */}
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ background: t.cor }}
+                  />
+                  {/* Nome + número */}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[9px] font-bold tracking-wide text-white/85 uppercase">
+                      {t.tipo}
+                    </p>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="font-serif text-sm text-white">{fmtInt(t.total)}</span>
+                      <span className="font-mono text-[8px] font-bold text-white/50">{fmtBrMax(t.pct, 1)}%</span>
                     </div>
-                  ) : (
-                    <div className="px-1 pt-1">
-                      <p className="truncate text-[7px] font-bold tracking-wider text-white uppercase">
-                        {t.tipo}
-                      </p>
-                    </div>
-                  )}
-                  <div className="p-1 sm:p-1.5">
-                    <div className="flex items-baseline justify-between">
-                      <span className="font-serif text-sm text-white sm:text-base">{fmtInt(t.total)}</span>
-                      <span className="font-mono text-[8px] font-bold text-white/55">{fmtBrMax(t.pct, 1)}%</span>
-                    </div>
-                    <div className="my-0.5 h-0.5 rounded-full" style={{ background: t.cor }} />
-                    <div className="flex h-5 items-stretch gap-0.5">
-                      {t.meses.map((m, mi) => (
-                        <div key={m.mes} className="flex h-full flex-1 flex-col items-center justify-end">
-                          <div
-                            className={cn("video-barra-y w-full rounded-t-sm", !anim && "video-pausada")}
-                            style={{
-                              height: `${Math.max((m.qtd / maxTMes) * 100, 6)}%`,
-                              background: t.cor,
-                              animationDelay: `${0.1 * i + 0.5 + 0.05 * mi}s`,
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                  </div>
+                  {/* Mini sparkline */}
+                  <div className="flex h-5 w-8 shrink-0 items-stretch gap-px">
+                    {t.meses.map((m, mi) => (
+                      <div key={m.mes} className="flex h-full flex-1 flex-col items-center justify-end">
+                        <div
+                          className={cn("video-barra-y w-full rounded-t-sm", !anim && "video-pausada")}
+                          style={{
+                            height: `${Math.max((m.qtd / maxTMes) * 100, 6)}%`,
+                            background: t.cor,
+                            animationDelay: `${0.06 * i + 0.5 + 0.04 * mi}s`,
+                          }}
+                        />
+                      </div>
+                    ))}
                   </div>
                 </button>
               );
@@ -171,30 +165,30 @@ export default function CenaAvariasUnificada({
         </div>
       ) : null}
 
-      {/* Motivo mais frequente por mês — faixa compacta */}
+      {/* ── Motivo mais frequente por mês ── */}
       <div className="mt-4">
-        <p className="mb-1 text-[9px] font-bold tracking-[0.3em] text-white/50 uppercase">
+        <p className="mb-1.5 text-[9px] font-bold tracking-[0.3em] text-white/50 uppercase">
           Motivo mais frequente
         </p>
-        <div className="flex flex-wrap gap-1">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
           {avarias.motivoMes.map((m, i) => {
             const destaque = m.mes.toUpperCase().startsWith("AGO");
             return (
               <div
                 key={m.mes}
-                className="video-sobe flex items-center gap-1 rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5"
-                style={{ animationDelay: `${0.08 * i + 0.6}s` }}
+                className="video-sobe flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2 py-1"
+                style={{ animationDelay: `${0.05 * i + 0.6}s` }}
               >
                 <span
                   className={cn(
-                    "text-[8px] font-bold uppercase",
+                    "w-7 shrink-0 text-[8px] font-bold uppercase",
                     destaque ? "text-brand-amber" : "text-white/50",
                   )}
                 >
                   {m.mes.slice(0, 3)}
                 </span>
-                <span className="text-[8px] text-white/70">{m.motivo}</span>
-                <span className="font-mono text-[8px] font-bold text-white">{fmtInt(m.qtd)}</span>
+                <span className="flex-1 truncate text-[9px] text-white/75">{m.motivo}</span>
+                <span className="font-mono text-[9px] font-bold text-white">{fmtInt(m.qtd)}</span>
               </div>
             );
           })}
