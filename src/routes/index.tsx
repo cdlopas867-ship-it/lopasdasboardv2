@@ -22,7 +22,7 @@ function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();
   const { dados, loaded } = useDadosSync<Painel>(initialSyncData as Painel);
   const [valorFaturado, setValorFaturado] = useState<number>();
-  const [fase, setFase] = useState<"intro" | "video">("intro");
+  const [fase, setFase] = useState<"intro" | "video">("video");
   useEffect(() => { if (pronto && !autenticado) navigate({ to: "/login", replace: true }); }, [pronto, autenticado, navigate]);
   useEffect(() => { if (autenticado) fetch("/api/valor-faturado").then(r => r.json()).then(d => setValorFaturado(d.valor)).catch(() => {}); }, [autenticado]);
   const presentation = useMemo(() => {
