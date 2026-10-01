@@ -294,11 +294,7 @@ export default function IntroTexto(props: Props) {
 
       {/* Mensagem central */}
       <div className="relative z-10 flex w-full max-w-2xl flex-col items-center px-6">
-        {carregando ? (
-          <p className="font-serif italic text-lg leading-relaxed text-white/60 drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)] sm:text-2xl">
-            Preparando análise de estoque...
-          </p>
-        ) : (
+        {!carregando && (
           <div
             className="flex items-center justify-center text-center transition-all duration-700 ease-out"
             style={{
