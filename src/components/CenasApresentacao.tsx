@@ -72,26 +72,6 @@ export default function CenasApresentacao({
   onPausar,
 }: Props) {
   const [tipoSel, setTipoSel] = useState<number | null>(null);
-  /* Auto-abertura dos cards da Cena 1: cards surgem fechados, abrem um por um
-     (2 s entre cada) e fecham todos após 2 minutos. */
-  const [autoOpenCount, setAutoOpenCount] = useState(0);
-  const [autoCloseAll, setAutoCloseAll] = useState(false);
-
-  useEffect(() => {
-    if (cena !== 0) return;
-    setAutoOpenCount(0);
-    setAutoCloseAll(false);
-    const totalCards = kpis.length + 1; // +1 = card Fora de linha
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    for (let i = 1; i <= totalCards; i++) {
-      timers.push(setTimeout(() => setAutoOpenCount(i), i * 2000));
-    }
-    timers.push(setTimeout(() => {
-      setAutoCloseAll(true);
-      setAutoOpenCount(0);
-    }, 120000));
-    return () => timers.forEach(clearTimeout);
-  }, [cena, kpis.length]);
 
   const maxDia = semana ? Math.max(...semana.dias.map((d) => d.ton), 1) : 1;
   const totalTurnoTon = turnos.reduce((s, t) => s + (t.ton ?? 0), 0);
@@ -106,23 +86,9 @@ export default function CenasApresentacao({
 
   return (
     <>
-      {/* Cena 1 — KPIs de abertura (clique para ver o resumo) */}
+      {/* Cena 1 — KPIs de abertura em destaque (um card por vez, centralizado) */}
       {cena === 0 && (
-        <div>
-          <div className="flex items-center justify-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Resumo do CD · {new Date().getFullYear()}
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Indicadores principais do CD Lopas. Valor em estoque = custo médio × saldo de cada item. Peças e massa somadas de todos os itens ativos. Ocupação = posições ocupadas ÷ total de endereços (5.970). Fonte: planilha de saldo de itens do Google Drive. Atualizado em 28/09/2026." />
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-            {kpis.map((k, i) => (
-              <KpiCenaCard key={k.rotulo} kpi={k} index={i} onPausar={onPausar} autoOpen={!autoCloseAll && i < autoOpenCount} />
-            ))}
-            {/* Fora de linha — card expansível no mesmo estilo dos KPIs */}
-            <ForaDeLinhaCard index={kpis.length} onPausar={onPausar} foraDeLinha={foraDeLinha} autoOpen={!autoCloseAll && kpis.length < autoOpenCount} />
-          </div>
-        </div>
+        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
       {/* Cena 2 — participação das unidades (barras) */}
@@ -1069,171 +1035,186 @@ export default function CenasApresentacao({
   );
 }
 
-/* Card de KPI da Cena 1 — clica para expandir o resumo com detalhe e breakdown */
-function KpiCenaCard({
-  kpi,
-  index,
+/* Cena 1 — carrossel de destaque: os cards abrem um a um e só o card aberto
+   aparece centralizado na tela, ganhando todo o destaque. Avança sozinho e
+   também por clique nos indicadores; clicar no card pausa/retoma o ciclo. */
+function CenaKpisFoco({
+  kpis,
+  foraDeLinha,
   onPausar,
-  autoOpen,
+}: {
+  kpis: VideoKpi[];
+  foraDeLinha?: VideoForaDeLinha | undefined;
+  onPausar?: (() => void) | undefined;
+}) {
+  const total = kpis.length + 1; // +1 = card Fora de linha
+  const [foco, setFoco] = useState(0);
+  const [pausado, setPausado] = useState(false);
+
+  useEffect(() => {
+    if (pausado) return;
+    const t = setTimeout(() => setFoco((f) => (f + 1) % total), 4200);
+    return () => clearTimeout(t);
+  }, [foco, pausado, total]);
+
+  const ehForaDeLinha = foco >= kpis.length;
+  const kpi = !ehForaDeLinha ? kpis[foco] : null;
+  const togglePausar = () => {
+    const next = !pausado;
+    setPausado(next);
+    if (next) onPausar?.();
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="flex items-center justify-center gap-2">
+        <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
+          Resumo do CD · {new Date().getFullYear()}
+        </p>
+        <InfoTooltip onOpen={onPausar} texto="Indicadores principais do CD Lopas. Valor em estoque = custo médio × saldo de cada item. Peças e massa somadas de todos os itens ativos. Ocupação = posições ocupadas ÷ total de endereços (5.970). Fonte: planilha de saldo de itens do Google Drive. Atualizado em 28/09/2026." />
+      </div>
+
+      {/* Apenas o card aberto aparece, centralizado e em destaque */}
+      <div className="relative mt-6 flex min-h-[300px] w-full max-w-md items-center justify-center sm:min-h-[340px]">
+        <div key={foco} className="card-foco-entra w-full">
+          {kpi ? (
+            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} pausado={pausado} />
+          ) : (
+            <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} pausado={pausado} />
+          )}
+        </div>
+      </div>
+
+      {/* Indicadores — um ponto por card, o ativo cresce */}
+      <div className="mt-6 flex items-center gap-2">
+        {Array.from({ length: total }).map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setFoco(i)}
+            aria-label={`Card ${i + 1}`}
+            className={cn(
+              "size-2.5 rounded-full border transition-all duration-300",
+              i === foco
+                ? "scale-125 border-primary bg-primary"
+                : "border-white/30 bg-transparent hover:border-white/50",
+            )}
+          />
+        ))}
+      </div>
+      <p className="mt-3 text-[9px] font-bold tracking-[0.3em] text-white/40 uppercase">
+        {pausado ? "Pausado · clique no card para retomar" : "Abrindo um a um · clique no card para pausar"}
+      </p>
+    </div>
+  );
+}
+
+/* Card de KPI em destaque — centralizado, grande, com o resumo sempre aberto */
+function CardFocoKpi({
+  kpi,
+  onTogglePausar,
+  pausado,
 }: {
   kpi: VideoKpi;
-  index: number;
-  onPausar?: (() => void) | undefined;
-  autoOpen?: boolean;
+  onTogglePausar: () => void;
+  pausado: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (autoOpen !== undefined) setOpen(autoOpen);
-  }, [autoOpen]);
   return (
     <button
       type="button"
-      onClick={() => {
-        const next = !open;
-        setOpen(next);
-        if (next) onPausar?.();
-      }}
-      aria-expanded={open}
-      className={cn(
-        "video-sobe cursor-pointer rounded-xl border p-3 text-center transition-colors sm:p-4",
-        open ? "border-[#889988]/60 bg-white/10" : "border-[#889988]/40 bg-white/5 hover:border-[#889988]/60 hover:bg-white/10",
-      )}
-      style={{ animationDelay: `${0.15 * (index + 1)}s` }}
+      onClick={onTogglePausar}
+      className="block w-full cursor-pointer rounded-2xl border border-[#889988]/50 bg-white/10 p-6 text-center backdrop-blur-md transition-colors hover:border-[#889988]/70 hover:bg-white/15 sm:p-8"
     >
-      <div className="flex items-start justify-between">
-        <p className="font-serif text-lg tracking-tight text-white sm:text-2xl">
-          {kpi.valor}
-        </p>
-        <span
-          className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-full border border-[#889988]/50 text-xs text-white transition-transform duration-300",
-            open && "rotate-45 border-white bg-white text-brand-dark",
-          )}
-        >
-          +
-        </span>
-      </div>
-      <p className="mt-2 text-[10px] font-bold tracking-widest text-white/55 uppercase">
+      <p className="font-serif text-4xl tracking-tight text-white sm:text-5xl">
+        {kpi.valor}
+      </p>
+      <p className="mt-2 text-[11px] font-bold tracking-[0.3em] text-primary uppercase sm:text-xs">
         {kpi.rotulo}
       </p>
       {kpi.detalhe && (
-        <div className={cn("expand-grid", open && "expand-grid-open")}>
-          <div>
-            <p className="pt-4 text-left text-sm leading-relaxed text-white/70">
-              {kpi.detalhe}
-            </p>
-            {kpi.extra?.length ? (
-              <dl className="mt-3 space-y-1.5 border-t border-white/20 pt-3 text-left">
-                {kpi.extra.map(([k, v], ki) => (
-                  <div key={`${k}-${ki}`} className="flex justify-between text-xs">
-                    <dt className="text-white/50">{k}</dt>
-                    <dd className="font-semibold text-white">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : null}
-          </div>
-        </div>
+        <p className="mt-5 text-left text-sm leading-relaxed text-white/70 sm:text-base">
+          {kpi.detalhe}
+        </p>
       )}
-      <span className="mt-2 block text-[10px] font-medium tracking-widest text-primary uppercase">
-        {open ? "Recolher" : "Ver resumo"}
+      {kpi.extra?.length ? (
+        <dl className="mt-4 space-y-2 border-t border-white/20 pt-4 text-left">
+          {kpi.extra.map(([k, v], ki) => (
+            <div key={`${k}-${ki}`} className="flex justify-between text-xs sm:text-sm">
+              <dt className="text-white/50">{k}</dt>
+              <dd className="font-semibold text-white">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      <span className="mt-5 block text-[10px] font-medium tracking-widest text-primary uppercase">
+        {pausado ? "Retomar" : "Pausar"}
       </span>
     </button>
   );
 }
 
-/* Card de "fora de linha" — mesmo visual do KpiCenaCard, com dados de itens
-   descontinuados que ainda ocupam o CD. */
-function ForaDeLinhaCard({
-  index,
-  onPausar,
+/* Card de "fora de linha" em destaque — mesmo visual do KPI, amber, resumo aberto */
+function CardFocoForaDeLinha({
   foraDeLinha,
-  autoOpen,
+  onTogglePausar,
+  pausado,
 }: {
-  index: number;
-  onPausar?: (() => void) | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
-  autoOpen?: boolean;
+  onTogglePausar: () => void;
+  pausado: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (autoOpen !== undefined) setOpen(autoOpen);
-  }, [autoOpen]);
   const pos = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const total = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
   const pctValor = pos.valorEstoque / total.valorEstoque;
   return (
     <button
       type="button"
-      onClick={() => {
-        const next = !open;
-        setOpen(next);
-        if (next) onPausar?.();
-      }}
-      aria-expanded={open}
-      className={cn(
-        "video-sobe cursor-pointer rounded-xl border p-3 text-center transition-colors sm:p-4",
-        open ? "border-brand-amber/60 bg-brand-amber/10" : "border-brand-amber/30 bg-brand-amber/5 hover:border-brand-amber/50 hover:bg-brand-amber/10",
-      )}
-      style={{ animationDelay: `${0.15 * (index + 1)}s` }}
+      onClick={onTogglePausar}
+      className="block w-full cursor-pointer rounded-2xl border border-brand-amber/50 bg-brand-amber/10 p-6 text-center backdrop-blur-md transition-colors hover:border-brand-amber/70 hover:bg-brand-amber/15 sm:p-8"
     >
-      <div className="flex items-start justify-between">
-        <p className="font-serif text-lg tracking-tight text-white sm:text-2xl">
-          {fmtPct(pctValor)}
-        </p>
-        <span
-          className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-full border border-brand-amber/50 text-xs text-white transition-transform duration-300",
-            open && "rotate-45 border-white bg-white text-brand-dark",
-          )}
-        >
-          +
-        </span>
-      </div>
-      <p className="mt-2 text-[10px] font-bold tracking-widest text-brand-amber uppercase">
+      <p className="font-serif text-4xl tracking-tight text-white sm:text-5xl">
+        {fmtPct(pctValor)}
+      </p>
+      <p className="mt-2 text-[11px] font-bold tracking-[0.3em] text-brand-amber uppercase sm:text-xs">
         Fora de linha
       </p>
-      <div className={cn("expand-grid", open && "expand-grid-open")}>
-        <div>
-          <p className="pt-4 text-left text-sm leading-relaxed text-white/70">
-            {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtMoeda(pos.valorEstoque)} em
-            custo ({fmtPct(pctValor)} do valor total) e {fmtPeso(pos.pesoTon * 1000)} de massa
-            ({fmtPct(pos.pesoTon / total.pesoTon)} do peso total).
-          </p>
-          <dl className="mt-3 space-y-1.5 border-t border-white/20 pt-3 text-left">
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Itens fora de linha</dt>
-              <dd className="font-semibold text-white">{fmtInt(pos.itens)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Valor em estoque</dt>
-              <dd className="font-semibold text-white">{fmtMoeda(pos.valorEstoque)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Valor reservado</dt>
-              <dd className="font-semibold text-white">{fmtMoeda(pos.valorReservado)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Massa total</dt>
-              <dd className="font-bold text-brand-amber text-sm">{fmtPeso(pos.pesoTon * 1000)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Massa reservada</dt>
-              <dd className="font-bold text-brand-amber text-sm">{fmtPeso(pos.pesoReservadoTon * 1000)}</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Saldo físico</dt>
-              <dd className="font-semibold text-white">{fmtInt(pos.saldoFocco)} un</dd>
-            </div>
-            <div className="flex justify-between text-xs">
-              <dt className="text-white/50">Disponível</dt>
-              <dd className="font-semibold text-white">{fmtInt(pos.disponivel)} un</dd>
-            </div>
-          </dl>
+      <p className="mt-5 text-left text-sm leading-relaxed text-white/70 sm:text-base">
+        {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtMoeda(pos.valorEstoque)} em
+        custo ({fmtPct(pctValor)} do valor total) e {fmtPeso(pos.pesoTon * 1000)} de massa
+        ({fmtPct(pos.pesoTon / total.pesoTon)} do peso total).
+      </p>
+      <dl className="mt-4 space-y-2 border-t border-white/20 pt-4 text-left">
+        <div className="flex justify-between text-xs sm:text-sm">
+          <dt className="text-white/50">Itens fora de linha</dt>
+          <dd className="font-semibold text-white">{fmtInt(pos.itens)}</dd>
         </div>
-      </div>
-      <span className="mt-2 block text-[10px] font-medium tracking-widest text-primary uppercase">
-        {open ? "Recolher" : "Ver resumo"}
+        <div className="flex justify-between text-xs sm:text-sm">
+          <dt className="text-white/50">Valor em estoque</dt>
+          <dd className="font-semibold text-white">{fmtMoeda(pos.valorEstoque)}</dd>
+        </div>
+        <div className="flex justify-between text-xs sm:text-sm">
+          <dt className="text-white/50">Valor reservado</dt>
+          <dd className="font-semibold text-white">{fmtMoeda(pos.valorReservado)}</dd>
+        </div>
+        <div className="flex justify-between text-xs sm:text-sm">
+          <dt className="text-white/50">Massa total</dt>
+          <dd className="font-bold text-brand-amber">{fmtPeso(pos.pesoTon * 1000)}</dd>
+        </div>
+        <div className="flex justify-between text-xs sm:text-sm">
+          <dt className="text-white/50">Massa reservada</dt>
+          <dd className="font-bold text-brand-amber">{fmtPeso(pos.pesoReservadoTon * 1000)}</dd>
+        </div>
+        <div className="flex justify-between text-xs sm:text-sm">
+          <dt className="text-white/50">Saldo físico</dt>
+          <dd className="font-semibold text-white">{fmtInt(pos.saldoFocco)} un</dd>
+        </div>
+        <div className="flex justify-between text-xs sm:text-sm">
+          <dt className="text-white/50">Disponível</dt>
+          <dd className="font-semibold text-white">{fmtInt(pos.disponivel)} un</dd>
+        </div>
+      </dl>
+      <span className="mt-5 block text-[10px] font-medium tracking-widest text-primary uppercase">
+        {pausado ? "Retomar" : "Pausar"}
       </span>
     </button>
   );
