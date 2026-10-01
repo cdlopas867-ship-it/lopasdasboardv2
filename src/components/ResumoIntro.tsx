@@ -75,9 +75,10 @@ function prepararSlides(
       linhas.push({ label: "Reservado", valor: `R$ ${(reservados.totalValor / 1e6).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} mi` });
     }
     if (previsto) {
-      linhas.push({ label: "Previsto", valor: previsto.valor });
-    } else if (reservados && valorFaturado) {
-      linhas.push({ label: "Previsto", valor: fmtMoeda(reservados.totalTon * valorFaturado) });
+      linhas.push({ label: "Prev. estoque", valor: previsto.valor });
+    }
+    if (reservados && valorFaturado) {
+      linhas.push({ label: "Prev. reserva", valor: fmtMoeda(reservados.totalTon * valorFaturado) });
     }
     if (linhas.length >= 3) {
       slides.push({
