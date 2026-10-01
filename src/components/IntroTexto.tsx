@@ -29,17 +29,18 @@ export default function IntroTexto(props: Props) {
   const [mensagens] = useState<Mensagem[]>(() => interpretarLocal(props));
   const [idx, setIdx] = useState(0);
   const [visivel, setVisivel] = useState(true);
+  const [pausado, setPausado] = useState(false);
 
   const concluir = useCallback(() => props.onConcluir(), [props]);
 
-  // Avança as mensagens com fade suave
+  // Avança as mensagens com fade suave (não avança se pausado)
   useEffect(() => {
-    if (idx >= mensagens.length) return;
+    if (pausado || idx >= mensagens.length) return;
     setVisivel(true);
     const tOut = setTimeout(() => setVisivel(false), TEMPO_POR_MSG - 700);
     const tNext = setTimeout(() => setIdx((i) => i + 1), TEMPO_POR_MSG);
     return () => { clearTimeout(tOut); clearTimeout(tNext); };
-  }, [idx, mensagens.length]);
+  }, [idx, mensagens.length, pausado]);
 
   // Quando chega ao fim, conclui
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function IntroTexto(props: Props) {
     }
   }, [idx, mensagens.length, concluir]);
 
+  const togglePausar = useCallback(() => setPausado((p) => !p), []);
   const pular = useCallback(() => concluir(), [concluir]);
   const msg = mensagens[Math.min(idx, mensagens.length - 1)] ?? [];
 
@@ -66,14 +68,23 @@ export default function IntroTexto(props: Props) {
       <div className="absolute inset-0 bg-gradient-to-b from-[#4a6b20]/82 via-[#3a521a]/68 to-[#2e3f14]/92" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.45)_100%)]" />
 
-      {/* Botão Pular */}
-      <button
-        type="button"
-        onClick={pular}
-        className="absolute top-4 right-4 z-20 cursor-pointer rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/20 sm:top-6 sm:right-6"
-      >
-        Pular resumo
-      </button>
+      {/* Botões Pausar / Pular */}
+      <div className="absolute top-4 right-4 z-20 flex gap-2 sm:top-6 sm:right-6">
+        <button
+          type="button"
+          onClick={togglePausar}
+          className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/20"
+        >
+          {pausado ? "Continuar" : "Pausar"}
+        </button>
+        <button
+          type="button"
+          onClick={pular}
+          className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/20"
+        >
+          Pular resumo
+        </button>
+      </div>
 
       {/* Watermark */}
       <div className="pointer-events-none absolute bottom-6 left-4 z-[1] sm:bottom-10 sm:left-10">
