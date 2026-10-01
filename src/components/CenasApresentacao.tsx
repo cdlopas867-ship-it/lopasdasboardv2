@@ -502,37 +502,6 @@ export default function CenasApresentacao({
                 Média mensal: <span className="font-bold text-brand-amber">{fmtBrMax(pendentes.mediaTon, 1)} t</span>
               </p>
 
-              {/* Resumo por status (crítico = mês passado · no prazo = mês atual/futuro) */}
-              <div className="mt-5 space-y-3">
-                {pendentes.fatias.map((f, i) => {
-                  const max = Math.max(...pendentes.fatias.map((x) => x.ton), 1);
-                  return (
-                    <div
-                      key={f.rotulo}
-                      className="video-sobe flex items-center gap-3"
-                      style={{ animationDelay: `${0.12 * i}s` }}
-                    >
-                      <span className="w-16 shrink-0 text-[10px] font-bold tracking-wider text-white/70 uppercase sm:w-20">
-                        {f.rotulo}
-                      </span>
-                      <div className="h-6 flex-1 overflow-hidden rounded-lg bg-white/15">
-                        <div
-                          className={cn("video-barra-x h-full rounded-lg", !anim && "video-pausada")}
-                          style={{
-                            width: `${(f.ton / max) * 100}%`,
-                            background: f.cor,
-                            animationDelay: `${0.12 * i + 0.15}s`,
-                          }}
-                        />
-                      </div>
-                      <span className="w-14 text-right font-mono text-[11px] font-bold text-white">
-                        {fmtBrMax(f.ton, 1)} t
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
               {/* Saúde da produção — toneladas pendentes × recebidas no estoque */}
               {(() => {
                 const pendente = pendentes.totalTon;
