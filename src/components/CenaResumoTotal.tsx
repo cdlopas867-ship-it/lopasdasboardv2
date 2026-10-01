@@ -49,14 +49,14 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
   const pesoEmLinha = posEmLinha.pesoTon;
 
   const metricas: Metrica[] = [
-    { rotulo: "Peso em estoque", valor: fmtTonDec(pesoTotal), cor: "#e2e8f0" },
-    { rotulo: "Peso em linha", valor: fmtTonDec(pesoEmLinha), cor: "#34d399" },
-    { rotulo: "Valor total", valor: fmtMoeda(valorTotal), cor: "#e2e8f0" },
-    { rotulo: "Valor previsto", valor: fmtMoeda(previsto), cor: "#fbbf24" },
-    { rotulo: "Valor reservado", valor: fmtMoeda(valorReservado), cor: "#f87171" },
-    { rotulo: "Peso reservado", valor: fmtTonDec(pesoReservado), cor: "#f87171" },
-    { rotulo: "Valor disponível", valor: fmtMoeda(valorDisponivel), cor: "#60a5fa" },
-    { rotulo: "Peso disponível", valor: fmtTonDec(pesoDisponivel), cor: "#60a5fa" },
+    { rotulo: "Peso em estoque", valor: fmtTonDec(pesoTotal), cor: "#ffffff" },
+    { rotulo: "Peso em linha", valor: fmtTonDec(pesoEmLinha), cor: "#ffffff" },
+    { rotulo: "Valor total", valor: fmtMoeda(valorTotal), cor: "#ffffff" },
+    { rotulo: "Valor previsto", valor: fmtMoeda(previsto), cor: "#ffffff" },
+    { rotulo: "Valor reservado", valor: fmtMoeda(valorReservado), cor: "#ffffff" },
+    { rotulo: "Peso reservado", valor: fmtTonDec(pesoReservado), cor: "#ffffff" },
+    { rotulo: "Valor disponível", valor: fmtMoeda(valorDisponivel), cor: "#ffffff" },
+    { rotulo: "Peso disponível", valor: fmtTonDec(pesoDisponivel), cor: "#ffffff" },
   ];
 
   return (
@@ -78,11 +78,6 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
             className="video-sobe group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] px-3.5 py-3 backdrop-blur-md transition-colors hover:border-white/20 hover:bg-white/[0.07]"
             style={{ animationDelay: `${0.08 * i}s` }}
           >
-            {/* Acento de cor superior */}
-            <div
-              className="absolute inset-x-0 top-0 h-px opacity-60"
-              style={{ background: `linear-gradient(90deg, transparent, ${m.cor}, transparent)` }}
-            />
             <p className="text-[8.5px] font-medium tracking-[0.18em] text-white/45 uppercase">
               {m.rotulo}
             </p>
