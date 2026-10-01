@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import type { VideoKpi, VideoUnidade, VideoOcupacao, VideoMes, VideoAvarias, VideoPendentes, VideoReservados } from "./VideoResumoDashboard";
 import type { VideoForaDeLinha } from "./CenasApresentacao";
 import { interpretarLocal } from "@/lib/interpretador-local";
@@ -30,7 +30,11 @@ const TEMPO_LOPAS = 3200;
 const TEMPO_MOVIDOS = 3000;
 
 export default function IntroTexto(props: Props) {
-  const [mensagens] = useState<Mensagem[]>(() => interpretarLocal(props));
+  const mensagens = useMemo<Mensagem[]>(() => interpretarLocal(props), [
+    props.resumo, props.avarias, props.ocupacao, props.semana,
+    props.mensal, props.pendentes, props.reservados, props.foraDeLinha,
+    props.unidades, props.valorFaturado,
+  ]);
   const [idx, setIdx] = useState(0);
   const [visivel, setVisivel] = useState(true);
   const [pausado, setPausado] = useState(false);

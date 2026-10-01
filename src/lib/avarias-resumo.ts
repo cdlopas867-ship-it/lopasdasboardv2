@@ -46,7 +46,6 @@ export function calcularAvariasResumo(avarias: Avaria[] | undefined): VideoAvari
      não contagem de linhas. Linhas sem motivo não entram na soma.
      O custo continua calculado pelas quantidades de peças de cada lançamento. */
   const comMotivo = validas.filter((a) => a.motivo?.trim());
-  const totalContagem = comMotivo.length;
   const total = comMotivo.reduce((s, a) => s + a.quantidade, 0);
   const custoTotal = validas.reduce((s, a) => s + a.custo, 0);
 
@@ -56,14 +55,14 @@ export function calcularAvariasResumo(avarias: Avaria[] | undefined): VideoAvari
     ordem: ordemMes(m),
   }));
 
-  /* motivoMes: motivo predominante de cada mês (por contagem de registros) */
+  /* motivoMes: motivo predominante de cada mês (por Soma de Quantidade) */
   const motivoMes = mesesOrdenados.map((m) => {
     const items = porMes.get(m)!;
     const motivosMap = new Map<string, number>();
     for (const a of items) {
       const mot = a.motivo?.trim();
       if (!mot) continue;
-      motivosMap.set(mot, (motivosMap.get(mot) ?? 0) + 1);
+      motivosMap.set(mot, (motivosMap.get(mot) ?? 0) + a.quantidade);
     }
     const [motivo, qtd] = [...motivosMap.entries()].sort((a, b) => b[1] - a[1])[0] ?? ["", 0];
     return {
@@ -73,12 +72,12 @@ export function calcularAvariasResumo(avarias: Avaria[] | undefined): VideoAvari
     };
   });
 
-  /* Tipos: contagem de linhas com motivo, como na tabela dinâmica. */
+  /* Tipos: Soma de Quantidade por motivo, como na tabela dinâmica oficial. */
   const motivosGlobais = new Map<string, number>();
   for (const a of validas) {
     const mot = a.motivo?.trim();
     if (!mot) continue;
-    motivosGlobais.set(mot, (motivosGlobais.get(mot) ?? 0) + 1);
+    motivosGlobais.set(mot, (motivosGlobais.get(mot) ?? 0) + a.quantidade);
   }
 
   const tipos: VideoAvariaTipo[] = [...motivosGlobais.entries()]
@@ -87,7 +86,9 @@ export function calcularAvariasResumo(avarias: Avaria[] | undefined): VideoAvari
       const cor = CORES_AVARIA[motivo];
       const mesesTipo = mesesOrdenados.map((m) => {
         const items = porMes.get(m)!;
-        const qtd = items.filter((a) => a.motivo?.trim() === motivo).length;
+        const qtd = items
+          .filter((a) => a.motivo?.trim() === motivo)
+          .reduce((s, a) => s + a.quantidade, 0);
         return { mes: MESES_CURTO[m] ?? m, qtd };
       });
       return {
@@ -95,7 +96,7 @@ export function calcularAvariasResumo(avarias: Avaria[] | undefined): VideoAvari
         imagem: imagemAvaria(motivo),
         cor: cor ?? "#6b7280",
         total: totalTipo,
-        pct: totalContagem > 0 ? (totalTipo / totalContagem) * 100 : 0,
+        pct: total > 0 ? (totalTipo / total) * 100 : 0,
         meses: mesesTipo,
       };
     });
