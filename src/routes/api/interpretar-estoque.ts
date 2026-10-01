@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/interpretar-estoque")({
         const denied = await requireApiAccess();
         if (denied) return denied;
 
-        const apiKey = process.env.ANTHROPIC_API_KEY;
+        const apiKey = process.env["ANTHROPIC_API_KEY"];
         if (!apiKey) {
           return Response.json(
             { error: "Chave Anthropic não configurada", semChave: true },
