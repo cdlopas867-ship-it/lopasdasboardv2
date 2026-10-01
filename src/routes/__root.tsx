@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "../components/ui/sonner";
 import { AuthProvider } from "../lib/auth";
+import loginBackgroundAsset from "../assets/login/lopas-aerea-jardim.webp.asset.json";
 
 function NotFoundComponent() {
   return (
@@ -102,7 +103,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "manifest", href: "/manifest.json" },
       { rel: "preload", href: "/fundo-satelite-real.jpg", as: "image", fetchPriority: "high" },
-      { rel: "preload", href: "/login-bg-1.jpg", as: "image", fetchPriority: "high" },
+      { rel: "preload", href: loginBackgroundAsset.url, as: "image", fetchPriority: "high" },
       { rel: "preload", href: "/fundo-apresentacao.jpg", as: "image" },
     ],
   }),
