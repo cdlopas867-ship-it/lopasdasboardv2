@@ -6,8 +6,8 @@ import { imagemAvaria } from "@/data/avarias-imagens";
    detalhamento por tipo e para o motivo predominante de cada mês.
 
    Totais por tipo (Soma de Quantidade):
-     PREGO NO PALETE 1287 · DANIFICADO 773 · ESPELHO QUEBRADO 568
-     MOLHADO 580 · ETIQUETA TROCADA 56 · SEPARAÇÃO 28
+     PREGO NO PALETE 1287 · DANIFICADO 773 · MOLHADO 580
+     ESPELHO QUEBRADO 568 · ETIQUETA TROCADA 56 · SEPARAÇÃO 28
      EMPILHADEIRA 11 · CONFERENTE CARGA 9  → Total Geral 3.312
 
    A matriz confere com os totais por motivo e por mês da tabela dinâmica. */
@@ -15,14 +15,14 @@ const MESES_REF = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set"
 
 const REFERENCIA: ReadonlyArray<readonly [string, ...readonly number[]]> = [
   //                   Jan  Fev  Mar  Abr  Mai  Jun  Jul  Ago  Set
-  ["PREGO NO PALETE",  252, 129, 191, 151, 159, 74, 109, 99, 123], // 1287
-  ["DANIFICADO",        94, 121, 135, 89, 84, 62, 87, 63, 38],     // 773
-  ["ESPELHO QUEBRADO",  58, 65, 75, 88, 107, 46, 70, 38, 21],      // 568
-  ["MOLHADO",           98, 231, 147, 33, 25, 3, 0, 16, 27],       // 580
-  ["SEPARAÇÃO",         12, 0, 0, 0, 11, 3, 1, 0, 1],              // 28
-  ["EMPILHADEIRA",      0, 0, 0, 0, 0, 0, 0, 10, 1],               // 11
-  ["CONFERENTE CARGA",  1, 0, 0, 0, 0, 0, 0, 3, 5],                // 9
-  ["ETIQUETA TROCADA",  45, 11, 0, 0, 0, 0, 0, 0, 0],              // 56
+  ["PREGO NO PALETE",  355, 114, 184, 138, 130, 71, 92, 79, 124],  // 1287
+  ["DANIFICADO",       122, 112, 140, 82, 77, 54, 80, 63, 43],     // 773
+  ["MOLHADO",          175, 237, 89, 20, 20, 1, 0, 21, 17],        // 580
+  ["ESPELHO QUEBRADO",  53, 73, 81, 81, 102, 43, 71, 36, 28],      // 568
+  ["ETIQUETA TROCADA",  52, 4, 0, 0, 0, 0, 0, 0, 0],               // 56
+  ["SEPARAÇÃO",        13, 0, 0, 0, 9, 3, 1, 0, 2],                // 28
+  ["EMPILHADEIRA",     0, 0, 0, 0, 0, 0, 0, 10, 1],                // 11
+  ["CONFERENTE CARGA",  1, 0, 0, 0, 0, 0, 0, 2, 6],                // 9
 ] as const;
 
 /* Total de Soma de Quantidade da matriz — base do % por tipo. */
@@ -33,7 +33,7 @@ const TOTAL_CONTAGEM_REF = REFERENCIA.reduce(
 
 /* Soma de Quantidade por mês — tabela dinâmica oficial do usuário
    (total geral 3.312 volumes avariados · jan–set 2026). */
-const MESES_QTD_OFICIAL: readonly number[] = [560, 557, 548, 361, 386, 188, 267, 229, 216];
+const MESES_QTD_OFICIAL: readonly number[] = [771, 540, 494, 321, 338, 172, 244, 211, 221];
 const TOTAL_QTD_OFICIAL = 3312;
 
 export function aplicarReferenciaMotivos(avarias: VideoAvarias): VideoAvarias {
