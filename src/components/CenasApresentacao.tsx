@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtTonDec, fmtMoeda, fmtMoeda2, fmtPct, fmtPeso } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { GraficoMotivoMensal } from "@/components/GraficoMotivoMensal";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
-import { imagemAvaria, temImagemAvaria } from "@/data/avarias-imagens";
+import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
 import { POSICAO_FORA_DE_LINHA, POSICAO_EM_LINHA, POSICAO_TOTAL, ITENS_FORA_DE_LINHA, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
 export type VideoForaDeLinha = {
@@ -71,8 +70,6 @@ export default function CenasApresentacao({
   onReiniciar,
   onPausar,
 }: Props) {
-  const [tipoSel, setTipoSel] = useState<number | null>(null);
-
   const maxDia = semana ? Math.max(...semana.dias.map((d) => d.ton), 1) : 1;
   const totalTurnoTon = turnos.reduce((s, t) => s + (t.ton ?? 0), 0);
   const turnoPrincipal = turnos.length ? turnos.reduce((a, b) => (b.pct > a.pct ? b : a)) : null;
@@ -478,206 +475,13 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 8 — avarias por mês (todos os meses, destaque: agosto) */}
+      {/* Cena 6 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
       {cena === 5 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Avarias
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Volumes avariados registrados no CD. Total de 3.276 volumes (Soma de Quantidade). Distribuição mensal conferida com a tabela oficial. Custos parciais (em apuração). Fonte: planilha de avarias + tabela de referência de motivos. Janeiro a setembro de 2026." />
-          </div>
-          {avarias ? (
-            <>
-              <div className="video-sobe mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-1">
-                <p className="font-serif text-3xl text-white sm:text-5xl">
-                  {fmtInt(avarias.total)}{" "}
-                  <span className="text-base text-white/60 sm:text-lg">volumes</span>
-                </p>
-              </div>
-              {avarias.referenciaParcial && <p className="mt-1 text-xs text-white/60">Distribuição mensal conferida na tabela oficial · custos parciais.</p>}
-              <div className="mt-5 flex h-32 items-end justify-between gap-2 sm:gap-4">
-                {avarias.meses.map((m, i) => {
-                  const max = Math.max(...avarias.meses.map((x) => x.qtd), 1);
-                  const destaque = m.mes.toUpperCase().startsWith("AGO");
-                  return (
-                    <div key={m.mes} className="flex h-full flex-1 flex-col justify-end">
-                      <p
-                        className={cn(
-                          "video-sobe mb-1.5 text-center font-mono text-[11px] font-bold",
-                          destaque ? "text-brand-amber" : "text-white/85",
-                        )}
-                        style={{ animationDelay: `${0.12 * i + 0.5}s` }}
-                      >
-                        {fmtInt(m.qtd)}
-                      </p>
-                      <div
-                        className={cn(
-                          "video-barra-y w-full rounded-t-lg",
-                          destaque
-                            ? "bg-gradient-to-t from-brand-amber/80 to-brand-amber shadow-[0_0_18px_rgba(241,196,15,0.35)]"
-                            : "bg-gradient-to-t from-red-500/60 to-red-400",
-                          !anim && "video-pausada",
-                        )}
-                        style={{
-                          height: `${Math.max((m.qtd / max) * 100, 4)}%`,
-                          animationDelay: `${0.12 * i + 0.2}s`,
-                        }}
-                      />
-                      <p
-                        className={cn(
-                          "mt-2 truncate text-center text-[10px] font-bold uppercase",
-                          destaque ? "text-brand-amber" : "text-white/70",
-                        )}
-                      >
-                        {m.mes.slice(0, 3)}
-                        {destaque && " ★"}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-5">
-                <p className="text-[10px] font-bold tracking-[0.3em] text-white/50 uppercase">
-                  Motivo mais frequente por mês
-                </p>
-                <div className="mt-3 flex h-32 items-end justify-between gap-2 sm:gap-4">
-                  {avarias.motivoMes.map((m, i) => {
-                    const max = Math.max(...avarias.motivoMes.map((x) => x.qtd), 1);
-                    const destaque = m.mes.toUpperCase().startsWith("AGO");
-                    return (
-                      <div key={m.mes} className="flex h-full flex-1 flex-col justify-end">
-                        <p
-                          className={cn(
-                            "video-sobe mb-1.5 text-center font-mono text-[11px] font-bold",
-                            destaque ? "text-brand-amber" : "text-white/85",
-                          )}
-                          style={{ animationDelay: `${0.12 * i + 0.5}s` }}
-                        >
-                          {fmtInt(m.qtd)}
-                        </p>
-                        <div
-                          className={cn(
-                            "video-barra-y w-full rounded-t-lg",
-                            destaque
-                              ? "bg-gradient-to-t from-brand-amber/80 to-brand-amber shadow-[0_0_18px_rgba(241,196,15,0.35)]"
-                              : "bg-gradient-to-t from-white/25 to-white/55",
-                            !anim && "video-pausada",
-                          )}
-                          style={{
-                            height: `${Math.max((m.qtd / max) * 100, 4)}%`,
-                            animationDelay: `${0.12 * i + 0.3}s`,
-                          }}
-                        />
-                        <p
-                          className={cn(
-                            "mt-1 truncate text-center text-[10px] font-bold uppercase",
-                            destaque ? "text-brand-amber" : "text-white/70",
-                          )}
-                        >
-                          {m.mes.slice(0, 3)}
-                          {destaque && " ★"}
-                        </p>
-                        <p
-                          className="line-clamp-2 text-center text-[9px] leading-tight break-words text-white/50"
-                          title={m.motivo}
-                        >
-                          {m.motivo}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          ) : (
-            <p className="video-sobe mt-8 font-serif text-3xl text-white/70">
-              Sem registros de avarias.
-            </p>
-          )}
-        </div>
+        <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
       )}
 
-      {/* Cena 9 — comparativo de tipos de avaria por mês */}
+      {/* Cena 7 — pendências de produção */}
       {cena === 6 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Avarias por tipo · mês a mês
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Detalhamento das avarias por tipo, com evolução mês a mês. Percentual = ocorrências do tipo ÷ total de avarias. Clique em um tipo para ver o gráfico detalhado. Fonte: planilha de avarias do CD. Janeiro a setembro de 2026." />
-          </div>
-          {avarias?.tipos?.length ? (
-            <>
-            {avarias.referenciaParcial && <p className="mt-1 text-xs text-white/60">Totais e distribuição mensal conferidos · custo parcial.</p>}
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-              {avarias.tipos.map((t, i) => {
-                const maxMes = Math.max(...t.meses.map((m) => m.qtd), 1);
-                const imagem = imagemAvaria(t.tipo);
-                const temImg = temImagemAvaria(t.tipo);
-                return (
-                  <button
-                    type="button"
-                    key={t.tipo}
-                    onClick={() => {
-                      setTipoSel(i);
-                      onPausar?.();
-                    }}
-                    className="video-sobe group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-white/20 bg-white/5 text-left transition-all hover:border-primary/50 hover:bg-white/10"
-                    style={{ animationDelay: `${0.12 * i}s` }}
-                  >
-                    {temImg ? (
-                      <div className="relative h-10 overflow-hidden sm:h-12">
-                        <img src={imagem} alt={t.tipo} className="h-full w-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                        <p className="absolute bottom-0.5 left-1.5 right-1.5 truncate text-[8px] font-bold tracking-wider text-white uppercase sm:text-[9px]">
-                          {t.tipo}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="px-1.5 pt-1.5">
-                        <p className="truncate text-[8px] font-bold tracking-wider text-white uppercase sm:text-[9px]">
-                          {t.tipo}
-                        </p>
-                      </div>
-                    )}
-                    <div className="p-1.5 sm:p-2">
-                      <div className="flex items-baseline justify-between">
-                        <span className="font-serif text-base text-white sm:text-lg">{fmtInt(t.total)}</span>
-                        <span className="font-mono text-[9px] font-bold text-white/60">{fmtBrMax(t.pct, 1)}%</span>
-                      </div>
-                      <div className="my-1 h-1 rounded-full" style={{ background: t.cor }} />
-                      <div className="flex h-7 items-stretch gap-0.5 sm:gap-1">
-                        {t.meses.map((m, mi) => (
-                          <div key={m.mes} className="flex h-full flex-1 flex-col items-center justify-end gap-0.5">
-                            <div
-                              className={cn("video-barra-y w-full rounded-t-full", !anim && "video-pausada")}
-                              style={{
-                                height: `${Math.max((m.qtd / maxMes) * 100, 6)}%`,
-                                background: t.cor,
-                                animationDelay: `${0.12 * i + 0.3 + 0.08 * mi}s`,
-                              }}
-                            />
-                            <span className="text-[6px] font-bold tracking-wider text-white/40 uppercase">{m.mes}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            </>
-          ) : (
-            <p className="video-sobe mt-8 font-serif text-3xl text-white/70">
-              Sem dados de tipos de avaria.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Cena 10 — pendências de produção */}
-      {cena === 7 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -785,8 +589,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 11 — itens reservados: cruzamento peso, quantidade e valor */}
-      {cena === 8 && reservados && (
+      {/* Cena 8 — itens reservados: cruzamento peso, quantidade e valor */}
+      {cena === 7 && reservados && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -914,8 +718,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 12 fallback — sem dados de reservados */}
-      {cena === 8 && !reservados && (
+      {/* Cena 8 fallback — sem dados de reservados */}
+      {cena === 7 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -932,23 +736,23 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 14 — Fora de linha por categoria */}
-      {cena === 9 && (
+      {/* Cena 9 — Fora de linha por categoria */}
+      {cena === 8 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
-      {/* Cena 14 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 10 && (
+      {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 9 && (
         <CenaTonelagemEstoque anim={anim} />
       )}
 
-      {/* Cena 14 — Saúde do estoque (donut) */}
-      {cena === 11 && (
+      {/* Cena 11 — Saúde do estoque (donut) */}
+      {cena === 10 && (
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
-      {/* Cena 15 — encerramento */}
-      {cena === 12 && (
+      {/* Cena 12 — encerramento */}
+      {cena === 11 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -967,18 +771,6 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Modal — gráfico mês a mês do tipo de avaria selecionado */}
-      {tipoSel !== null && avarias?.tipos?.[tipoSel] && (
-        <GraficoMotivoMensal
-          titulo={avarias.tipos[tipoSel].tipo}
-          imagem={imagemAvaria(avarias.tipos[tipoSel].tipo)}
-          cor={avarias.tipos[tipoSel].cor}
-          meses={avarias.tipos[tipoSel].meses}
-          total={avarias.tipos[tipoSel].total}
-          pct={avarias.tipos[tipoSel].pct}
-          onClose={() => setTipoSel(null)}
-        />
-      )}
     </>
   );
 }
