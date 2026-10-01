@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
+import ResumoBg from "./ResumoBg";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 
 /* Vídeo-resumo do dashboard — cenas animadas com gráficos e o mínimo de texto,
@@ -210,11 +211,8 @@ export default function VideoResumoDashboard({
         else setPausado((p) => !p);
       }}
     >
-      {/* Fundo da marca com movimento sutil (Ken Burns) */}
-      <div
-        className="video-kenburns absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url(/fundo-satelite-real.jpg?v=1)" }}
-      />
+      {/* Fundo da marca com movimento sutil (Ken Burns) e troca de imagem */}
+      <ResumoBg />
       {/* Camadas de profundidade para legibilidade */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#4a6b20]/75 via-[#3a521a]/60 to-[#2e3f14]/85" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.35)_100%)]" />
