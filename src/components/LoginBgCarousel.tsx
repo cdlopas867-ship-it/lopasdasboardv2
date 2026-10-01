@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
+import jardimAsset from "@/assets/login/lopas-aerea-jardim.webp.asset.json";
+import valeAsset from "@/assets/login/lopas-aerea-vale.webp.asset.json";
+import montanhasAsset from "@/assets/login/lopas-aerea-montanhas.webp.asset.json";
+import patioAsset from "@/assets/login/lopas-patio.webp.asset.json";
+import verdeAsset from "@/assets/login/lopas-aerea-verde.webp.asset.json";
 
-const IMAGENS = ["/login-bg-1.jpg", "/login-bg-2.jpg", "/login-bg-3.jpg"];
+const IMAGENS = [
+  jardimAsset.url,
+  valeAsset.url,
+  montanhasAsset.url,
+  patioAsset.url,
+  verdeAsset.url,
+];
 const INTERVALO = 6000;
 
 function carregarImagem(src: string) {
@@ -56,7 +67,7 @@ export default function LoginBgCarousel() {
             alt=""
             decoding="async"
             fetchPriority={i === 0 ? "high" : "low"}
-            className="absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-in-out"
+            className="login-bg-image absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ease-in-out"
             style={{
               opacity: i === atual ? 1 : 0,
               transform: i === atual ? "scale(1.04)" : "scale(1)",
