@@ -1023,7 +1023,7 @@ function CenaKpisFoco({
       </div>
 
       {/* Apenas o card aberto aparece, centralizado e em destaque */}
-      <div className="relative mt-4 flex min-h-[160px] w-full max-w-[19rem] items-center justify-center sm:min-h-[190px]">
+      <div className="relative mt-4 flex w-full max-w-[19rem] items-center justify-center">
         {/* halo suave atrás do card para destacar sem peso */}
         <div className="card-foco-halo pointer-events-none absolute inset-0" aria-hidden />
         <div key={foco} className="card-foco-entra relative w-full">
