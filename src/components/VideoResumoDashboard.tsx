@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
+import ResumoBg from "./ResumoBg";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 
 /* Vídeo-resumo do dashboard — cenas animadas com gráficos e o mínimo de texto,

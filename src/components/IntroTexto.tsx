@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import type { VideoKpi, VideoUnidade, VideoOcupacao, VideoMes, VideoAvarias, VideoPendentes, VideoReservados } from "./VideoResumoDashboard";
 import type { VideoForaDeLinha } from "./CenasApresentacao";
 import { interpretarLocal } from "@/lib/interpretador-local";
+import ResumoBg from "./ResumoBg";
 
 type Resumo = { valor: number; previsto: number; ton: number; saldo: number; itens: number };
 
