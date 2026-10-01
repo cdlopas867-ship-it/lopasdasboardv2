@@ -47,7 +47,7 @@ function serialToIso(v: unknown): string {
 }
 
 /* Classifica a pendência pelo mês da DT FINAL: CRÍTICO quando a data final
-   está 3 ou mais meses atrás do mês atual, NO PRAZO caso contrário. */
+   é de um mês anterior ao atual, NO PRAZO apenas no mês atual ou futuro. */
 export function alertaPorData(dtFinal: string): AlertaPendente {
   const data = parseDate(dtFinal);
   if (!data) return "prazo";
@@ -55,7 +55,7 @@ export function alertaPorData(dtFinal: string): AlertaPendente {
   const diffMeses =
     (agora.getFullYear() - data.getFullYear()) * 12 +
     (agora.getMonth() - data.getMonth());
-  if (diffMeses >= 2) return "critico";
+  if (diffMeses >= 1) return "critico";
   return "prazo";
 }
 

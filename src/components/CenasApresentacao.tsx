@@ -488,7 +488,7 @@ export default function CenasApresentacao({
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
               Pendências de produção
             </p>
-            <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Crítico = ordens com data final 2 ou mais meses atrás. No prazo = mês anterior, atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
+            <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Crítico = ordens com data final em qualquer mês anterior ao atual. No prazo = apenas ordens do mês atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
           </div>
           {pendentes ? (
             <>
