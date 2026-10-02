@@ -8,10 +8,17 @@ import { TONELAGEM_ESTOQUE_MENSAL } from "@/data/tonelagem-estoque";
 
 type Props = {
   anim: boolean;
+  tonAtual?: number | undefined;
 };
 
-export default function CenaTonelagemEstoque({ anim }: Props) {
-  const dados = TONELAGEM_ESTOQUE_MENSAL;
+export default function CenaTonelagemEstoque({ anim, tonAtual }: Props) {
+  /* Outubro reflete sempre o último peso do estoque (atualização ao vivo),
+     não um valor fixo — atualiza conforme a sincronização até o fim do mês. */
+  const dados = TONELAGEM_ESTOQUE_MENSAL.map((d, i) =>
+    i === TONELAGEM_ESTOQUE_MENSAL.length - 1 && tonAtual && tonAtual > 0
+      ? { ...d, ton: Math.round(tonAtual) }
+      : d,
+  );
   const ultimo = dados[dados.length - 1]!;
   const anterior = dados[dados.length - 2]!;
   const deltaUltimo = ((ultimo.ton - anterior.ton) / anterior.ton) * 100;

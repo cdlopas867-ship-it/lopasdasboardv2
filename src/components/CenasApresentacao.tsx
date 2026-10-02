@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { fmtBrMax, fmtInt, fmtTonDec, fmtMoeda, fmtMoeda2, fmtPct, fmtPeso } from "@/lib/format";
+import { fmtBrMax, fmtInt, fmtMoeda, fmtPct, fmtPeso } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
-import CenaPaletas from "@/components/CenaPaletas";
+import CenaOcupacao from "@/components/CenaOcupacao";
+import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
+import CenaReservados from "@/components/CenaReservados";
 
-import { POSICAO_FORA_DE_LINHA, POSICAO_EM_LINHA, POSICAO_TOTAL, ITENS_FORA_DE_LINHA, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
+import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
 export type VideoForaDeLinha = {
   itens: ItemForaDeLinha[];
@@ -51,6 +53,7 @@ type Props = {
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
+  resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   onReiniciar: () => void;
   onPausar?: (() => void) | undefined;
 };
@@ -72,421 +75,39 @@ export default function CenasApresentacao({
   saidasCD,
   foraDeLinha,
   paletas,
+  resumo,
   onReiniciar,
   onPausar,
 }: Props) {
-  const maxDia = semana ? Math.max(...semana.dias.map((d) => d.ton), 1) : 1;
-  const totalTurnoTon = turnos.reduce((s, t) => s + (t.ton ?? 0), 0);
-  const turnoPrincipal = turnos.length ? turnos.reduce((a, b) => (b.pct > a.pct ? b : a)) : null;
   /* Mostra todos os meses com recebimento ou carregamento — meses sem
      carregado no Drive (jan–abr) agora têm valores da planilha do usuário. */
   const listaMes = (mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0);
   const totRecebido = listaMes.reduce((s, m) => s + m.recebido, 0);
-  const totCarregado = listaMes.reduce((s, m) => s + m.carregado, 0);
-  const R = 84;
-  const CIRC = 2 * Math.PI * R;
 
   return (
     <>
       {/* Cena 1 — KPIs de abertura em destaque (um card por vez, centralizado) */}
       {cena === 0 && (
-        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} onPausar={onPausar} />
+        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} paletas={paletas} onPausar={onPausar} />
       )}
 
-      {/* Cena 3 — ocupação (donut) */}
+      {/* Cena 2 — ocupação (donut interativo) */}
       {cena === 1 && (
-        <div className="flex w-full flex-col items-center">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Ocupação do CD
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Taxa de ocupação das posições de armazenagem. Cálculo: posições ocupadas ÷ total de posições (5.970). Capacidades: CD1 = 1.800 kg/posição, CD2 = 2.500 kg/posição, 20 volumes/posição. Área total: 18.300 m². Fonte: inventário físico do CD. Atualizado em 28/09/2026." />
-          </div>
-          <div className="video-pop relative mt-2 flex items-center justify-center">
-            <svg viewBox="0 0 200 200" className="size-28 sm:size-32">
-              <circle
-                cx="100"
-                cy="100"
-                r={R}
-                fill="none"
-                strokeWidth="16"
-                className="stroke-white/15"
-              />
-              <circle
-                cx="100"
-                cy="100"
-                r={R}
-                fill="none"
-                strokeWidth="16"
-                strokeLinecap="round"
-                stroke="white"
-                transform="rotate(-90 100 100)"
-                style={{
-                  strokeDasharray: CIRC,
-                  strokeDashoffset: anim ? CIRC * (1 - ocupacao.pct) : CIRC,
-                  transition: "stroke-dashoffset 1.3s cubic-bezier(0.22,1,0.36,1)",
-                  filter: "drop-shadow(0 0 8px rgba(255,255,255,0.35))",
-                }}
-              />
-            </svg>
-            <div className="absolute text-center">
-              <p className="font-serif text-2xl text-white">
-                {fmtBrMax(ocupacao.pct * 100, 1)}%
-              </p>
-              <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">
-                ocupado
-              </p>
-            </div>
-          </div>
-          <div
-            className="video-sobe mt-3 w-full max-w-xs mx-auto"
-            style={{ animationDelay: "0.5s" }}
-          >
-            <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-              Legenda
-            </p>
-            <table className="w-full text-left text-[11px] text-white">
-              <thead>
-                <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
-                  <th className="pb-0.5 font-bold">Atributo</th>
-                  <th className="pb-0.5 text-center font-bold">Und.</th>
-                  <th className="pb-0.5 text-right font-bold">CD1</th>
-                  <th className="pb-0.5 text-right font-bold">CD2</th>
-                  <th className="pb-0.5 text-right font-bold">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(ocupacao.detalhes ?? []).map((d, i) => (
-                  <tr key={`${d.atributo}-${d.unidade}-${i}`} className="border-b border-white/10 last:border-0">
-                    <td className="py-0.5 text-white/80">{d.atributo}</td>
-                    <td className="py-0.5 text-center text-white/50">{d.unidade}</td>
-                    <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(d.cd1)}</td>
-                    <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(d.cd2)}</td>
-                    <td className="py-0.5 text-right font-mono font-bold text-white">{fmtInt(d.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-              * 1.800 kg/posição CD1. * 2.500 kg/posição CD2. * 20 volumes/posição.
-            </p>
-          </div>
-        </div>
+        <CenaOcupacao anim={anim} ocupacao={ocupacao} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 4 — recebimento da semana (barras por dia) */}
-      {cena === 2 && semana && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Recebimento · Semana {semana.rotulo}
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Tonelagem recebida por dia útil. Meta diária: 330 toneladas (linha tracejada). Cada barra representa um dia de recebimento. Fonte: sistema de recebimento Focco. Período: 10/09 a 22/09/2026." />
-          </div>
-          <p className="video-sobe mt-3 font-serif text-3xl text-white sm:text-5xl">
-            {semana.total}
-          </p>
-          <div className="relative mt-10 flex h-48 items-end justify-between gap-2 sm:gap-4">
-            {/* linha da meta */}
-            <div
-              className="pointer-events-none absolute right-0 left-0 border-t border-dashed border-brand-amber"
-              style={{ bottom: `${Math.min((semana.dias[0]?.meta ?? 330) / maxDia, 1) * 100}%` }}
-            >
-              <span className="absolute -top-5 right-0 text-[9px] font-bold tracking-widest text-brand-amber uppercase">
-                meta
-              </span>
-            </div>
-            {semana.dias.map((d, i) => (
-              <div key={d.data} className="flex h-full flex-1 flex-col justify-end">
-                <p
-                  className="video-sobe mb-1.5 text-center font-mono text-[11px] font-bold text-white/85"
-                  style={{ animationDelay: `${0.12 * i + 0.5}s` }}
-                >
-                  {fmtTonCurto(d.ton)}
-                </p>
-                <div
-                  className={cn(
-                    "video-barra-y w-full rounded-t-lg",
-                    d.ton >= d.meta
-                      ? "bg-gradient-to-t from-white/80 to-white shadow-[0_0_16px_rgba(255,255,255,0.25)]"
-                      : "bg-gradient-to-t from-brand-amber/70 to-brand-amber",
-                    !anim && "video-pausada",
-                  )}
-                  style={{
-                    height: `${Math.max((d.ton / maxDia) * 100, 4)}%`,
-                    animationDelay: `${0.12 * i + 0.2}s`,
-                  }}
-                />
-                <p className="mt-2 text-center text-[10px] font-bold text-white/70 uppercase">
-                  {d.data}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Cena 3 — recebimento por turno (donut interativo) */}
+      {cena === 2 && (
+        <CenaRecebimentoTurno anim={anim} turnos={turnos} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 5 — recebimento por turno (formato ocupação do CD) */}
+      {/* Cena 4 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
       {cena === 3 && (
-        <div className="flex w-full flex-col items-center">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Recebimento por turno
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Distribuição do recebimento entre turnos. Turno dia: 06:00–17:59. Turno noite: 18:00–02:30. Percentual = tonelagem do turno ÷ total recebido. Fonte: sistema Focco. Período acumulado de 2026." />
-          </div>
-          {turnoPrincipal && (
-            <div className="video-pop relative mt-2 flex items-center justify-center">
-              <svg viewBox="0 0 200 200" className="size-28 sm:size-32">
-                <circle
-                  cx="100"
-                  cy="100"
-                  r={R}
-                  fill="none"
-                  strokeWidth="16"
-                  className="stroke-white/15"
-                />
-                <circle
-                  cx="100"
-                  cy="100"
-                  r={R}
-                  fill="none"
-                  strokeWidth="16"
-                  strokeLinecap="round"
-                  stroke="white"
-                  transform="rotate(-90 100 100)"
-                  style={{
-                    strokeDasharray: CIRC,
-                    strokeDashoffset: anim ? CIRC * (1 - turnoPrincipal.pct / 100) : CIRC,
-                    transition: "stroke-dashoffset 1.3s cubic-bezier(0.22,1,0.36,1)",
-                    filter: "drop-shadow(0 0 8px rgba(255,255,255,0.35))",
-                  }}
-                />
-              </svg>
-              <div className="absolute text-center">
-                <p className="font-serif text-2xl text-white">
-                  {fmtBrMax(turnoPrincipal.pct, 1)}%
-                </p>
-                <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">
-                  turno {turnoPrincipal.nome}
-                </p>
-              </div>
-            </div>
-          )}
-          <div
-            className="video-sobe mt-3 w-full max-w-xs mx-auto"
-            style={{ animationDelay: "0.5s" }}
-          >
-            <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-              Legenda
-            </p>
-            <table className="w-full text-left text-[11px] text-white">
-              <thead>
-                <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
-                  <th className="pb-0.5 font-bold">Turno</th>
-                  <th className="pb-0.5 text-center font-bold">Faixa</th>
-                  <th className="pb-0.5 text-right font-bold">Ton.</th>
-                  <th className="pb-0.5 text-right font-bold">%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {turnos.map((t) => (
-                  <tr key={t.nome} className="border-b border-white/10 last:border-0">
-                    <td className="py-0.5 text-white/80">{t.nome}</td>
-                    <td className="py-0.5 text-center text-white/50">{t.faixa ?? "—"}</td>
-                    <td className="py-0.5 text-right font-mono font-semibold text-white/80">
-                      {t.ton ? fmtTonDec(t.ton) : "—"}
-                    </td>
-                    <td className="py-0.5 text-right font-mono font-bold text-white">
-                      {fmtBrMax(t.pct, 1)}%
-                    </td>
-                  </tr>
-                ))}
-                <tr className="border-t-2 border-white/30 font-bold">
-                  <td className="py-0.5 text-white">Total</td>
-                  <td />
-                  <td className="py-0.5 text-right font-mono text-white">
-                    {totalTurnoTon ? fmtTonDec(totalTurnoTon) : "—"}
-                  </td>
-                  <td className="py-0.5 text-right font-mono text-white">100%</td>
-                </tr>
-              </tbody>
-            </table>
-            <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-              * Turno dia: 06:00–17:59. * Turno noite: 18:00–02:30. Fonte: sistema Focco.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Cena 6 — recebido × carregado por mês (destaque: agosto) */}
-      {cena === 4 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Recebido × Carregado · por mês
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Comparativo mensal de tonelagem recebida e carregada. Eficiência = carregado ÷ recebido × 100. Variação = (carregado do mês ÷ carregado do mês anterior − 1) × 100. Agosto em destaque. Fonte: planilhas de recebimento e carregamento do Drive. Janeiro a setembro de 2026." />
-          </div>
-          {listaMes.length ? (
-            <>
-              <div className="video-sobe mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-1">
-                <p className="font-serif text-2xl text-white sm:text-4xl">
-                  {fmtTonDec(totRecebido)}{" "}
-                  <span className="text-sm text-white/60 sm:text-base">recebidas</span>
-                </p>
-                <p className="font-serif text-2xl text-brand-amber sm:text-4xl">
-                  {fmtTonDec(totCarregado)}{" "}
-                  <span className="text-sm text-white/60 sm:text-base">carregadas</span>
-                </p>
-                <p className="font-serif text-2xl sm:text-4xl">
-                  <span className={cn(totRecebido - totCarregado >= 0 ? "text-emerald-400" : "text-red-400")}>
-                    {fmtTonDec(Math.abs(totRecebido - totCarregado))}
-                  </span>{" "}
-                  <span className="text-sm text-white/60 sm:text-base">saldo</span>
-                </p>
-              </div>
-
-              <div className="mt-8 flex h-44 items-end justify-between gap-3 sm:gap-5">
-                {listaMes.map((m, i) => {
-                  const max = Math.max(
-                    ...listaMes.map((x) => Math.max(x.recebido, x.carregado)),
-                    1,
-                  );
-                  const destaque = m.mes.toUpperCase().startsWith("AGO");
-                  /* Desempenho do mês: eficiência (carregado/recebido) e variação vs. mês anterior */
-                  const pct = m.recebido > 0 ? (m.carregado / m.recebido) * 100 : 0;
-                  const anterior = listaMes[i - 1];
-                  const delta = anterior?.carregado
-                    ? ((m.carregado - anterior.carregado) / anterior.carregado) * 100
-                    : null;
-                  return (
-                    <div key={m.mes} className="flex h-full flex-1 flex-col justify-end">
-                      <div className="flex h-full items-end justify-center gap-1.5">
-                        <div className="flex h-full flex-1 flex-col items-center justify-end">
-                          <p
-                            className="video-sobe mb-1 text-center font-mono text-[10px] font-bold text-white/85"
-                            style={{ animationDelay: `${0.12 * i + 0.5}s` }}
-                          >
-                            {fmtInt(m.recebido)}
-                          </p>
-                          <div
-                            className={cn(
-                              "video-barra-y w-full rounded-t-lg bg-gradient-to-t from-brand-amber/70 to-brand-amber",
-                              !anim && "video-pausada",
-                            )}
-                            style={{
-                              height: `${Math.max((m.recebido / max) * 100, 3)}%`,
-                              animationDelay: `${0.12 * i + 0.2}s`,
-                            }}
-                          />
-                        </div>
-                        <div className="flex h-full flex-1 flex-col items-center justify-end">
-                          <p
-                            className="video-sobe mb-1 text-center font-mono text-[10px] font-bold text-white/85"
-                            style={{ animationDelay: `${0.12 * i + 0.55}s` }}
-                          >
-                            {fmtInt(m.carregado)}
-                          </p>
-                          <div
-                            className={cn(
-                              "video-barra-y w-full rounded-t-lg",
-                              destaque
-                                ? "bg-gradient-to-t from-white/90 to-white shadow-[0_0_18px_rgba(255,255,255,0.35)]"
-                                : "bg-gradient-to-t from-white/50 to-white/80",
-                              !anim && "video-pausada",
-                            )}
-                            style={{
-                              height: `${Math.max((m.carregado / max) * 100, 3)}%`,
-                              animationDelay: `${0.12 * i + 0.3}s`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <p
-                        className={cn(
-                          "mt-2 truncate text-center text-[10px] font-bold uppercase",
-                          destaque ? "text-brand-amber" : "text-white/70",
-                        )}
-                      >
-                        {m.mes}
-                        {destaque && " ★"}
-                      </p>
-                      <p
-                        className="video-sobe mt-1 text-center font-mono text-[10px] font-bold text-white/85"
-                        style={{ animationDelay: `${0.12 * i + 0.65}s` }}
-                      >
-                        {fmtBrMax(pct, 0)}%
-                      </p>
-                      <p
-                        className={cn(
-                          "video-sobe text-center text-[9px] font-bold",
-                          delta === null
-                            ? "text-white/30"
-                            : delta >= 0
-                              ? "text-emerald-400"
-                              : "text-red-400",
-                        )}
-                        style={{ animationDelay: `${0.12 * i + 0.7}s` }}
-                      >
-                        {delta === null
-                          ? "—"
-                          : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
-                      </p>
-                      {/* Diferença recebido − carregado do mês */}
-                      {(() => {
-                        const diff = m.recebido - m.carregado;
-                        return (
-                          <p
-                            className={cn(
-                              "video-sobe text-center font-mono text-[8px] font-bold",
-                              diff >= 0 ? "text-emerald-400/80" : "text-red-400/80",
-                            )}
-                            style={{ animationDelay: `${0.12 * i + 0.75}s` }}
-                          >
-                            {diff >= 0 ? "+" : "−"}{fmtInt(Math.abs(diff))}
-                          </p>
-                        );
-                      })()}
-                    </div>
-                  );
-                })}
-              </div>
-              <div
-                className="video-sobe mt-5 flex flex-wrap items-center justify-center gap-3 text-[9px] font-bold tracking-widest uppercase sm:gap-6 sm:text-[10px]"
-                style={{ animationDelay: "0.6s" }}
-              >
-                <span className="flex items-center gap-2 text-white/70">
-                  <span className="size-2.5 rounded-sm bg-brand-amber" /> Recebido
-                </span>
-                <span className="flex items-center gap-2 text-white/70">
-                  <span className="size-2.5 rounded-sm bg-white" /> Carregado
-                </span>
-                <span className="text-white/50">
-                  <span className="text-emerald-400">▲</span>/<span className="text-red-400">▼</span> vs. mês anterior
-                </span>
-                <span className="text-white/50">% carregado/recebido</span>
-                <span className="text-white/50">
-                  <span className="text-emerald-400">+</span>/<span className="text-red-400">−</span> saldo mês
-                </span>
-                <span className="text-brand-amber">★ Agosto em destaque</span>
-              </div>
-            </>
-          ) : (
-            <p className="video-sobe mt-8 font-serif text-3xl text-white/70">
-              Sem dados de carregamento por mês.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Cena 6 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
-      {cena === 5 && (
         <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
       )}
 
-      {/* Cena 7 — pendências de produção */}
-      {cena === 6 && (
+      {/* Cena 5 — pendências de produção */}
+      {cena === 4 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -620,137 +241,13 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 8 — itens reservados: cruzamento peso, quantidade e valor */}
-      {cena === 7 && reservados && (
-        <div className="flex w-full flex-col items-center">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Estoque Reservado
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Itens com reserva comercial. % do valor = valor reservado ÷ valor total do estoque × 100. Cálculo por item: qtd reservada × custo médio = valor reservado; qtd reservada × peso bruto = peso reservado. Fonte: planilha 'COMERCIAL 024 - SALDO DE ITENS COM RESERVA' do Drive. Atualizado em 28/09/2026." />
-          </div>
-
-          {/* Anel circular de progresso — % do valor reservado */}
-          <div className="video-pop relative mt-2 flex items-center justify-center">
-            <svg viewBox="0 0 200 200" className="size-28 sm:size-32">
-              <circle
-                cx="100"
-                cy="100"
-                r={R}
-                fill="none"
-                strokeWidth="16"
-                className="stroke-white/15"
-              />
-              <circle
-                cx="100"
-                cy="100"
-                r={R}
-                fill="none"
-                strokeWidth="16"
-                strokeLinecap="round"
-                stroke="white"
-                transform="rotate(-90 100 100)"
-                style={{
-                  strokeDasharray: CIRC,
-                  strokeDashoffset: anim ? CIRC * (1 - reservados.pctValor / 100) : CIRC,
-                  transition: "stroke-dashoffset 1.3s cubic-bezier(0.22,1,0.36,1)",
-                  filter: "drop-shadow(0 0 8px rgba(255,255,255,0.35))",
-                }}
-              />
-            </svg>
-            <div className="absolute text-center">
-              <p className="font-serif text-2xl text-white">
-                {fmtBrMax(reservados.pctValor, 1)}%
-              </p>
-              <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">
-                reservado
-              </p>
-            </div>
-          </div>
-
-          {/* Tabela de cruzamento — peso, quantidade e valor */}
-          <div
-            className="video-sobe mt-3 w-full max-w-xs mx-auto"
-            style={{ animationDelay: "0.5s" }}
-          >
-            <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-              Legenda
-            </p>
-            <table className="w-full text-left text-[11px] text-white">
-              <thead>
-                <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
-                  <th className="pb-0.5 font-bold">Atributo</th>
-                  <th className="pb-0.5 text-center font-bold">Und.</th>
-                  <th className="pb-0.5 text-right font-bold">Reserv.</th>
-                  <th className="pb-0.5 text-right font-bold">Estoque</th>
-                  <th className="pb-0.5 text-right font-bold">%</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-white/10">
-                  <td className="py-0.5 text-white/80">Peso</td>
-                  <td className="py-0.5 text-center text-white/50">t</td>
-                  <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(reservados.totalTon, 1)}</td>
-                  <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(reservados.totalPesoEstoque, 1)}</td>
-                  <td className="py-0.5 text-right font-mono font-bold text-brand-amber">{fmtBrMax(reservados.pctPeso, 1)}%</td>
-                </tr>
-                <tr className="border-b border-white/10">
-                  <td className="py-0.5 text-white/80">Quantidade</td>
-                  <td className="py-0.5 text-center text-white/50">un</td>
-                  <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(reservados.totalQtd)}</td>
-                  <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(reservados.totalSaldo)}</td>
-                  <td className="py-0.5 text-right font-mono font-bold text-brand-amber">{fmtBrMax(reservados.pctQtd, 1)}%</td>
-                </tr>
-                <tr className="border-b border-white/10 last:border-0">
-                  <td className="py-0.5 text-white/80">Valor</td>
-                  <td className="py-0.5 text-center text-white/50">R$</td>
-                  <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(reservados.totalValor / 1e6, 2)} mi</td>
-                  <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(reservados.totalValorEstoque / 1e6, 2)} mi</td>
-                  <td className="py-0.5 text-right font-mono font-bold text-brand-amber">{fmtBrMax(reservados.pctValor, 1)}%</td>
-                </tr>
-              </tbody>
-            </table>
-            <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-              * Valores em milhões de reais. Toneladas com 1 casa decimal.
-            </p>
-          </div>
-
-          {/* Valor previsto da reserva — integrado na mesma cena */}
-          {valorFaturado && (
-            <div className="video-sobe mt-5 w-full max-w-sm mx-auto border-t border-white/10 pt-5" style={{ animationDelay: "0.7s" }}>
-              <div className="flex items-center justify-center gap-2">
-                <p className="text-[10px] font-bold tracking-[0.3em] text-white/60 uppercase">
-                  Valor Previsto da Reserva
-                </p>
-                <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
-              </div>
-              <p className="mt-2 text-center font-serif text-3xl text-primary sm:text-4xl">
-                {fmtMoeda(reservados.totalTon * valorFaturado)}
-              </p>
-              <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
-                <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 text-center">
-                  <p className="font-serif text-base text-white sm:text-lg">{fmtTonDec(reservados.totalTon)}</p>
-                  <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">Ton. reserv.</p>
-                </div>
-                <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 text-center">
-                  <p className="font-serif text-base text-white sm:text-lg">× {fmtMoeda2(valorFaturado)}</p>
-                  <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">R$/t faturado</p>
-                </div>
-                <div className="rounded-xl border border-primary/30 bg-primary/10 p-2.5 text-center">
-                  <p className="font-serif text-base text-primary sm:text-lg">{fmtBrMax(reservados.pctValor, 1)}%</p>
-                  <p className="text-[7px] font-bold tracking-widest text-primary uppercase">do valor</p>
-                </div>
-              </div>
-              <p className="mt-2 text-center text-[9px] text-white/40">
-                Toneladas reservadas × valor faturado = valor previsto da reserva
-              </p>
-            </div>
-          )}
-        </div>
+      {/* Cena 6 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
+      {cena === 5 && reservados && (
+        <CenaReservados anim={anim} reservados={reservados} valorFaturado={valorFaturado} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 8 fallback — sem dados de reservados */}
-      {cena === 7 && !reservados && (
+      {/* Cena 6 fallback — sem dados de reservados */}
+      {cena === 5 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -767,28 +264,23 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 9 — Fora de linha por categoria */}
+      {/* Cena 7 — Fora de linha por categoria */}
+      {cena === 6 && (
+        <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 8 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 7 && (
+        <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
+      )}
+
+      {/* Cena 9 — Saúde do estoque (donut) */}
       {cena === 8 && (
-        <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
+        <CenaSaudeEstoque anim={anim} mensal={mensal} cena={cena} />
       )}
 
-      {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
+      {/* Cena 10 — encerramento */}
       {cena === 9 && (
-        <CenaTonelagemEstoque anim={anim} />
-      )}
-
-      {/* Cena 11 — Saúde do estoque (donut) */}
-      {cena === 10 && (
-        <CenaSaudeEstoque anim={anim} mensal={mensal} />
-      )}
-
-      {/* Cena 12 — Paletes & Ocupação do estoque */}
-      {cena === 11 && (
-        <CenaPaletas anim={anim} paletas={paletas} ocupacao={ocupacao} onPausar={onPausar} />
-      )}
-
-      {/* Cena 13 — encerramento */}
-      {cena === 12 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -817,13 +309,15 @@ export default function CenasApresentacao({
 function CenaKpisFoco({
   kpis,
   foraDeLinha,
+  paletas,
   onPausar,
 }: {
   kpis: VideoKpi[];
   foraDeLinha?: VideoForaDeLinha | undefined;
+  paletas?: VideoPaletas | undefined;
   onPausar?: (() => void) | undefined;
 }) {
-  const total = kpis.length + 1; // +1 = card Fora de linha
+  const total = kpis.length + 1 + (paletas && paletas.totalPaletes > 0 ? 1 : 0); // +1 Fora de linha, +1 Paletes
   const [foco, setFoco] = useState(0);
   const [pausado, setPausado] = useState(false);
 
@@ -843,8 +337,9 @@ function CenaKpisFoco({
     return () => window.removeEventListener("keydown", onKey);
   }, [total]);
 
-  const ehForaDeLinha = foco >= kpis.length;
-  const kpi = !ehForaDeLinha ? kpis[foco] : null;
+  const ehForaDeLinha = foco === kpis.length;
+  const ehPaletas = foco === kpis.length + 1;
+  const kpi = foco < kpis.length ? kpis[foco] : null;
   const togglePausar = () => {
     const next = !pausado;
     setPausado(next);
@@ -877,6 +372,8 @@ function CenaKpisFoco({
         <div key={foco} className="card-foco-entra relative w-full">
           {kpi ? (
             <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} onAvancar={avancar} />
+          ) : ehPaletas ? (
+            <CardFocoPaletas paletas={paletas} onAvancar={avancar} />
           ) : (
             <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} onAvancar={avancar} />
           )}
@@ -1019,7 +516,59 @@ function CardFocoForaDeLinha({
   );
 }
 
-/* Toneladas em formato curto — "327" ou "1.234" */
-function fmtTonCurto(ton: number) {
-  return fmtInt(ton);
+/* Card de "paletes em estoque" em destaque — mostra o total de paletes
+   e o breakdown por tamanho (P, M, G, GG). */
+const CORES_TAMANHO: Record<string, string> = {
+  P: "#22c55e",
+  M: "#3b82f6",
+  G: "#f97316",
+  GG: "#a855f7",
+};
+
+function CardFocoPaletas({
+  paletas,
+  onAvancar,
+}: {
+  paletas?: VideoPaletas | undefined;
+  onAvancar: () => void;
+}) {
+  const total = paletas?.totalPaletes ?? 0;
+  const itens = paletas?.totalItens ?? 0;
+  return (
+    <button
+      type="button"
+      onClick={onAvancar}
+      className={cn(cardFocoBase, "border-primary/20 bg-primary/[0.05] hover:border-primary/35 hover:bg-primary/[0.08]")}
+    >
+      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
+        {fmtInt(total)}
+      </p>
+      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-primary/80 uppercase">
+        Paletes em Estoque
+      </p>
+      <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
+        {fmtInt(itens)} itens mapeados distribuídos em {fmtInt(total)} paletes,
+        organizados por tamanho de pallet.
+      </p>
+      {paletas?.porTamanho?.length ? (
+        <dl className="mt-3 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
+          {paletas.porTamanho.map((t) => {
+            const cor = CORES_TAMANHO[t.tamanho] ?? "#6b7280";
+            const pct = total > 0 ? (t.paletes / total) * 100 : 0;
+            return (
+              <div key={t.tamanho} className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+                <dt className="flex items-center gap-1.5 text-white/45">
+                  <span className="size-2 rounded-full" style={{ background: cor }} />
+                  Tamanho {t.tamanho}
+                </dt>
+                <dd className="font-medium text-white/90">
+                  {fmtInt(t.paletes)} <span className="text-white/40">({fmtBrMax(pct, 0)}%)</span>
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      ) : null}
+    </button>
+  );
 }

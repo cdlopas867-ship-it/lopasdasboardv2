@@ -7,7 +7,6 @@ import VideoResumoDashboard, { type VideoAbc, type VideoAvarias, type VideoDia, 
 import type { VideoForaDeLinha } from "@/components/CenasApresentacao";
 
 import LoadingApresentacao from "@/components/LoadingApresentacao";
-import IntroTexto from "@/components/IntroTexto";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
 import { normalizarDiasExibicao } from "@/lib/recebimento";
@@ -22,7 +21,6 @@ function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();
   const { dados, loaded } = useDadosSync<Painel>(initialSyncData as Painel);
   const [valorFaturado, setValorFaturado] = useState<number>();
-  const [fase, setFase] = useState<"intro" | "video">("intro");
   useEffect(() => { if (pronto && !autenticado) navigate({ to: "/login", replace: true }); }, [pronto, autenticado, navigate]);
   useEffect(() => { if (autenticado) fetch("/api/valor-faturado").then(r => r.json()).then(d => setValorFaturado(d.valor)).catch(() => {}); }, [autenticado]);
   const presentation = useMemo(() => {
@@ -73,6 +71,5 @@ function DashboardHome() {
   }, [dados]);
   if (!pronto || !autenticado) return null;
   if (!loaded) return <LoadingApresentacao />;
-  if (fase === "intro") return <IntroTexto {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onConcluir={() => setFase("video")} />;
   return <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />;
 }
