@@ -41,11 +41,13 @@ function extrairUnidadesPorPalete(texto: string): number | null {
 
   const candidatos: number[] = [];
 
-  for (const regex of [
+  const regexes = [
     /(\d+)\s*(?:UN|UND|UNIDADES?)\b/gi,
-    /(?:C\/|C\\/)\s*(\d+)\s*(?:UN|UND|UNIDADES?)\b/gi,
+    /(?:C\/|C\\\/)\s*(\d+)\s*(?:UN|UND|UNIDADES?)\b/gi,
     /(?:=|:|\/)\s*(\d+)\s*(?:UN|UND|UNIDADES?)\b/gi,
-  ]) {
+  ];
+
+  for (const regex of regexes) {
     for (const match of s.matchAll(regex)) {
       const value = Number(match[1]);
       if (Number.isFinite(value) && value > 0) candidatos.push(value);
