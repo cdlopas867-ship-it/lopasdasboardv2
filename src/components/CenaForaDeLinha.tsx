@@ -1,10 +1,10 @@
-/* Cena Fora de Linha por categoria — classifica os itens descontinuados por
-   unidade (Guarda-Roupas, Salas, Complementos) com cards de KPI e
-   tabela-resumo compacta, no mesmo estilo das demais cenas da apresentação.
-   Layout enxuto para caber na tela sem cortar. */
+/* Cena Fora de Linha — comparativo Em Linha × Fora de Linha no mesmo
+   estilo minimalista da CenaSaudeEstoque: anel central + tabela-resumo
+   de duas colunas. */
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { fmtInt, fmtMoeda, fmtPct, fmtPeso, fmtBrMax } from "@/lib/format";
+import { fmtInt, fmtMoeda, fmtPct, fmtBrMax } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import {
   ITENS_FORA_DE_LINHA,
@@ -22,222 +22,142 @@ export type ForaDeLinhaProp = {
   posicaoTotal: PosicaoEstoque;
 } | null;
 
-const CAT_CURTO: Record<string, string> = {
-  "UNIDADE GUARDA ROUPAS": "Guarda-Roupas",
-  "UNIDADE DE SALAS": "Salas",
-  "UNIDADE DE COMPLEMENTOS": "Complementos",
-  "EMBALAGEM JOGO DE PES": "Embalagem",
-};
+const R = 84;
+const CIRC = 2 * Math.PI * R;
+const DURACAO_CONTAGEM = 1300; // ms — mesma duração do donut
 
-const CAT_COR: Record<string, string> = {
-  "UNIDADE GUARDA ROUPAS": "#fbbf24",
-  "UNIDADE DE SALAS": "#34d399",
-  "UNIDADE DE COMPLEMENTOS": "#60a5fa",
-  "EMBALAGEM JOGO DE PES": "#f472b6",
-};
-
-type CatResumo = {
-  nome: string;
-  curto: string;
-  cor: string;
-  itens: number;
-  saldoFocco: number;
-  disponivel: number;
-  reservas: number;
-  pesoKg: number;
-  pesoReservadoKg: number;
-  valorEstoque: number;
-  valorReservado: number;
-};
-
-export function calcularForaDeLinhaPorCategoria(itens: ItemForaDeLinha[] = ITENS_FORA_DE_LINHA): CatResumo[] {
-  const map = new Map<string, CatResumo>();
-  for (const item of itens) {
-    /* Embalagem removida — só Guarda-Roupas, Salas e Complementos */
-    if (item.categoria === "EMBALAGEM JOGO DE PES") continue;
-    const curto = CAT_CURTO[item.categoria] ?? item.categoria;
-    if (!map.has(item.categoria)) {
-      map.set(item.categoria, {
-        nome: item.categoria,
-        curto,
-        cor: CAT_COR[item.categoria] ?? "#9ca3af",
-        itens: 0,
-        saldoFocco: 0,
-        disponivel: 0,
-        reservas: 0,
-        pesoKg: 0,
-        pesoReservadoKg: 0,
-        valorEstoque: 0,
-        valorReservado: 0,
-      });
-    }
-    const c = map.get(item.categoria)!;
-    c.itens++;
-    c.saldoFocco += item.saldoFocco;
-    c.disponivel += item.disponivel;
-    c.reservas += item.reservas;
-    c.pesoKg += item.pesoKg;
-    c.pesoReservadoKg += item.pesoReservadoKg;
-    c.valorEstoque += item.valorEstoque;
-    c.valorReservado += item.valorReservado;
-  }
-  return [...map.values()].sort((a, b) => b.valorEstoque - a.valorEstoque);
-}
-
-export default function CenaForaDeLinha({ anim, foraDeLinha, onPausar }: { anim: boolean; foraDeLinha?: ForaDeLinhaProp | null; onPausar?: () => void }) {
-  const itens = foraDeLinha?.itens ?? ITENS_FORA_DE_LINHA;
+export default function CenaForaDeLinha({
+  anim,
+  foraDeLinha,
+  onPausar,
+}: {
+  anim: boolean;
+  foraDeLinha?: ForaDeLinhaProp | null;
+  onPausar?: () => void;
+}) {
   const posicaoEmLinha = foraDeLinha?.posicaoEmLinha ?? POSICAO_EM_LINHA;
   const posicaoFora = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const posicaoTotal = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
-  const cats = calcularForaDeLinhaPorCategoria(itens);
-  const totalValor = cats.reduce((s, c) => s + c.valorEstoque, 0);
-  const totalItens = cats.reduce((s, c) => s + c.itens, 0);
-  const totalSaldo = cats.reduce((s, c) => s + c.saldoFocco, 0);
-  const totalDisponivel = cats.reduce((s, c) => s + c.disponivel, 0);
-  const totalReservas = cats.reduce((s, c) => s + c.reservas, 0);
-  const totalPesoKg = cats.reduce((s, c) => s + c.pesoKg, 0);
-  const totalPesoReservadoKg = cats.reduce((s, c) => s + c.pesoReservadoKg, 0);
-  const maxValor = Math.max(...cats.map((c) => c.valorEstoque), 1);
 
-  /* Dados para comparação Em Linha × Fora de Linha */
-  const grupos = [
-    { pos: posicaoEmLinha, cor: "#34d399", rotulo: "Em Linha" },
-    { pos: posicaoFora, cor: "#fbbf24", rotulo: "Fora de Linha" },
-  ];
+  const pctEmLinha = posicaoTotal.valorEstoque > 0
+    ? (posicaoEmLinha.valorEstoque / posicaoTotal.valorEstoque) * 100
+    : 0;
+  const pctFora = posicaoTotal.valorEstoque > 0
+    ? (posicaoFora.valorEstoque / posicaoTotal.valorEstoque) * 100
+    : 0;
+
+  /* Contagem animada de 0 até o valor da % em linha */
+  const [contagem, setContagem] = useState(0);
+  useEffect(() => {
+    if (!anim) {
+      setContagem(0);
+      return;
+    }
+    let raf: number;
+    const inicio = performance.now();
+    const tick = (agora: number) => {
+      const t = Math.min((agora - inicio) / DURACAO_CONTAGEM, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setContagem(pctEmLinha * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [anim, pctEmLinha]);
 
   return (
-    <div className="w-full">
+    <div className="flex w-full flex-col items-center">
       <div className="flex items-center gap-2">
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Em Linha × Fora de Linha
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Comparativo entre itens em linha (ativos) e fora de linha (descontinuados). Inclui itens, saldo, valor em estoque, reservas e massa. Fonte: planilha 'Estoque Em Linha x Fora de Linha'. Atualizado em 24/09/2026." />
+        <InfoTooltip
+          onOpen={onPausar}
+          texto="Comparativo entre itens em linha (ativos) e fora de linha (descontinuados). Inclui itens, saldo, valor em estoque, reservas e massa. Fonte: planilha 'Estoque Em Linha x Fora de Linha'. Atualizado em 24/09/2026."
+        />
       </div>
 
-      {/* Comparação Em Linha × Fora de Linha */}
-      <div className="video-sobe mt-3 grid grid-cols-2 gap-2.5" style={{ animationDelay: "0.1s" }}>
-        {grupos.map((g) => {
-          const pctValor = g.pos.valorEstoque / posicaoTotal.valorEstoque;
-          const pctItens = g.pos.itens / posicaoTotal.itens;
-          return (
-            <div
-              key={g.rotulo}
-              className="rounded-xl border border-white/15 bg-white/5 p-2.5"
-              style={{ borderColor: `${g.cor}40` }}
-            >
-              <div className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full" style={{ background: g.cor }} />
-                <p className="text-[10px] font-bold tracking-widest text-white/70 uppercase">{g.rotulo}</p>
-              </div>
-              <p className="mt-1.5 font-serif text-xl text-white sm:text-2xl">
-                {fmtInt(g.pos.itens)} <span className="text-[10px] text-white/50">itens</span>
-              </p>
-              <div className="mt-1.5 space-y-0.5 text-[10px] text-white/70">
-                <div className="flex justify-between">
-                  <span className="text-white/45">Valor</span>
-                  <span className="font-mono font-semibold text-white">{fmtMoeda(g.pos.valorEstoque)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/45">Saldo</span>
-                  <span className="font-mono font-semibold text-white">{fmtInt(g.pos.saldoFocco)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/45">Reservado</span>
-                  <span className="font-mono font-semibold text-white">{fmtMoeda(g.pos.valorReservado)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/45">Massa</span>
-                  <span className="font-mono font-semibold text-white">{fmtBrMax(g.pos.pesoTon, 1)} t</span>
-                </div>
-                <div className="flex justify-between border-t border-white/10 pt-0.5">
-                  <span className="text-white/45">% valor</span>
-                  <span className="font-mono font-bold" style={{ color: g.cor }}>{fmtPct(pctValor)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-white/45">% itens</span>
-                  <span className="font-mono font-bold" style={{ color: g.cor }}>{fmtPct(pctItens)}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Barra de proporção do valor */}
-      <div className="video-sobe mt-2" style={{ animationDelay: "0.2s" }}>
-        <div className="flex h-3 overflow-hidden rounded-full">
-          <div
-            className={cn("video-barra-x h-full", !anim && "video-pausada")}
-            style={{ width: `${(posicaoEmLinha.valorEstoque / posicaoTotal.valorEstoque) * 100}%`, background: "#34d399", animationDelay: "0.3s" }}
+      {/* Anel circular — % em linha sobre o total */}
+      <div className="video-pop relative mt-2 flex items-center justify-center">
+        <svg viewBox="0 0 200 200" className="size-28 sm:size-32">
+          <circle cx="100" cy="100" r={R} fill="none" strokeWidth="16" className="stroke-white/15" />
+          <circle
+            cx="100"
+            cy="100"
+            r={R}
+            fill="none"
+            strokeWidth="16"
+            strokeLinecap="round"
+            stroke="white"
+            transform="rotate(-90 100 100)"
+            style={{
+              strokeDasharray: CIRC,
+              strokeDashoffset: anim ? CIRC * (1 - pctEmLinha / 100) : CIRC,
+              transition: "stroke-dashoffset 1.3s cubic-bezier(0.22,1,0.36,1)",
+              filter: "drop-shadow(0 0 8px rgba(255,255,255,0.35))",
+            }}
           />
-          <div
-            className={cn("video-barra-x h-full", !anim && "video-pausada")}
-            style={{ width: `${(posicaoFora.valorEstoque / posicaoTotal.valorEstoque) * 100}%`, background: "#fbbf24", animationDelay: "0.4s" }}
-          />
-        </div>
-        <div className="mt-1 flex justify-between text-[9px] font-bold text-white/50">
-          <span className="text-emerald-400">{fmtPct(posicaoEmLinha.valorEstoque / posicaoTotal.valorEstoque)} em linha</span>
-          <span className="text-brand-amber">{fmtPct(posicaoFora.valorEstoque / posicaoTotal.valorEstoque)} fora de linha</span>
+        </svg>
+        <div className="absolute text-center">
+          <p className="font-serif text-2xl text-white">{fmtBrMax(contagem, 1)}%</p>
+          <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">em linha</p>
         </div>
       </div>
 
-      {/* Tabela resumo — barras inline no valor */}
-      <div className="video-sobe mt-3 overflow-x-auto" style={{ animationDelay: "0.6s" }}>
-        <table className="w-full min-w-[34rem] text-left text-[11px] text-white">
+      {/* Resumo — indicadores em duas colunas */}
+      <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
+        <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+          Resumo
+        </p>
+        <table className="w-full text-left text-[11px] text-white">
           <thead>
-            <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/50 uppercase">
-              <th className="pb-1 font-bold">Categoria</th>
-              <th className="pb-1 text-right font-bold">Itens</th>
-              <th className="pb-1 text-right font-bold">Saldo</th>
-              <th className="pb-1 text-right font-bold">Disponível</th>
-              <th className="pb-1 text-right font-bold">Reservas</th>
-              <th className="pb-1 text-right font-bold">Massa</th>
-              <th className="pb-1 text-right font-bold">Valor</th>
-              <th className="pb-1 text-right font-bold">% valor</th>
+            <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
+              <th className="pb-0.5 font-bold">Indicador</th>
+              <th className="pb-0.5 text-right font-bold">Valor</th>
             </tr>
           </thead>
           <tbody>
-            {cats.map((c) => (
-              <tr key={c.nome} className="border-b border-white/10 last:border-0">
-                <td className="flex items-center gap-1.5 py-1">
-                  <span className="size-2 rounded-full" style={{ background: c.cor }} />
-                  <span className="font-semibold text-white/80">{c.curto}</span>
-                </td>
-                <td className="py-1 text-right font-mono">{fmtInt(c.itens)}</td>
-                <td className="py-1 text-right font-mono text-white/70">{fmtInt(c.saldoFocco)}</td>
-                <td className="py-1 text-right font-mono text-white/70">{fmtInt(c.disponivel)}</td>
-                <td className="py-1 text-right font-mono text-white/70">{fmtInt(c.reservas)}</td>
-                <td className="py-1 text-right font-mono text-white/70">{fmtPeso(c.pesoKg)}</td>
-                <td className="py-1 text-right">
-                  <span className="relative inline-block">
-                    <span
-                      className={cn("absolute inset-y-0 right-0 rounded-sm opacity-25", !anim && "video-pausada")}
-                      style={{
-                        width: `${(c.valorEstoque / maxValor) * 100}%`,
-                        background: c.cor,
-                        animationDelay: "0.4s",
-                      }}
-                    />
-                    <span className="relative font-mono font-semibold">{fmtMoeda(c.valorEstoque)}</span>
-                  </span>
-                </td>
-                <td className="py-1 text-right font-mono font-bold" style={{ color: c.cor }}>
-                  {fmtPct(c.valorEstoque / totalValor)}
-                </td>
-              </tr>
-            ))}
-            <tr className="border-t-2 border-white/30 font-bold">
-              <td className="py-1 text-white">Total</td>
-              <td className="py-1 text-right font-mono text-white">{fmtInt(totalItens)}</td>
-              <td className="py-1 text-right font-mono text-white">{fmtInt(totalSaldo)}</td>
-              <td className="py-1 text-right font-mono text-white">{fmtInt(totalDisponivel)}</td>
-              <td className="py-1 text-right font-mono text-white">{fmtInt(totalReservas)}</td>
-              <td className="py-1 text-right font-mono text-white">{fmtPeso(totalPesoKg)}</td>
-              <td className="py-1 text-right font-mono text-brand-amber">{fmtMoeda(totalValor)}</td>
-              <td className="py-1 text-right font-mono text-brand-amber">100%</td>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Itens em linha</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-emerald-400">
+                {fmtInt(posicaoEmLinha.itens)}
+              </td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Itens fora de linha</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-brand-amber">
+                {fmtInt(posicaoFora.itens)}
+              </td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Valor em linha</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">
+                {fmtMoeda(posicaoEmLinha.valorEstoque)}
+              </td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Valor fora de linha</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-brand-amber">
+                {fmtMoeda(posicaoFora.valorEstoque)}
+              </td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Massa em linha</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">
+                {fmtBrMax(posicaoEmLinha.pesoTon, 1)} t
+              </td>
+            </tr>
+            <tr className="border-b border-white/10 last:border-0">
+              <td className="py-0.5 text-white/80">Massa fora de linha</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-brand-amber">
+                {fmtBrMax(posicaoFora.pesoTon, 1)} t
+              </td>
             </tr>
           </tbody>
         </table>
+        <p className="mt-1.5 text-[8px] leading-tight text-white/40">
+          * % em linha = valor em linha ÷ valor total × 100. {fmtPct(pctEmLinha / 100)} em linha · {fmtPct(pctFora / 100)} fora de linha.
+        </p>
       </div>
     </div>
   );
