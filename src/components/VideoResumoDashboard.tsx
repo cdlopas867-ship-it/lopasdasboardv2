@@ -200,6 +200,7 @@ export default function VideoResumoDashboard({
     saidasCD,
     foraDeLinha,
     paletas,
+    resumo,
     onReiniciar: () => setCena(0),
     onPausar: () => setPausado(true),
   };

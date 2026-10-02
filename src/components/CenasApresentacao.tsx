@@ -53,6 +53,7 @@ type Props = {
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
+  resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   onReiniciar: () => void;
   onPausar?: (() => void) | undefined;
 };
@@ -74,6 +75,7 @@ export default function CenasApresentacao({
   saidasCD,
   foraDeLinha,
   paletas,
+  resumo,
   onReiniciar,
   onPausar,
 }: Props) {
@@ -269,7 +271,7 @@ export default function CenasApresentacao({
 
       {/* Cena 8 — Tonelagem do estoque mês a mês com variação % */}
       {cena === 7 && (
-        <CenaTonelagemEstoque anim={anim} />
+        <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
       {/* Cena 9 — Saúde do estoque (donut) */}
