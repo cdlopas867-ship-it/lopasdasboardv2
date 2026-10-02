@@ -350,13 +350,9 @@ export default function CenasApresentacao({
                         </div>
                       </div>
                       <p
-                        className={cn(
-                          "mt-2 truncate text-center text-[10px] font-bold uppercase",
-                          destaque ? "text-brand-amber" : "text-white/70",
-                        )}
+                        className="mt-2 truncate text-center text-[10px] font-bold uppercase text-white/70"
                       >
                         {m.mes}
-                        {destaque && " ★"}
                       </p>
                       <p
                         className="video-sobe mt-1 text-center font-mono text-[10px] font-bold text-white/85"
