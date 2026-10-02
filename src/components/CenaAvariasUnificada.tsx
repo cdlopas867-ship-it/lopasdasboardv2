@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { fmtInt, fmtBrMax } from "@/lib/format";
+import { fmtInt, fmtBrMax, fmtPeso } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { GraficoMotivoMensal } from "@/components/GraficoMotivoMensal";
 import { imagemAvaria, temImagemAvaria } from "@/data/avarias-imagens";
@@ -22,6 +22,7 @@ export default function CenaAvariasUnificada({
   onPausar?: (() => void) | undefined;
 }) {
   const [tipoSel, setTipoSel] = useState<number | null>(null);
+  const [mesHover, setMesHover] = useState<number | null>(null);
 
   if (!avarias) {
     return (
@@ -62,7 +63,7 @@ export default function CenaAvariasUnificada({
       </div>
 
       {/* ── Gráfico mensal ── */}
-      <div className="mt-4">
+      <div className="relative mt-4">
         <p className="mb-1.5 text-[9px] font-bold tracking-[0.3em] text-white/50 uppercase">
           Por mês
         </p>
@@ -70,7 +71,12 @@ export default function CenaAvariasUnificada({
           {avarias.meses.map((m, i) => {
             const destaque = m.mes.toUpperCase().startsWith("AGO");
             return (
-              <div key={m.mes} className="flex h-full flex-1 flex-col justify-end">
+              <div
+                key={m.mes}
+                className="flex h-full flex-1 flex-col justify-end"
+                onMouseEnter={() => setMesHover(i)}
+                onMouseLeave={() => setMesHover(null)}
+              >
                 <p
                   className={cn(
                     "video-sobe mb-0.5 text-center font-mono text-[9px] font-bold",
@@ -82,10 +88,11 @@ export default function CenaAvariasUnificada({
                 </p>
                 <div
                   className={cn(
-                    "video-barra-y w-full rounded-t-md",
+                    "video-barra-y w-full rounded-t-md transition-opacity",
                     destaque
                       ? "bg-gradient-to-t from-brand-amber/80 to-brand-amber shadow-[0_0_12px_rgba(241,196,15,0.3)]"
                       : "bg-gradient-to-t from-red-500/50 to-red-400",
+                    mesHover === i && "opacity-70",
                     !anim && "video-pausada",
                   )}
                   style={{
@@ -106,6 +113,65 @@ export default function CenaAvariasUnificada({
             );
           })}
         </div>
+
+        {/* Tooltip de hover — resumo do mês */}
+        {mesHover !== null && avarias.meses[mesHover] && (
+          <div
+            className="pointer-events-none absolute -top-1 z-30 w-44 rounded-xl border border-white/20 bg-[#1e2c10]/95 p-3 text-left shadow-xl backdrop-blur-md"
+            style={{
+              left: `${((mesHover + 0.5) / avarias.meses.length) * 100}%`,
+              transform:
+                mesHover === 0
+                  ? "translateX(0)"
+                  : mesHover === avarias.meses.length - 1
+                    ? "translateX(-100%)"
+                    : "translateX(-50%)",
+            }}
+          >
+            <p className="mb-1.5 font-serif text-sm font-bold tracking-wide text-white uppercase">
+              {avarias.meses[mesHover].mes}
+            </p>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-mono text-lg font-bold text-white">
+                {fmtInt(avarias.meses[mesHover].qtd)}
+              </span>
+              <span className="text-[9px] font-semibold tracking-widest text-white/50 uppercase">volumes</span>
+            </div>
+            {avarias.meses[mesHover].peso ? (
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-mono text-sm font-bold text-brand-amber">
+                  {fmtPeso(avarias.meses[mesHover].peso!)}
+                </span>
+                <span className="text-[9px] font-semibold tracking-widest text-white/50 uppercase">peso</span>
+              </div>
+            ) : null}
+            {(() => {
+              const tiposMes = (avarias.tipos ?? [])
+                .map((t) => ({
+                  tipo: t.tipo,
+                  cor: t.cor,
+                  qtd: t.meses.find((mm) => mm.mes === avarias.meses[mesHover].mes)?.qtd ?? 0,
+                }))
+                .filter((t) => t.qtd > 0)
+                .sort((a, b) => b.qtd - a.qtd);
+              if (!tiposMes.length) return null;
+              return (
+                <div className="mt-2 border-t border-white/10 pt-1.5">
+                  <p className="mb-1 text-[8px] font-bold tracking-widest text-white/40 uppercase">Tipos</p>
+                  <div className="space-y-0.5">
+                    {tiposMes.map((t) => (
+                      <div key={t.tipo} className="flex items-center gap-1.5">
+                        <span className="size-1.5 shrink-0 rounded-full" style={{ background: t.cor }} />
+                        <span className="flex-1 truncate text-[9px] text-white/80">{t.tipo}</span>
+                        <span className="font-mono text-[9px] font-bold text-white/60">{fmtInt(t.qtd)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
 
       {/* ── Tipos de avaria — lista compacta ── */}

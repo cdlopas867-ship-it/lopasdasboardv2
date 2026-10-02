@@ -28,7 +28,7 @@ export type VideoAvarias = {
   total: number;
   referenciaParcial?: boolean;
   custo: string;
-  meses: { mes: string; qtd: number; ordem?: number }[];
+  meses: { mes: string; qtd: number; peso?: number; ordem?: number }[];
   motivoMes: { mes: string; motivo: string; qtd: number }[];
   tipos?: VideoAvariaTipo[];
 } | null;

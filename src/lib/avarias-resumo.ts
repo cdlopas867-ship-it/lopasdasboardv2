@@ -49,11 +49,16 @@ export function calcularAvariasResumo(avarias: Avaria[] | undefined): VideoAvari
   const total = comMotivo.reduce((s, a) => s + a.quantidade, 0);
   const custoTotal = validas.reduce((s, a) => s + a.custo, 0);
 
-  const meses = mesesOrdenados.map((m) => ({
-    mes: MESES_CURTO[m] ?? m,
-    qtd: porMes.get(m)!.filter((a) => a.motivo?.trim()).reduce((s, a) => s + a.quantidade, 0),
-    ordem: ordemMes(m),
-  }));
+  const meses = mesesOrdenados.map((m) => {
+    const items = porMes.get(m)!;
+    const comMot = items.filter((a) => a.motivo?.trim());
+    return {
+      mes: MESES_CURTO[m] ?? m,
+      qtd: comMot.reduce((s, a) => s + a.quantidade, 0),
+      peso: comMot.reduce((s, a) => s + a.pesoTotal, 0),
+      ordem: ordemMes(m),
+    };
+  });
 
   /* motivoMes: motivo predominante de cada mês (por Soma de Quantidade) */
   const motivoMes = mesesOrdenados.map((m) => {

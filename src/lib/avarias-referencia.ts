@@ -39,10 +39,14 @@ const TOTAL_QTD_OFICIAL = 3312;
 export function aplicarReferenciaMotivos(avarias: VideoAvarias): VideoAvarias {
   if (!avarias) return avarias;
 
-  /* Totais por mês — Soma de Quantidade da tabela oficial */
+  /* Totais por mês — Soma de Quantidade da tabela oficial.
+     O peso é preservado do resumo calculado a partir dos registros brutos,
+     pois a tabela dinâmica oficial só traz quantidades. */
+  const pesoPorMes = new Map((avarias.meses ?? []).map((m) => [m.mes, m.peso ?? 0]));
   const meses = MESES_REF.map((mes, i) => ({
     mes,
     qtd: MESES_QTD_OFICIAL[i]!,
+    peso: pesoPorMes.get(mes) ?? 0,
     ordem: i + 1,
   }));
 
