@@ -782,9 +782,9 @@ export default function CenasApresentacao({
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
-      {/* Cena 12 — Paletes em estoque por tamanho */}
+      {/* Cena 12 — Paletes & Ocupação do estoque */}
       {cena === 11 && (
-        <CenaPaletas anim={anim} paletas={paletas} onPausar={onPausar} />
+        <CenaPaletas anim={anim} paletas={paletas} ocupacao={ocupacao} onPausar={onPausar} />
       )}
 
       {/* Cena 13 — encerramento */}
