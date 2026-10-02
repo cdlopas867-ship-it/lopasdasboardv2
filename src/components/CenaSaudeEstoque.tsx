@@ -2,7 +2,7 @@
  * Apenas o donut com a % de saúde (carregado ÷ recebido × 100). */
 
 import { useEffect, useState } from "react";
-import { fmtBrMax } from "@/lib/format";
+import { fmtBrMax, fmtTonDec } from "@/lib/format";
 import type { VideoMes } from "./VideoResumoDashboard";
 
 const R = 84;
@@ -77,7 +77,19 @@ export default function CenaSaudeEstoque({ anim, mensal }: Props) {
         </div>
       </div>
 
-      <p className="video-sobe mt-3 text-[8px] leading-tight text-white/40" style={{ animationDelay: "0.5s" }}>
+      <div className="video-sobe mt-3 flex items-center gap-6" style={{ animationDelay: "0.5s" }}>
+        <div className="text-center">
+          <p className="font-mono text-base font-bold text-white">{fmtTonDec(totRecebido)}</p>
+          <p className="text-[8px] font-bold tracking-widest text-white/50 uppercase">recebido</p>
+        </div>
+        <span className="text-white/20">·</span>
+        <div className="text-center">
+          <p className="font-mono text-base font-bold" style={{ color: COR }}>{fmtTonDec(totCarregado)}</p>
+          <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: COR }}>carregado</p>
+        </div>
+      </div>
+
+      <p className="video-sobe mt-2 text-[8px] leading-tight text-white/40" style={{ animationDelay: "0.6s" }}>
         * Saúde = carregado ÷ recebido × 100. Janeiro a setembro de 2026.
       </p>
     </div>
