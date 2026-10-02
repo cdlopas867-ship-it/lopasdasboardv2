@@ -559,6 +559,22 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
 .video-kenburns {
   animation: video-kenburns 30s ease-in-out infinite;
 }
+.resumo-bg-image {
+  opacity: 0;
+  transform: scale(1.02);
+  transition: opacity 1.2s ease-in-out;
+  animation: video-kenburns 30s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+.resumo-bg-image--ativa {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .resumo-bg-image {
+    animation: none;
+    transition-duration: 0.2s;
+  }
+}
 @keyframes video-pop {
   from {
     opacity: 0;

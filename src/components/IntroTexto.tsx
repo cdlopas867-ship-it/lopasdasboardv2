@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import type { VideoKpi, VideoUnidade, VideoOcupacao, VideoMes, VideoAvarias, VideoPendentes, VideoReservados } from "./VideoResumoDashboard";
 import type { VideoForaDeLinha } from "./CenasApresentacao";
 import { interpretarLocal } from "@/lib/interpretador-local";
+import ResumoBg from "./ResumoBg";
 
 type Resumo = { valor: number; previsto: number; ton: number; saldo: number; itens: number };
 
@@ -96,10 +97,14 @@ export default function IntroTexto(props: Props) {
       className="fixed inset-0 z-[120] flex flex-col items-center justify-center overflow-hidden"
     >
       {/* Fundo */}
-      <div
-        className="video-kenburns absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${faseFinal ? "/fundo-lopas-final.webp" : "/fundo-satelite-real.jpg?v=1"})` }}
-      />
+      {faseFinal ? (
+        <div
+          className="video-kenburns absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url(/fundo-lopas-final.webp)" }}
+        />
+      ) : (
+        <ResumoBg cena={idx} />
+      )}
       {!faseFinal && (
         <>
           <div className="absolute inset-0 bg-gradient-to-b from-[#4a6b20]/82 via-[#3a521a]/68 to-[#2e3f14]/92" />

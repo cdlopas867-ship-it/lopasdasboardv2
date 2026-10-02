@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
+import ResumoBg from "./ResumoBg";
 
 /* Vídeo-resumo do dashboard — cenas animadas com gráficos e o mínimo de texto,
    sobre o fundo da marca Móveis Lopas, tocando automaticamente ao iniciar o app.
@@ -210,11 +211,8 @@ export default function VideoResumoDashboard({
         else setPausado((p) => !p);
       }}
     >
-      {/* Fundo da marca com movimento sutil (Ken Burns) */}
-      <div
-        className="video-kenburns absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url(/fundo-satelite-real.jpg?v=1)" }}
-      />
+      {/* Cada cena recebe uma foto da Lopas com movimento e transição suave. */}
+      <ResumoBg cena={cena} />
       {/* Camadas de profundidade para legibilidade */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#4a6b20]/75 via-[#3a521a]/60 to-[#2e3f14]/85" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.35)_100%)]" />
