@@ -842,7 +842,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     const avarias = mesclarAvarias(listasAvarias);
     if (avarias.length > 0) {
       melhorAvarias = avarias;
-      const resumoAvarias = calcularAvariasResumo(avarias);
+      const resumoAvarias = calcularAvariasResumo(avarias, melhorItens ?? undefined);
       if (resumoAvarias) melhorAvariasResumo = resumoAvarias;
     }
   }

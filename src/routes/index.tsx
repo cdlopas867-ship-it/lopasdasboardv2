@@ -39,7 +39,7 @@ function DashboardHome() {
     const dias = normalizarDiasExibicao((p["dias"] ?? []) as VideoDia[]); const semana = dias.length ? { rotulo: "Recebimento", total: `${dias.reduce((s,d)=>s+d.ton,0).toLocaleString("pt-BR",{maximumFractionDigits:1})} t`, dias } : null;
     const turnos = ((p["turnos"] ?? []) as any[]).map(t => ({ nome: t.nome, faixa: t.faixa, ton: Number(t.ton ?? 0), pct: Number(t.pct) })) as VideoTurno[];
     const avarias = aplicarReferenciaMotivos(
-      (p["avarias"]?.length ? calcularAvariasResumo(p["avarias"]) : null)
+      (p["avarias"]?.length ? calcularAvariasResumo(p["avarias"], p["itens"]) : null)
         ?? p["avariasResumo"] as VideoAvarias | undefined ?? null,
     );
     const pendentesCalc = p["pendentesResumo"] as VideoPendentes | undefined ?? calcularPendentesResumo(p["pendentes"] as PendenteProducao[] | undefined);
