@@ -91,7 +91,7 @@ export default function CenasApresentacao({
         <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} paletas={paletas} onPausar={onPausar} />
       )}
 
-      {/* Cena 3 — ocupação (donut) */}
+      {/* Cena 2 — ocupação (donut) */}
       {cena === 1 && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
@@ -265,169 +265,13 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 4 — recebido × carregado por mês (destaque: agosto) */}
+      {/* Cena 4 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
       {cena === 3 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Recebido × Carregado · por mês
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Comparativo mensal de tonelagem recebida e carregada. Eficiência = carregado ÷ recebido × 100. Variação = (carregado do mês ÷ carregado do mês anterior − 1) × 100. Agosto em destaque. Fonte: planilhas de recebimento e carregamento do Drive. Janeiro a setembro de 2026." />
-          </div>
-          {listaMes.length ? (
-            <>
-              <div className="video-sobe mt-3 flex flex-wrap items-baseline gap-x-8 gap-y-1">
-                <p className="font-serif text-2xl text-white sm:text-4xl">
-                  {fmtTonDec(totRecebido)}{" "}
-                  <span className="text-sm text-white/60 sm:text-base">recebidas</span>
-                </p>
-                <p className="font-serif text-2xl text-brand-amber sm:text-4xl">
-                  {fmtTonDec(totCarregado)}{" "}
-                  <span className="text-sm text-white/60 sm:text-base">carregadas</span>
-                </p>
-                <p className="font-serif text-2xl sm:text-4xl">
-                  <span className={cn(totRecebido - totCarregado >= 0 ? "text-emerald-400" : "text-red-400")}>
-                    {fmtTonDec(Math.abs(totRecebido - totCarregado))}
-                  </span>{" "}
-                  <span className="text-sm text-white/60 sm:text-base">saldo</span>
-                </p>
-              </div>
-
-              <div className="mt-8 flex h-44 items-end justify-between gap-3 sm:gap-5">
-                {listaMes.map((m, i) => {
-                  const max = Math.max(
-                    ...listaMes.map((x) => Math.max(x.recebido, x.carregado)),
-                    1,
-                  );
-                  const destaque = m.mes.toUpperCase().startsWith("AGO");
-                  /* Desempenho do mês: eficiência (carregado/recebido) e variação vs. mês anterior */
-                  const pct = m.recebido > 0 ? (m.carregado / m.recebido) * 100 : 0;
-                  const anterior = listaMes[i - 1];
-                  const delta = anterior?.carregado
-                    ? ((m.carregado - anterior.carregado) / anterior.carregado) * 100
-                    : null;
-                  return (
-                    <div key={m.mes} className="flex h-full flex-1 flex-col justify-end">
-                      <div className="flex h-full items-end justify-center gap-1.5">
-                        <div className="flex h-full flex-1 flex-col items-center justify-end">
-                          <p
-                            className="video-sobe mb-1 text-center font-mono text-[10px] font-bold text-white/85"
-                            style={{ animationDelay: `${0.12 * i + 0.5}s` }}
-                          >
-                            {fmtInt(m.recebido)}
-                          </p>
-                          <div
-                            className={cn(
-                              "video-barra-y w-full rounded-t-lg bg-gradient-to-t from-brand-amber/70 to-brand-amber",
-                              !anim && "video-pausada",
-                            )}
-                            style={{
-                              height: `${Math.max((m.recebido / max) * 100, 3)}%`,
-                              animationDelay: `${0.12 * i + 0.2}s`,
-                            }}
-                          />
-                        </div>
-                        <div className="flex h-full flex-1 flex-col items-center justify-end">
-                          <p
-                            className="video-sobe mb-1 text-center font-mono text-[10px] font-bold text-white/85"
-                            style={{ animationDelay: `${0.12 * i + 0.55}s` }}
-                          >
-                            {fmtInt(m.carregado)}
-                          </p>
-                          <div
-                            className={cn(
-                              "video-barra-y w-full rounded-t-lg",
-                              destaque
-                                ? "bg-gradient-to-t from-white/90 to-white shadow-[0_0_18px_rgba(255,255,255,0.35)]"
-                                : "bg-gradient-to-t from-white/50 to-white/80",
-                              !anim && "video-pausada",
-                            )}
-                            style={{
-                              height: `${Math.max((m.carregado / max) * 100, 3)}%`,
-                              animationDelay: `${0.12 * i + 0.3}s`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <p
-                        className="mt-2 truncate text-center text-[10px] font-bold uppercase text-white/70"
-                      >
-                        {m.mes}
-                      </p>
-                      <p
-                        className="video-sobe mt-1 text-center font-mono text-[10px] font-bold text-white/85"
-                        style={{ animationDelay: `${0.12 * i + 0.65}s` }}
-                      >
-                        {fmtBrMax(pct, 0)}%
-                      </p>
-                      <p
-                        className={cn(
-                          "video-sobe text-center text-[9px] font-bold",
-                          delta === null
-                            ? "text-white/30"
-                            : delta >= 0
-                              ? "text-emerald-400"
-                              : "text-red-400",
-                        )}
-                        style={{ animationDelay: `${0.12 * i + 0.7}s` }}
-                      >
-                        {delta === null
-                          ? "—"
-                          : `${delta >= 0 ? "▲" : "▼"} ${fmtBrMax(Math.abs(delta), 1)}%`}
-                      </p>
-                      {/* Diferença recebido − carregado do mês */}
-                      {(() => {
-                        const diff = m.recebido - m.carregado;
-                        return (
-                          <p
-                            className={cn(
-                              "video-sobe text-center font-mono text-[8px] font-bold",
-                              diff >= 0 ? "text-emerald-400/80" : "text-red-400/80",
-                            )}
-                            style={{ animationDelay: `${0.12 * i + 0.75}s` }}
-                          >
-                            {diff >= 0 ? "+" : "−"}{fmtInt(Math.abs(diff))}
-                          </p>
-                        );
-                      })()}
-                    </div>
-                  );
-                })}
-              </div>
-              <div
-                className="video-sobe mt-5 flex flex-wrap items-center justify-center gap-3 text-[9px] font-bold tracking-widest uppercase sm:gap-6 sm:text-[10px]"
-                style={{ animationDelay: "0.6s" }}
-              >
-                <span className="flex items-center gap-2 text-white/70">
-                  <span className="size-2.5 rounded-sm bg-brand-amber" /> Recebido
-                </span>
-                <span className="flex items-center gap-2 text-white/70">
-                  <span className="size-2.5 rounded-sm bg-white" /> Carregado
-                </span>
-                <span className="text-white/50">
-                  <span className="text-emerald-400">▲</span>/<span className="text-red-400">▼</span> vs. mês anterior
-                </span>
-                <span className="text-white/50">% carregado/recebido</span>
-                <span className="text-white/50">
-                  <span className="text-emerald-400">+</span>/<span className="text-red-400">−</span> saldo mês
-                </span>
-              </div>
-            </>
-          ) : (
-            <p className="video-sobe mt-8 font-serif text-3xl text-white/70">
-              Sem dados de carregamento por mês.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Cena 5 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
-      {cena === 4 && (
         <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
       )}
 
-      {/* Cena 6 — pendências de produção */}
-      {cena === 5 && (
+      {/* Cena 5 — pendências de produção */}
+      {cena === 4 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -561,8 +405,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 7 — itens reservados: cruzamento peso, quantidade e valor */}
-      {cena === 6 && reservados && (
+      {/* Cena 6 — itens reservados: cruzamento peso, quantidade e valor */}
+      {cena === 5 && reservados && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -690,8 +534,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 7 fallback — sem dados de reservados */}
-      {cena === 6 && !reservados && (
+      {/* Cena 6 fallback — sem dados de reservados */}
+      {cena === 5 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -708,23 +552,23 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 8 — Fora de linha por categoria */}
-      {cena === 7 && (
+      {/* Cena 7 — Fora de linha por categoria */}
+      {cena === 6 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
-      {/* Cena 9 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 8 && (
+      {/* Cena 8 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 7 && (
         <CenaTonelagemEstoque anim={anim} />
       )}
 
-      {/* Cena 10 — Saúde do estoque (donut) */}
-      {cena === 9 && (
+      {/* Cena 9 — Saúde do estoque (donut) */}
+      {cena === 8 && (
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
-      {/* Cena 11 — encerramento */}
-      {cena === 10 && (
+      {/* Cena 10 — encerramento */}
+      {cena === 9 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
