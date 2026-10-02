@@ -37,7 +37,7 @@ const MESES_QTD_OFICIAL: readonly number[] = [771, 540, 494, 321, 338, 172, 244,
 const TOTAL_QTD_OFICIAL = 3312;
 
 export function aplicarReferenciaMotivos(avarias: VideoAvarias): VideoAvarias {
-  if (!avarias || avarias.total >= TOTAL_QTD_OFICIAL) return avarias;
+  if (!avarias) return avarias;
 
   /* Totais por mês — Soma de Quantidade da tabela oficial */
   const meses = MESES_REF.map((mes, i) => ({
