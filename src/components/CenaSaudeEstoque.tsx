@@ -7,7 +7,7 @@ import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/c
 import type { VideoMes } from "./VideoResumoDashboard";
 
 const COR_CARREGADO = "#00FFCC";
-const COR_SALDO = "#FFA500";
+const COR_RECEBIDO = "#FFA500";
 
 type Props = {
   anim: boolean;
@@ -26,13 +26,13 @@ export default function CenaSaudeEstoque({ anim, mensal, cena = 8 }: Props) {
 
   const secoes: SecaoDonut[] = [
     { id: "carregado", label: "carregado", cor: COR_CARREGADO, pct: pctGrafico },
-    { id: "saldo", label: "saldo", cor: COR_SALDO, pct: Math.max(100 - pctGrafico, 0) },
+    { id: "recebido", label: "recebido", cor: COR_RECEBIDO, pct: 100 },
   ];
 
   const linhas = [
-    { focoIdx: null, rotulo: "Recebido", valor: fmtTonDec(totRecebido) },
+    { focoIdx: 1, rotulo: "Recebido", valor: fmtTonDec(totRecebido) },
     { focoIdx: 0, rotulo: "Carregado", valor: fmtTonDec(totCarregado) },
-    { focoIdx: 1, rotulo: "Saldo", valor: fmtTonDec(Math.abs(totRecebido - totCarregado)) },
+    { focoIdx: null, rotulo: "Saldo", valor: fmtTonDec(Math.abs(totRecebido - totCarregado)) },
     { focoIdx: 0, rotulo: "Saúde", valor: `${fmtBrMax(saude, 1)}%` },
   ];
 
