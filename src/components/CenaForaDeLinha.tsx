@@ -105,9 +105,9 @@ export default function CenaForaDeLinha({
       </div>
 
       {/* Resumo — indicadores em duas colunas */}
-      <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
+      <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-          Resumo
+          Resumo do estoque
         </p>
         <table className="w-full text-left text-[11px] text-white">
           <thead>
@@ -117,41 +117,63 @@ export default function CenaForaDeLinha({
             </tr>
           </thead>
           <tbody>
+            {/* Em Linha */}
             <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Itens em linha</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-emerald-400">
-                {fmtInt(posicaoEmLinha.itens)}
-              </td>
+              <td className="py-0.5 text-emerald-400/80">Em linha · itens</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-emerald-400">{fmtInt(posicaoEmLinha.itens)}</td>
             </tr>
             <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Itens fora de linha</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-brand-amber">
-                {fmtInt(posicaoFora.itens)}
-              </td>
+              <td className="py-0.5 text-white/80">Em linha · saldo</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(posicaoEmLinha.saldoFocco)}</td>
             </tr>
             <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Valor em linha</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">
-                {fmtMoeda(posicaoEmLinha.valorEstoque)}
-              </td>
+              <td className="py-0.5 text-white/80">Em linha · reservados qtd</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(posicaoEmLinha.reservas)}</td>
             </tr>
             <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Valor fora de linha</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-brand-amber">
-                {fmtMoeda(posicaoFora.valorEstoque)}
-              </td>
+              <td className="py-0.5 text-white/80">Em linha · reservados ton</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(posicaoEmLinha.pesoReservadoTon, 1)} t</td>
             </tr>
             <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Massa em linha</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">
-                {fmtBrMax(posicaoEmLinha.pesoTon, 1)} t
-              </td>
+              <td className="py-0.5 text-white/80">Em linha · reservados R$</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtMoeda(posicaoEmLinha.valorReservado)}</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Em linha · tonelagem</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(posicaoEmLinha.pesoTon, 1)} t</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Em linha · valor</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtMoeda(posicaoEmLinha.valorEstoque)}</td>
+            </tr>
+            {/* Fora de Linha */}
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-brand-amber/80">Fora de linha · itens</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-brand-amber">{fmtInt(posicaoFora.itens)}</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Fora de linha · saldo</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(posicaoFora.saldoFocco)}</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Fora de linha · reservados qtd</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(posicaoFora.reservas)}</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Fora de linha · reservados ton</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(posicaoFora.pesoReservadoTon, 1)} t</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Fora de linha · reservados R$</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtMoeda(posicaoFora.valorReservado)}</td>
+            </tr>
+            <tr className="border-b border-white/10">
+              <td className="py-0.5 text-white/80">Fora de linha · tonelagem</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(posicaoFora.pesoTon, 1)} t</td>
             </tr>
             <tr className="border-b border-white/10 last:border-0">
-              <td className="py-0.5 text-white/80">Massa fora de linha</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-brand-amber">
-                {fmtBrMax(posicaoFora.pesoTon, 1)} t
-              </td>
+              <td className="py-0.5 text-white/80">Fora de linha · valor</td>
+              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtMoeda(posicaoFora.valorEstoque)}</td>
             </tr>
           </tbody>
         </table>
