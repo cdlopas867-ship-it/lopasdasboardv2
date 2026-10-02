@@ -130,7 +130,7 @@ export default function CenaAvariasUnificada({
             const maxTipo = Math.max(...tiposMes.map((t) => t.qtd), 1);
             return (
               <div
-                className="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-48"
+                className="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-56"
                 style={{
                   left: `${((mesHover + 0.5) / avarias.meses.length) * 100}%`,
                   transform:
@@ -155,13 +155,13 @@ export default function CenaAvariasUnificada({
                   </div>
                   {/* stats em mini-cards */}
                   <div className="grid grid-cols-2 gap-px bg-white/5">
-                    <div className="bg-[#161f0b] px-3.5 py-1.5">
+                    <div className="bg-[#161f0b] px-3 py-1.5">
                       <p className="text-[8px] font-bold tracking-widest text-white/35 uppercase">Volumes</p>
-                      <p className="font-mono text-base font-bold text-white">{fmtInt(mes.qtd)}</p>
+                      <p className="whitespace-nowrap font-mono text-sm font-bold text-white">{fmtInt(mes.qtd)}</p>
                     </div>
-                    <div className="bg-[#161f0b] px-3.5 py-1.5">
+                    <div className="bg-[#161f0b] px-3 py-1.5">
                       <p className="text-[8px] font-bold tracking-widest text-white/35 uppercase">Peso</p>
-                      <p className="font-mono text-base font-bold text-brand-amber">
+                      <p className="whitespace-nowrap font-mono text-sm font-bold text-brand-amber">
                         {mes.peso ? fmtPeso(mes.peso) : "—"}
                       </p>
                     </div>
