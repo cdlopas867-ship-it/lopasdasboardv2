@@ -130,7 +130,7 @@ export default function CenaAvariasUnificada({
             const maxTipo = Math.max(...tiposMes.map((t) => t.qtd), 1);
             return (
               <div
-                className="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-56"
+                className="pointer-events-none absolute top-0 z-30 w-56"
                 style={{
                   left: `${((mesHover + 0.5) / avarias.meses.length) * 100}%`,
                   transform:
