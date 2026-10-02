@@ -11,7 +11,7 @@ export const checkAccess = createServerFn({ method: "GET" }).handler(async () =>
 });
 
 export const unlockSite = createServerFn({ method: "POST" })
-  .inputValidator((data: { usuario: string; senha: string }) => ({
+  .validator((data: { usuario: string; senha: string }) => ({
     usuario: String(data.usuario ?? "").trim().toLowerCase(),
     senha: String(data.senha ?? ""),
   }))
