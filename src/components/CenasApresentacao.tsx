@@ -6,7 +6,6 @@ import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
-import CenaPaletas from "@/components/CenaPaletas";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_EM_LINHA, POSICAO_TOTAL, ITENS_FORA_DE_LINHA, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -90,7 +89,7 @@ export default function CenasApresentacao({
     <>
       {/* Cena 1 — KPIs de abertura em destaque (um card por vez, centralizado) */}
       {cena === 0 && (
-        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} onPausar={onPausar} />
+        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} paletas={paletas} onPausar={onPausar} />
       )}
 
       {/* Cena 3 — ocupação (donut) */}
@@ -782,13 +781,8 @@ export default function CenasApresentacao({
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
-      {/* Cena 12 — Paletes & Ocupação do estoque */}
+      {/* Cena 12 — encerramento */}
       {cena === 11 && (
-        <CenaPaletas anim={anim} paletas={paletas} ocupacao={ocupacao} onPausar={onPausar} />
-      )}
-
-      {/* Cena 13 — encerramento */}
-      {cena === 12 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -817,13 +811,15 @@ export default function CenasApresentacao({
 function CenaKpisFoco({
   kpis,
   foraDeLinha,
+  paletas,
   onPausar,
 }: {
   kpis: VideoKpi[];
   foraDeLinha?: VideoForaDeLinha | undefined;
+  paletas?: VideoPaletas | undefined;
   onPausar?: (() => void) | undefined;
 }) {
-  const total = kpis.length + 1; // +1 = card Fora de linha
+  const total = kpis.length + 1 + (paletas && paletas.totalPaletes > 0 ? 1 : 0); // +1 Fora de linha, +1 Paletes
   const [foco, setFoco] = useState(0);
   const [pausado, setPausado] = useState(false);
 
@@ -843,8 +839,9 @@ function CenaKpisFoco({
     return () => window.removeEventListener("keydown", onKey);
   }, [total]);
 
-  const ehForaDeLinha = foco >= kpis.length;
-  const kpi = !ehForaDeLinha ? kpis[foco] : null;
+  const ehForaDeLinha = foco === kpis.length;
+  const ehPaletas = foco === kpis.length + 1;
+  const kpi = foco < kpis.length ? kpis[foco] : null;
   const togglePausar = () => {
     const next = !pausado;
     setPausado(next);
@@ -877,6 +874,8 @@ function CenaKpisFoco({
         <div key={foco} className="card-foco-entra relative w-full">
           {kpi ? (
             <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} onAvancar={avancar} />
+          ) : ehPaletas ? (
+            <CardFocoPaletas paletas={paletas} onAvancar={avancar} />
           ) : (
             <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} onAvancar={avancar} />
           )}
@@ -1022,4 +1021,61 @@ function CardFocoForaDeLinha({
 /* Toneladas em formato curto — "327" ou "1.234" */
 function fmtTonCurto(ton: number) {
   return fmtInt(ton);
+}
+
+/* Card de "paletes em estoque" em destaque — mostra o total de paletes
+   e o breakdown por tamanho (P, M, G, GG). */
+const CORES_TAMANHO: Record<string, string> = {
+  P: "#22c55e",
+  M: "#3b82f6",
+  G: "#f97316",
+  GG: "#a855f7",
+};
+
+function CardFocoPaletas({
+  paletas,
+  onAvancar,
+}: {
+  paletas?: VideoPaletas | undefined;
+  onAvancar: () => void;
+}) {
+  const total = paletas?.totalPaletes ?? 0;
+  const itens = paletas?.totalItens ?? 0;
+  return (
+    <button
+      type="button"
+      onClick={onAvancar}
+      className={cn(cardFocoBase, "border-primary/20 bg-primary/[0.05] hover:border-primary/35 hover:bg-primary/[0.08]")}
+    >
+      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
+        {fmtInt(total)}
+      </p>
+      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-primary/80 uppercase">
+        Paletes em Estoque
+      </p>
+      <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
+        {fmtInt(itens)} itens mapeados distribuídos em {fmtInt(total)} paletes,
+        organizados por tamanho de pallet.
+      </p>
+      {paletas?.porTamanho?.length ? (
+        <dl className="mt-3 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
+          {paletas.porTamanho.map((t) => {
+            const cor = CORES_TAMANHO[t.tamanho] ?? "#6b7280";
+            const pct = total > 0 ? (t.paletes / total) * 100 : 0;
+            return (
+              <div key={t.tamanho} className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+                <dt className="flex items-center gap-1.5 text-white/45">
+                  <span className="size-2 rounded-full" style={{ background: cor }} />
+                  Tamanho {t.tamanho}
+                </dt>
+                <dd className="font-medium text-white/90">
+                  {fmtInt(t.paletes)} <span className="text-white/40">({fmtBrMax(pct, 0)}%)</span>
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      ) : null}
+    </button>
+  );
 }
