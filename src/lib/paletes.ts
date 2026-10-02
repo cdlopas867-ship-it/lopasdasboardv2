@@ -17,39 +17,70 @@ export type ResumoPaletes = {
   totalItens: number;
 };
 
+function normalizarTexto(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+}
+
+function extrairTamanho(texto: string): "P" | "M" | "G" | "GG" | null {
+  const s = normalizarTexto(texto);
+  if (!s) return null;
+
+  const match = s.match(/\b(GG|G|M|P)\b/);
+  if (!match) return null;
+
+  return match[1] as "P" | "M" | "G" | "GG";
+}
+
+function extrairUnidadesPorPalete(texto: string): number | null {
+  const s = normalizarTexto(texto);
+  if (!s) return null;
+
+  const candidatos: number[] = [];
+
+  for (const regex of [
+    /(\d+)\s*(?:UN|UND|UNIDADES?)\b/gi,
+    /(?:C\/|C\\/)\s*(\d+)\s*(?:UN|UND|UNIDADES?)\b/gi,
+    /(?:=|:|\/)\s*(\d+)\s*(?:UN|UND|UNIDADES?)\b/gi,
+  ]) {
+    for (const match of s.matchAll(regex)) {
+      const value = Number(match[1]);
+      if (Number.isFinite(value) && value > 0) candidatos.push(value);
+    }
+  }
+
+  if (candidatos.length === 0) return null;
+  return candidatos[candidatos.length - 1];
+}
+
 /* Extrai o tamanho (P/M/G/GG) e as unidades por pallet da coluna
-   "PALLET FORRO". Padrões encontrados:
-     "TAM P= 4 PILHAS C/2UND= 8UND"   → P, 8
-     "PALETE P: 11 UND"               → P, 11
-     "PALETE G=38UN"                  → G, 38
-     "PALETE GG= 24UN"                → GG, 24
-     "PALETE GG: 120 UND"             → GG, 120
-     "TAM GG= 1 PILHA C/18 UND"       → GG, 18  (sem = final, pega C/N)
+   "PALLET FORRO". Aceita variações como:
+     "TAM P= 4 PILHAS C/2UND= 8UND" -> P, 8
+     "PALETE P: 11 UND"            -> P, 11
+     "PALETE G=38UN"               -> G, 38
+     "PALETE GG= 24UN"             -> GG, 24
+     "TAM GG= 1 PILHA C/18 UND"    -> GG, 18
 */
 function parsePalletInfo(
   text: string,
 ): { tamanho: "P" | "M" | "G" | "GG"; undPorPalete: number } | null {
-  const s = text.toUpperCase().trim();
+  const s = normalizarTexto(text);
   if (!s) return null;
 
-  /* Tamanho — GG antes de G para não capturar G primeiro */
-  const sizeMatch = s.match(/\b(GG|G|M|P)\b\s*[=:]?/);
-  if (!sizeMatch) return null;
-  const tamanho = sizeMatch[1] as "P" | "M" | "G" | "GG";
+  const tamanho = extrairTamanho(s);
+  if (!tamanho) return null;
 
-  /* Unidades por pallet — número antes de UND? no fim da string */
-  const endMatch = s.match(/(\d+)\s*UND?\s*$/);
-  if (endMatch) return { tamanho, undPorPalete: Number(endMatch[1]) };
+  const undPorPalete = extrairUnidadesPorPalete(s);
+  if (undPorPalete == null || undPorPalete <= 0) return null;
 
-  /* Fallback: ": N UN" (ex.: "PALETE P: 11 UND") */
-  const colonMatch = s.match(/:\s*(\d+)\s*UN/);
-  if (colonMatch) return { tamanho, undPorPalete: Number(colonMatch[1]) };
+  return { tamanho, undPorPalete };
+}
 
-  /* Fallback: "C/NUND" sem = final (ex.: "C/18 UND") */
-  const cslash = s.match(/C\/\s*(\d+)\s*UN/);
-  if (cslash) return { tamanho, undPorPalete: Number(cslash[1]) };
-
-  return null;
+function encontraColuna(headers: string[], aliases: string[]): number {
+  return headers.findIndex((h) => aliases.some((alias) => h === alias || h.includes(alias)));
 }
 
 /* Lê a planilha de paletes e retorna um mapa item → { tamanho, undPorPalete }. */
@@ -59,31 +90,51 @@ export function lerPaletes(wb: XLSX.WorkBook): Map<string, PalletItem> {
   for (const name of wb.SheetNames) {
     const ws = wb.Sheets[name];
     if (!ws) continue;
+
     const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
 
-    /* Procura o cabeçalho com "COD ITEM" e "PALLET FORRO" */
-    const headerIdx = rows.findIndex((r) =>
-      r?.some(
-        (c) =>
-          String(c ?? "").toUpperCase().includes("COD ITEM") ||
-          String(c ?? "").toUpperCase().includes("PALLET FORRO"),
-      ),
-    );
+    const headerIdx = rows.findIndex((r) => {
+      if (!r) return false;
+      const headers = r.map((c) => normalizarTexto(c));
+      return (
+        headers.some(
+          (h) =>
+            h === "COD ITEM" ||
+            h === "ITEM" ||
+            h.includes("CODIGO ITEM") ||
+            h.includes("COD ITEM"),
+        ) &&
+        headers.some(
+          (h) => h.includes("PALLET") || h.includes("PALETE") || h.includes("TAMANHO"),
+        )
+      );
+    });
+
     if (headerIdx < 0) continue;
 
-    const headers = rows[headerIdx]!.map((c) => String(c ?? "").toUpperCase().trim());
-    const cItem = headers.findIndex((h) => h === "COD ITEM" || h.includes("COD ITEM"));
-    const cPallet = headers.findIndex((h) => h.includes("PALLET"));
+    const headers = rows[headerIdx]!.map((c) => normalizarTexto(c));
+    const cItem = encontraColuna(headers, ["COD ITEM", "CODIGO ITEM", "ITEM"]);
+    const cPallet = encontraColuna(headers, [
+      "PALLET",
+      "PALETE",
+      "PALLET FORRO",
+      "PALETE FORRO",
+      "TAMANHO PALLET",
+    ]);
 
     if (cItem < 0 || cPallet < 0) continue;
 
     for (const r of rows.slice(headerIdx + 1)) {
-      if (!r) continue;
-      const item = String(r[cItem] ?? "").trim();
+      if (!r || !Array.isArray(r)) continue;
+      const item = normalizarTexto(r[cItem]).replace(/\s+/g, "").trim();
       if (!item) continue;
+
       const palletStr = String(r[cPallet] ?? "").trim();
+      if (!palletStr) continue;
+
       const info = parsePalletInfo(palletStr);
       if (!info) continue;
+
       mapa.set(item, { item, ...info });
     }
   }
@@ -97,15 +148,16 @@ export function calcularResumoPaletes(
   itensEstoque: { item: string; saldo: number }[],
   paletes: Map<string, PalletItem>,
 ): ResumoPaletes {
-  const porTamanho = new Map<
-    string,
-    { paletes: number; itens: number; und: number }
-  >();
+  const porTamanho = new Map<string, { paletes: number; itens: number; und: number }>();
 
   for (const it of itensEstoque) {
-    const pallet = paletes.get(it.item);
+    const chave = normalizarTexto(it.item).replace(/\s+/g, "").trim();
+    if (!chave) continue;
+
+    const pallet = paletes.get(chave);
     if (!pallet || pallet.undPorPalete <= 0) continue;
-    const paletesItem = Math.round(it.saldo / pallet.undPorPalete);
+
+    const paletesItem = Math.ceil(it.saldo / pallet.undPorPalete);
     const atual = porTamanho.get(pallet.tamanho) ?? {
       paletes: 0,
       itens: 0,
