@@ -415,7 +415,6 @@ export default function CenasApresentacao({
                 <span className="text-white/50">
                   <span className="text-emerald-400">+</span>/<span className="text-red-400">−</span> saldo mês
                 </span>
-                <span className="text-brand-amber">★ Agosto em destaque</span>
               </div>
             </>
           ) : (
