@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { fmtInt, fmtBrMax, fmtPeso } from "@/lib/format";
+import { fmtInt, fmtBrMax, fmtPeso, fmtMoeda } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { GraficoMotivoMensal } from "@/components/GraficoMotivoMensal";
 import { imagemAvaria, temImagemAvaria } from "@/data/avarias-imagens";
@@ -57,6 +57,15 @@ export default function CenaAvariasUnificada({
           {fmtInt(avarias.total)}
         </p>
         <span className="text-sm text-white/60">volumes</span>
+        {(() => {
+          const totalPeso = avarias.meses.reduce((s, m) => s + (m.peso ?? 0), 0);
+          return totalPeso > 0 ? (
+            <>
+              <span className="text-[10px] font-bold text-white/30">·</span>
+              <p className="font-mono text-lg font-bold text-brand-amber">{fmtPeso(totalPeso)}</p>
+            </>
+          ) : null;
+        })()}
         {avarias.referenciaParcial && (
           <span className="text-[10px] text-white/45">· custos parciais em apuração</span>
         )}
@@ -130,7 +139,7 @@ export default function CenaAvariasUnificada({
             const maxTipo = Math.max(...tiposMes.map((t) => t.qtd), 1);
             return (
               <div
-                className="pointer-events-none absolute top-0 z-30 w-56"
+                className="pointer-events-none absolute top-0 z-30 w-64"
                 style={{
                   left: `${((mesHover + 0.5) / avarias.meses.length) * 100}%`,
                   transform:
@@ -154,15 +163,21 @@ export default function CenaAvariasUnificada({
                     </p>
                   </div>
                   {/* stats em mini-cards */}
-                  <div className="grid grid-cols-2 gap-px bg-white/5">
-                    <div className="bg-[#161f0b] px-3 py-1.5">
+                  <div className="grid grid-cols-3 gap-px bg-white/5">
+                    <div className="bg-[#161f0b] px-2 py-1.5">
                       <p className="text-[8px] font-bold tracking-widest text-white/35 uppercase">Volumes</p>
-                      <p className="whitespace-nowrap font-mono text-sm font-bold text-white">{fmtInt(mes.qtd)}</p>
+                      <p className="whitespace-nowrap font-mono text-xs font-bold text-white">{fmtInt(mes.qtd)}</p>
                     </div>
-                    <div className="bg-[#161f0b] px-3 py-1.5">
-                      <p className="text-[8px] font-bold tracking-widest text-white/35 uppercase">Peso</p>
-                      <p className="whitespace-nowrap font-mono text-sm font-bold text-brand-amber">
+                    <div className="bg-[#161f0b] px-2 py-1.5">
+                      <p className="text-[8px] font-bold tracking-widest text-brand-amber/60 uppercase">Peso</p>
+                      <p className="whitespace-nowrap font-mono text-xs font-bold text-brand-amber">
                         {mes.peso ? fmtPeso(mes.peso) : "—"}
+                      </p>
+                    </div>
+                    <div className="bg-[#161f0b] px-2 py-1.5">
+                      <p className="text-[8px] font-bold tracking-widest text-emerald-400/60 uppercase">Valor</p>
+                      <p className="whitespace-nowrap font-mono text-xs font-bold text-emerald-400">
+                        {mes.custo ? fmtMoeda(mes.custo) : "—"}
                       </p>
                     </div>
                   </div>

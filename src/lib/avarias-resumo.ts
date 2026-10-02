@@ -102,6 +102,7 @@ export function calcularAvariasResumo(
       mes: MESES_CURTO[m] ?? m,
       qtd: comMot.reduce((s, a) => s + a.quantidade, 0),
       peso: comMot.reduce((s, a) => s + pesoDe(a), 0),
+      custo: comMot.reduce((s, a) => s + custoDe(a), 0),
       ordem: ordemMes(m),
     };
   });
