@@ -1,22 +1,20 @@
-/* Cena Fora de Linha — comparativo Em Linha × Fora de Linha no mesmo
-   estilo minimalista da CenaSaudeEstoque: anel central + tabela-resumo
-   de duas colunas. */
+/* Cena Fora de Linha — comparativo interativo Em Linha × Fora de Linha.
+   Widget de dados cruzados: clique numa seção para destacar seus indicadores
+   e mudar a cor do anel (ciano = em linha, âmbar = fora de linha). */
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtMoeda, fmtPct, fmtBrMax } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import {
-  ITENS_FORA_DE_LINHA,
   POSICAO_EM_LINHA,
   POSICAO_FORA_DE_LINHA,
   POSICAO_TOTAL,
-  type ItemForaDeLinha,
   type PosicaoEstoque,
 } from "@/data/fora-de-linha";
 
 export type ForaDeLinhaProp = {
-  itens: ItemForaDeLinha[];
+  itens: unknown[];
   posicaoEmLinha: PosicaoEstoque;
   posicaoForaDeLinha: PosicaoEstoque;
   posicaoTotal: PosicaoEstoque;
@@ -24,7 +22,19 @@ export type ForaDeLinhaProp = {
 
 const R = 84;
 const CIRC = 2 * Math.PI * R;
-const DURACAO_CONTAGEM = 1300; // ms — mesma duração do donut
+const DURACAO_CONTAGEM = 1300;
+
+/* Cores do tema interativo — ciano para em linha, âmbar para fora de linha */
+const COR_EM_LINHA = "#00FFCC";
+const COR_FORA = "#FFA500";
+
+type Foco = "emLinha" | "foraDeLinha";
+
+type LinhaTabela = {
+  grupo: Foco;
+  rotulo: string;
+  valor: string;
+};
 
 export default function CenaForaDeLinha({
   anim,
@@ -46,7 +56,12 @@ export default function CenaForaDeLinha({
     ? (posicaoFora.valorEstoque / posicaoTotal.valorEstoque) * 100
     : 0;
 
-  /* Contagem animada de 0 até o valor da % em linha */
+  const [foco, setFoco] = useState<Foco>("emLinha");
+
+  const pctAtiva = foco === "emLinha" ? pctEmLinha : pctFora;
+  const corAtiva = foco === "emLinha" ? COR_EM_LINHA : COR_FORA;
+
+  /* Contagem animada de 0 até o valor da % ativa */
   const [contagem, setContagem] = useState(0);
   useEffect(() => {
     if (!anim) {
@@ -58,29 +73,62 @@ export default function CenaForaDeLinha({
     const tick = (agora: number) => {
       const t = Math.min((agora - inicio) / DURACAO_CONTAGEM, 1);
       const eased = 1 - Math.pow(1 - t, 3);
-      setContagem(pctEmLinha * eased);
+      setContagem(pctAtiva * eased);
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [anim, pctEmLinha]);
+  }, [anim, pctAtiva]);
+
+  /* Linhas da tabela — dados cruzados de ambas as posições */
+  const linhas: LinhaTabela[] = [
+    { grupo: "emLinha", rotulo: "Em linha · itens", valor: fmtInt(posicaoEmLinha.itens) },
+    { grupo: "emLinha", rotulo: "Em linha · saldo", valor: fmtInt(posicaoEmLinha.saldoFocco) },
+    { grupo: "emLinha", rotulo: "Em linha · reservados qtd", valor: fmtInt(posicaoEmLinha.reservas) },
+    { grupo: "emLinha", rotulo: "Em linha · reservados ton", valor: `${fmtBrMax(posicaoEmLinha.pesoReservadoTon, 1)} t` },
+    { grupo: "emLinha", rotulo: "Em linha · reservados R$", valor: fmtMoeda(posicaoEmLinha.valorReservado) },
+    { grupo: "emLinha", rotulo: "Em linha · tonelagem", valor: `${fmtBrMax(posicaoEmLinha.pesoTon, 1)} t` },
+    { grupo: "emLinha", rotulo: "Em linha · valor", valor: fmtMoeda(posicaoEmLinha.valorEstoque) },
+    { grupo: "foraDeLinha", rotulo: "Fora de linha · itens", valor: fmtInt(posicaoFora.itens) },
+    { grupo: "foraDeLinha", rotulo: "Fora de linha · saldo", valor: fmtInt(posicaoFora.saldoFocco) },
+    { grupo: "foraDeLinha", rotulo: "Fora de linha · reservados qtd", valor: fmtInt(posicaoFora.reservas) },
+    { grupo: "foraDeLinha", rotulo: "Fora de linha · reservados ton", valor: `${fmtBrMax(posicaoFora.pesoReservadoTon, 1)} t` },
+    { grupo: "foraDeLinha", rotulo: "Fora de linha · reservados R$", valor: fmtMoeda(posicaoFora.valorReservado) },
+    { grupo: "foraDeLinha", rotulo: "Fora de linha · tonelagem", valor: `${fmtBrMax(posicaoFora.pesoTon, 1)} t` },
+    { grupo: "foraDeLinha", rotulo: "Fora de linha · valor", valor: fmtMoeda(posicaoFora.valorEstoque) },
+  ];
+
+  const dataSinc = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="flex items-center gap-2">
-        <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-          Em Linha × Fora de Linha
-        </p>
-        <InfoTooltip
-          onOpen={onPausar}
-          texto="Comparativo entre itens em linha (ativos) e fora de linha (descontinuados). Inclui itens, saldo, valor em estoque, reservas e massa. Fonte: planilha 'Estoque Em Linha x Fora de Linha'. Atualizado em 24/09/2026."
-        />
+      {/* Cabeçalho — título + pílula SINCRONIZADO */}
+      <div className="flex w-full max-w-sm items-center justify-between">
+        <div className="flex items-center gap-2">
+          <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
+            Em Linha × Fora de Linha
+          </p>
+          <InfoTooltip
+            onOpen={onPausar}
+            texto="Comparativo entre itens em linha (ativos) e fora de linha (descontinuados). Clique numa seção para destacar seus indicadores. Inclui itens, saldo, valor em estoque, reservas e massa. Fonte: planilha 'Estoque Em Linha x Fora de Linha'."
+          />
+        </div>
+        <span className="video-sobe inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[8px] font-bold tracking-widest text-white/60 uppercase backdrop-blur-sm">
+          <span className="size-1.5 rounded-full bg-emerald-400" />
+          Sincronizado {dataSinc}
+        </span>
       </div>
 
-      {/* Anel circular — % em linha sobre o total */}
-      <div className="video-pop relative mt-2 flex items-center justify-center">
-        <svg viewBox="0 0 200 200" className="size-28 sm:size-32">
+      {/* Anel circular interativo — cor muda conforme a seção ativa */}
+      <button
+        type="button"
+        onClick={() => setFoco((f) => (f === "emLinha" ? "foraDeLinha" : "emLinha"))}
+        className="video-pop group relative mt-3 flex items-center justify-center cursor-pointer"
+        aria-label="Alternar Em Linha / Fora de Linha"
+      >
+        <svg viewBox="0 0 200 200" className="size-28 sm:size-32 transition-transform group-hover:scale-105">
           <circle cx="100" cy="100" r={R} fill="none" strokeWidth="16" className="stroke-white/15" />
+          {/* Anel da seção inativa (fundo) */}
           <circle
             cx="100"
             cy="100"
@@ -88,23 +136,74 @@ export default function CenaForaDeLinha({
             fill="none"
             strokeWidth="16"
             strokeLinecap="round"
-            stroke="white"
+            stroke={foco === "emLinha" ? COR_FORA : COR_EM_LINHA}
+            strokeOpacity={0.2}
             transform="rotate(-90 100 100)"
             style={{
               strokeDasharray: CIRC,
-              strokeDashoffset: anim ? CIRC * (1 - pctEmLinha / 100) : CIRC,
+              strokeDashoffset: anim ? CIRC * (1 - (foco === "emLinha" ? pctFora : pctEmLinha) / 100) : CIRC,
               transition: "stroke-dashoffset 1.3s cubic-bezier(0.22,1,0.36,1)",
-              filter: "drop-shadow(0 0 8px rgba(255,255,255,0.35))",
+            }}
+          />
+          {/* Anel da seção ativa */}
+          <circle
+            cx="100"
+            cy="100"
+            r={R}
+            fill="none"
+            strokeWidth="16"
+            strokeLinecap="round"
+            stroke={corAtiva}
+            transform="rotate(-90 100 100)"
+            style={{
+              strokeDasharray: CIRC,
+              strokeDashoffset: anim ? CIRC * (1 - pctAtiva / 100) : CIRC,
+              transition: "stroke-dashoffset 1.3s cubic-bezier(0.22,1,0.36,1), stroke 0.4s ease",
+              filter: `drop-shadow(0 0 8px ${corAtiva}55)`,
             }}
           />
         </svg>
-        <div className="absolute text-center">
-          <p className="font-serif text-2xl text-white">{fmtBrMax(contagem, 1)}%</p>
-          <p className="text-[8px] font-bold tracking-widest text-white/55 uppercase">em linha</p>
+        <div className="absolute text-center pointer-events-none">
+          <p className="font-serif text-2xl text-white" style={{ textShadow: `0 0 12px ${corAtiva}44` }}>
+            {fmtBrMax(contagem, 1)}%
+          </p>
+          <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: corAtiva }}>
+            {foco === "emLinha" ? "em linha" : "fora de linha"}
+          </p>
         </div>
+      </button>
+
+      {/* Botões de seleção — Em Linha / Fora de Linha */}
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setFoco("emLinha")}
+          className={cn(
+            "rounded-full px-3 py-1 text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
+            foco === "emLinha"
+              ? "text-brand-dark"
+              : "text-white/50 border border-white/15 hover:text-white/80",
+          )}
+          style={foco === "emLinha" ? { background: COR_EM_LINHA } : undefined}
+        >
+          Em Linha
+        </button>
+        <button
+          type="button"
+          onClick={() => setFoco("foraDeLinha")}
+          className={cn(
+            "rounded-full px-3 py-1 text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
+            foco === "foraDeLinha"
+              ? "text-brand-dark"
+              : "text-white/50 border border-white/15 hover:text-white/80",
+          )}
+          style={foco === "foraDeLinha" ? { background: COR_FORA } : undefined}
+        >
+          Fora de Linha
+        </button>
       </div>
 
-      {/* Resumo — indicadores em duas colunas */}
+      {/* Tabela — Resumo do estoque com destaque interativo */}
       <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
           Resumo do estoque
@@ -117,68 +216,37 @@ export default function CenaForaDeLinha({
             </tr>
           </thead>
           <tbody>
-            {/* Em Linha */}
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-emerald-400/80">Em linha · itens</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-emerald-400">{fmtInt(posicaoEmLinha.itens)}</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Em linha · saldo</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(posicaoEmLinha.saldoFocco)}</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Em linha · reservados qtd</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(posicaoEmLinha.reservas)}</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Em linha · reservados ton</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(posicaoEmLinha.pesoReservadoTon, 1)} t</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Em linha · reservados R$</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtMoeda(posicaoEmLinha.valorReservado)}</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Em linha · tonelagem</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(posicaoEmLinha.pesoTon, 1)} t</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Em linha · valor</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtMoeda(posicaoEmLinha.valorEstoque)}</td>
-            </tr>
-            {/* Fora de Linha */}
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-brand-amber/80">Fora de linha · itens</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-brand-amber">{fmtInt(posicaoFora.itens)}</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Fora de linha · saldo</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(posicaoFora.saldoFocco)}</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Fora de linha · reservados qtd</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(posicaoFora.reservas)}</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Fora de linha · reservados ton</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(posicaoFora.pesoReservadoTon, 1)} t</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Fora de linha · reservados R$</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtMoeda(posicaoFora.valorReservado)}</td>
-            </tr>
-            <tr className="border-b border-white/10">
-              <td className="py-0.5 text-white/80">Fora de linha · tonelagem</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtBrMax(posicaoFora.pesoTon, 1)} t</td>
-            </tr>
-            <tr className="border-b border-white/10 last:border-0">
-              <td className="py-0.5 text-white/80">Fora de linha · valor</td>
-              <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtMoeda(posicaoFora.valorEstoque)}</td>
-            </tr>
+            {linhas.map((linha, i) => {
+              const ativa = linha.grupo === foco;
+              const cor = linha.grupo === "emLinha" ? COR_EM_LINHA : COR_FORA;
+              return (
+                <tr
+                  key={i}
+                  className={cn(
+                    "border-b border-white/10 transition-all duration-300",
+                    i === linhas.length - 1 && "last:border-0",
+                    ativa ? "bg-white/[0.04]" : "opacity-35",
+                  )}
+                >
+                  <td
+                    className={cn("py-0.5 transition-colors", ativa ? "" : "")}
+                    style={ativa ? { color: cor } : undefined}
+                  >
+                    {linha.rotulo}
+                  </td>
+                  <td
+                    className="py-0.5 text-right font-mono font-semibold transition-colors"
+                    style={ativa ? { color: cor } : undefined}
+                  >
+                    {linha.valor}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * % em linha = valor em linha ÷ valor total × 100. {fmtPct(pctEmLinha / 100)} em linha · {fmtPct(pctFora / 100)} fora de linha.
+          * % em linha = valor em linha ÷ valor total × 100. {fmtPct(pctEmLinha / 100)} em linha · {fmtPct(pctFora / 100)} fora de linha. Clique para alternar.
         </p>
       </div>
     </div>
