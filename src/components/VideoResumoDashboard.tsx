@@ -28,7 +28,7 @@ export type VideoAvarias = {
   total: number;
   referenciaParcial?: boolean;
   custo: string;
-  meses: { mes: string; qtd: number; ordem?: number }[];
+  meses: { mes: string; qtd: number; peso?: number; custo?: number; ordem?: number }[];
   motivoMes: { mes: string; motivo: string; qtd: number }[];
   tipos?: VideoAvariaTipo[];
 } | null;
@@ -72,6 +72,11 @@ export type VideoAbc = {
   recebimento: VideoClasseAbc[] | null;
   estoque: VideoClasseAbc[] | null;
 } | null;
+export type VideoPaletas = {
+  porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
+  totalPaletes: number;
+  totalItens: number;
+} | null;
 
 type Props = {
   kpis: VideoKpi[];
@@ -87,14 +92,15 @@ type Props = {
   valorFaturado?: number | undefined;
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
+  paletas?: VideoPaletas | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   onFechar?: () => void;
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 12;
-const DURACOES = [130000, 5000, 6500, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 12000];
+const TOTAL_CENAS = 13;
+const DURACOES = [130000, 5000, 6500, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 7000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
@@ -111,6 +117,7 @@ export default function VideoResumoDashboard({
   saidasCD,
   foraDeLinha,
   resumo,
+  paletas,
   sincronizacao,
   onFechar,
   onLogout,
@@ -192,6 +199,7 @@ export default function VideoResumoDashboard({
     valorFaturado,
     saidasCD,
     foraDeLinha,
+    paletas,
     onReiniciar: () => setCena(0),
     onPausar: () => setPausado(true),
   };

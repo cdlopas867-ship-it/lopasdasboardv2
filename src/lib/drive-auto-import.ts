@@ -20,6 +20,7 @@ import { buscarCarregamentoMensal, lerCarregadoMensal, CARREGADO_SEM_DRIVE } fro
 import { lerSaidasCD } from "./saidas-cd";
 import { calcularRecebimento } from "./recebimento";
 import { lerItensEstoque, curvaAbcEstoque, curvaAbcRecebimento } from "./base-estoque";
+import { lerPaletes, calcularResumoPaletes } from "./paletes";
 import { existsSync, readFileSync, statSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
@@ -63,6 +64,7 @@ const PLANILHAS_LOCAIS = [
   "public/planilhas/carregado.xlsx",
   "public/planilhas/saidascd.xlsx",
   "public/planilhas/estoque.xlsx",
+  "public/planilhas/paletes.xlsx",
 ];
 
 type ArquivoDrive = { id: string; nome: string; modificado?: string | undefined };
@@ -699,6 +701,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorUnidadesResumo: UnidadeResumo[] | null = null;
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
   let melhorOcupacao: OcupacaoData | null = null;
+  let melhorPaletes: ReturnType<typeof lerPaletes> | null = null;
 
   for (const arq of arquivos) {
     try {
@@ -811,6 +814,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const itensEstoque = lerItensEstoque(wb);
       if (itensEstoque.length > (melhorItens?.length ?? 0)) melhorItens = itensEstoque;
 
+      /* Lê a planilha de paletes (item → tamanho + und/palete) */
+      const paletesMap = lerPaletes(wb);
+      if (paletesMap.size > (melhorPaletes?.size ?? 0)) melhorPaletes = paletesMap;
+
       /* Resumo local só é usado se o Drive não encontrou nenhum resumo
          (fallback — o Drive é a fonte de dados principal e atualizada) */
       const resumo = extrairResumo(wb);
@@ -842,9 +849,19 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     const avarias = mesclarAvarias(listasAvarias);
     if (avarias.length > 0) {
       melhorAvarias = avarias;
-      const resumoAvarias = calcularAvariasResumo(avarias);
+      const resumoAvarias = calcularAvariasResumo(avarias, melhorItens ?? undefined);
       if (resumoAvarias) melhorAvariasResumo = resumoAvarias;
     }
+  }
+
+  /* Calcula quantos paletes existem no estoque por tamanho (P/M/G/GG),
+     cruzando o saldo de cada item com a configuração de pallet. */
+  let resumoPaletes: ReturnType<typeof calcularResumoPaletes> | null = null;
+  if (melhorItens && melhorPaletes && melhorPaletes.size > 0) {
+    resumoPaletes = calcularResumoPaletes(melhorItens, melhorPaletes);
+    console.info(
+      `[auto-import] paletes: ${resumoPaletes.totalPaletes} paletes (${resumoPaletes.porTamanho.map((t) => `${t.tamanho}: ${t.paletes}`).join(", ")})`,
+    );
   }
 
   /* Fallback: se a leitura direta da aba de reservas não encontrou totais,
@@ -920,6 +937,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(melhorPendentes ? { pendentes: melhorPendentes } : {}),
     ...(melhorReservados ? { reservados: melhorReservados.itens } : {}),
     ...(melhorItens ? { itens: melhorItens } : {}),
+    ...(resumoPaletes ? { paletas: resumoPaletes } : {}),
     ...(melhorItens || abcRecebimento
       ? {
           abc: {

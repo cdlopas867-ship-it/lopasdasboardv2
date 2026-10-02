@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
-import VideoResumoDashboard, { type VideoAbc, type VideoAvarias, type VideoDia, type VideoKpi, type VideoMes, type VideoOcupacao, type VideoPendentes, type VideoReservados, type VideoSaidasCD, type VideoTurno, type VideoUnidade } from "@/components/VideoResumoDashboard";
+import VideoResumoDashboard, { type VideoAbc, type VideoAvarias, type VideoDia, type VideoKpi, type VideoMes, type VideoOcupacao, type VideoPaletas, type VideoPendentes, type VideoReservados, type VideoSaidasCD, type VideoTurno, type VideoUnidade } from "@/components/VideoResumoDashboard";
 import type { VideoForaDeLinha } from "@/components/CenasApresentacao";
 
 import LoadingApresentacao from "@/components/LoadingApresentacao";
@@ -39,7 +39,7 @@ function DashboardHome() {
     const dias = normalizarDiasExibicao((p["dias"] ?? []) as VideoDia[]); const semana = dias.length ? { rotulo: "Recebimento", total: `${dias.reduce((s,d)=>s+d.ton,0).toLocaleString("pt-BR",{maximumFractionDigits:1})} t`, dias } : null;
     const turnos = ((p["turnos"] ?? []) as any[]).map(t => ({ nome: t.nome, faixa: t.faixa, ton: Number(t.ton ?? 0), pct: Number(t.pct) })) as VideoTurno[];
     const avarias = aplicarReferenciaMotivos(
-      (p["avarias"]?.length ? calcularAvariasResumo(p["avarias"]) : null)
+      (p["avarias"]?.length ? calcularAvariasResumo(p["avarias"], p["itens"]) : null)
         ?? p["avariasResumo"] as VideoAvarias | undefined ?? null,
     );
     const pendentesCalc = p["pendentesResumo"] as VideoPendentes | undefined ?? calcularPendentesResumo(p["pendentes"] as PendenteProducao[] | undefined);
@@ -69,7 +69,7 @@ function DashboardHome() {
       extra: [["Recebido", fmtTonDec(totRec)], ["Carregado", fmtTonDec(totCar)], ["Saldo", fmtTonDec(Math.abs(totRec - totCar))]],
     };
     const kpisComSaude = [...kpis, saudeKpi];
-    return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, abc: p["abc"] as VideoAbc | undefined, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, saidasCD: p["saidasCD"] as VideoSaidasCD | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
+    return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, abc: p["abc"] as VideoAbc | undefined, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, saidasCD: p["saidasCD"] as VideoSaidasCD | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, paletas: p["paletas"] as VideoPaletas | undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
   }, [dados]);
   if (!pronto || !autenticado) return null;
   if (!loaded) return <LoadingApresentacao />;
