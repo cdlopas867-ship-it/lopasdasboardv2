@@ -74,7 +74,6 @@ export default function CenasApresentacao({
   onReiniciar,
   onPausar,
 }: Props) {
-  const maxDia = semana ? Math.max(...semana.dias.map((d) => d.ton), 1) : 1;
   const totalTurnoTon = turnos.reduce((s, t) => s + (t.ton ?? 0), 0);
   const turnoPrincipal = turnos.length ? turnos.reduce((a, b) => (b.pct > a.pct ? b : a)) : null;
   /* Mostra todos os meses com recebimento ou carregamento — meses sem
@@ -173,60 +172,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 4 — recebimento da semana (barras por dia) */}
-      {cena === 2 && semana && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Recebimento · Semana {semana.rotulo}
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Tonelagem recebida por dia útil. Meta diária: 330 toneladas (linha tracejada). Cada barra representa um dia de recebimento. Fonte: sistema de recebimento Focco. Período: 10/09 a 22/09/2026." />
-          </div>
-          <p className="video-sobe mt-3 font-serif text-3xl text-white sm:text-5xl">
-            {semana.total}
-          </p>
-          <div className="relative mt-10 flex h-48 items-end justify-between gap-2 sm:gap-4">
-            {/* linha da meta */}
-            <div
-              className="pointer-events-none absolute right-0 left-0 border-t border-dashed border-brand-amber"
-              style={{ bottom: `${Math.min((semana.dias[0]?.meta ?? 330) / maxDia, 1) * 100}%` }}
-            >
-              <span className="absolute -top-5 right-0 text-[9px] font-bold tracking-widest text-brand-amber uppercase">
-                meta
-              </span>
-            </div>
-            {semana.dias.map((d, i) => (
-              <div key={d.data} className="flex h-full flex-1 flex-col justify-end">
-                <p
-                  className="video-sobe mb-1.5 text-center font-mono text-[11px] font-bold text-white/85"
-                  style={{ animationDelay: `${0.12 * i + 0.5}s` }}
-                >
-                  {fmtTonCurto(d.ton)}
-                </p>
-                <div
-                  className={cn(
-                    "video-barra-y w-full rounded-t-lg",
-                    d.ton >= d.meta
-                      ? "bg-gradient-to-t from-white/80 to-white shadow-[0_0_16px_rgba(255,255,255,0.25)]"
-                      : "bg-gradient-to-t from-brand-amber/70 to-brand-amber",
-                    !anim && "video-pausada",
-                  )}
-                  style={{
-                    height: `${Math.max((d.ton / maxDia) * 100, 4)}%`,
-                    animationDelay: `${0.12 * i + 0.2}s`,
-                  }}
-                />
-                <p className="mt-2 text-center text-[10px] font-bold text-white/70 uppercase">
-                  {d.data}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Cena 5 — recebimento por turno (formato ocupação do CD) */}
-      {cena === 3 && (
+      {/* Cena 3 — recebimento por turno (formato ocupação do CD) */}
+      {cena === 2 && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -318,8 +265,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 6 — recebido × carregado por mês (destaque: agosto) */}
-      {cena === 4 && (
+      {/* Cena 4 — recebido × carregado por mês (destaque: agosto) */}
+      {cena === 3 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -479,13 +426,13 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 6 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
-      {cena === 5 && (
+      {/* Cena 5 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
+      {cena === 4 && (
         <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
       )}
 
-      {/* Cena 7 — pendências de produção */}
-      {cena === 6 && (
+      {/* Cena 6 — pendências de produção */}
+      {cena === 5 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -619,8 +566,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 8 — itens reservados: cruzamento peso, quantidade e valor */}
-      {cena === 7 && reservados && (
+      {/* Cena 7 — itens reservados: cruzamento peso, quantidade e valor */}
+      {cena === 6 && reservados && (
         <div className="flex w-full flex-col items-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -748,8 +695,8 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 8 fallback — sem dados de reservados */}
-      {cena === 7 && !reservados && (
+      {/* Cena 7 fallback — sem dados de reservados */}
+      {cena === 6 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -766,23 +713,23 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 9 — Fora de linha por categoria */}
-      {cena === 8 && (
+      {/* Cena 8 — Fora de linha por categoria */}
+      {cena === 7 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} onPausar={onPausar} />
       )}
 
-      {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 9 && (
+      {/* Cena 9 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 8 && (
         <CenaTonelagemEstoque anim={anim} />
       )}
 
-      {/* Cena 11 — Saúde do estoque (donut) */}
-      {cena === 10 && (
+      {/* Cena 10 — Saúde do estoque (donut) */}
+      {cena === 9 && (
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
-      {/* Cena 12 — encerramento */}
-      {cena === 11 && (
+      {/* Cena 11 — encerramento */}
+      {cena === 10 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -1016,11 +963,6 @@ function CardFocoForaDeLinha({
       </dl>
     </button>
   );
-}
-
-/* Toneladas em formato curto — "327" ou "1.234" */
-function fmtTonCurto(ton: number) {
-  return fmtInt(ton);
 }
 
 /* Card de "paletes em estoque" em destaque — mostra o total de paletes
