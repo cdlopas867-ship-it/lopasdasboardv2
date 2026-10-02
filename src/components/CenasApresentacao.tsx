@@ -6,6 +6,7 @@ import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
+import CenaPaletas from "@/components/CenaPaletas";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_EM_LINHA, POSICAO_TOTAL, ITENS_FORA_DE_LINHA, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -22,6 +23,7 @@ import type {
   VideoKpi,
   VideoMes,
   VideoOcupacao,
+  VideoPaletas,
   VideoPendentes,
   VideoReservados,
   VideoSaidasCD,
@@ -48,6 +50,7 @@ type Props = {
   valorFaturado?: number | undefined;
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
+  paletas?: VideoPaletas | undefined;
   onReiniciar: () => void;
   onPausar?: (() => void) | undefined;
 };
@@ -68,6 +71,7 @@ export default function CenasApresentacao({
   valorFaturado,
   saidasCD,
   foraDeLinha,
+  paletas,
   onReiniciar,
   onPausar,
 }: Props) {
@@ -778,8 +782,13 @@ export default function CenasApresentacao({
         <CenaSaudeEstoque anim={anim} mensal={mensal} />
       )}
 
-      {/* Cena 12 — encerramento */}
+      {/* Cena 12 — Paletes em estoque por tamanho */}
       {cena === 11 && (
+        <CenaPaletas anim={anim} paletas={paletas} onPausar={onPausar} />
+      )}
+
+      {/* Cena 13 — encerramento */}
+      {cena === 12 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
