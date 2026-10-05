@@ -68,6 +68,22 @@ function prepararSlides(
         : `Custo: ${avarias.custo}`,
     });
   }
+  if (avarias?.tipos?.length) {
+    const tipos = avarias.tipos;
+    const top = tipos[0]!;
+    slides.push({
+      icone: "avarias",
+      titulo: "Tipos de Avaria",
+      valor: `${fmtInt(tipos.length)} tipos`,
+      subtitulo: tipos.map((t) => t.tipo).join(" · "),
+    });
+    slides.push({
+      icone: "avarias",
+      titulo: "Maior Incidência",
+      valor: top.tipo,
+      subtitulo: `${fmtInt(top.total)} volumes · ${fmtBrMax(top.pct, 1)}% do total de avarias`,
+    });
+  }
   if (semana?.dias?.length) {
     const ultimo = semana.dias[semana.dias.length - 1]!;
     slides.push({
