@@ -16,7 +16,7 @@ import { lerPendentes } from "./pendentes";
 import { calcularPendentesResumo } from "./pendentes-resumo";
 import { lerAvarias, mesclarAvarias } from "./avarias";
 import { calcularAvariasResumo } from "./avarias-resumo";
-import { buscarCarregamentoMensal, lerCarregadoMensal, CARREGADO_SEM_DRIVE } from "./carregamento";
+import { buscarCarregamentoMensal, lerCarregadoMensal, lerUltimaDataCarregado, CARREGADO_SEM_DRIVE } from "./carregamento";
 import { lerSaidasCD } from "./saidas-cd";
 import { calcularRecebimento } from "./recebimento";
 import { calcularProducaoSemanal, type ProducaoSemanalDia } from "./producao-semanal";
@@ -693,6 +693,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let pendentesResumo: ReturnType<typeof calcularPendentesResumo> | null = null;
   let melhorAvariasResumo: ReturnType<typeof calcularAvariasResumo> | null = null;
   let carregadoDriveMap: Map<string, number> | null = null;
+  let carregadoAte: string | null = null;
   let melhorSaidasCD: ReturnType<typeof lerSaidasCD> | null = null;
   const listasAvarias: Avaria[][] = [];
   let melhorAvarias: Avaria[] | null = null;
@@ -792,6 +793,8 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 
       /* Extrai carregamento por mês da aba CARREGADO */
       const cargMap = lerCarregadoMensal(wb);
+      const cargAte = lerUltimaDataCarregado(wb);
+      if (cargAte && (!carregadoAte || cargAte > carregadoAte)) carregadoAte = cargAte;
       if (cargMap && cargMap.size > 0) carregadoDriveMap = cargMap;
 
       /* Extrai Saídas CD da aba SAIDAS CD */
@@ -839,6 +842,8 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 
       /* Cópias locais só servem de reserva — a pasta do Drive sempre vence. */
       const cargMap = lerCarregadoMensal(wb);
+      const cargAte = lerUltimaDataCarregado(wb);
+      if (cargAte && (!carregadoAte || cargAte > carregadoAte)) carregadoAte = cargAte;
       if (cargMap && cargMap.size > 0 && !carregadoDriveMap) carregadoDriveMap = cargMap;
 
       const saidasCD = lerSaidasCD(wb);
@@ -963,6 +968,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(pendentesResumo ? { pendentesResumo } : {}),
     ...(melhorAvariasResumo ? { avariasResumo: melhorAvariasResumo } : {}),
     ...(mensalData ? { mensal: mensalData } : {}),
+    ...(carregadoAte ? { carregadoAte } : {}),
     ...(melhorSaidasCD ? { saidasCD: melhorSaidasCD } : {}),
     ...(melhorAvarias ? { avarias: melhorAvarias } : {}),
     ...(melhorPendentes ? { pendentes: melhorPendentes } : {}),

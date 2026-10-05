@@ -60,12 +60,16 @@ function DashboardHome() {
     const totRec = mensal.reduce((s, m) => s + m.recebido, 0);
     const totCar = mensal.reduce((s, m) => s + m.carregado, 0);
     const saudePct = totRec > 0 ? (totCar / totRec) * 100 : 0;
+    const fmtIso = (iso?: string) => (iso && /^\d{4}-\d{2}-\d{2}/.test(iso) ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : undefined);
+    const recebidoAte = fmtIso((dias as { iso?: string }[]).map((d) => d.iso ?? "").sort().pop());
+    const carregadoAte = fmtIso(p["carregadoAte"] as string | undefined);
+    const periodoTxt = `Período: 01/01/2026 a ${(p["atualizadoEm"] as string | undefined) ?? new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.`;
     const saudeKpi: VideoKpi = {
       id: "saude",
       rotulo: "Saúde do Estoque",
       valor: `${fmtBrMax(saudePct, 1)}%`,
-      detalhe: `De ${fmtTonDec(totRec)} recebidas, ${fmtTonDec(totCar)} foram carregadas — ${fmtBrMax(saudePct, 1)}% de eficiência no fluxo de estoque. Janeiro a setembro de 2026.`,
-      extra: [["Recebido", fmtTonDec(totRec)], ["Carregado", fmtTonDec(totCar)], ["Saldo", fmtTonDec(Math.abs(totRec - totCar))]],
+      detalhe: `De ${fmtTonDec(totRec)} recebidas, ${fmtTonDec(totCar)} foram carregadas — ${fmtBrMax(saudePct, 1)}% de eficiência no fluxo de estoque. ${periodoTxt}`,
+      extra: [[`Recebido${recebidoAte ? ` · 01/01 – ${recebidoAte.slice(0, 5)}` : ""}`, fmtTonDec(totRec)], [`Carregado${carregadoAte ? ` · 01/01 – ${carregadoAte.slice(0, 5)}` : ""}`, fmtTonDec(totCar)], ["Saldo", fmtTonDec(Math.abs(totRec - totCar))]],
     };
     const kpisComSaude = [...kpis, saudeKpi];
     return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, abc: p["abc"] as VideoAbc | undefined, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, semReserva: p["semReservaResumo"] as VideoReservados | undefined, saidasCD: p["saidasCD"] as VideoSaidasCD | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, paletas: PALETAS_FIXO as VideoPaletas, recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };

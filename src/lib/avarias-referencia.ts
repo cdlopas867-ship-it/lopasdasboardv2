@@ -39,45 +39,68 @@ const TOTAL_QTD_OFICIAL = 3312;
 export function aplicarReferenciaMotivos(avarias: VideoAvarias): VideoAvarias {
   if (!avarias) return avarias;
 
+  /* Meses posteriores à tabela oficial (ex.: outubro) vêm direto dos registros
+     brutos (Soma de Quantidade), pois a referência só cobre jan–set. */
+  const extras = (avarias.meses ?? [])
+    .filter((m) => !(MESES_REF as readonly string[]).includes(m.mes) && m.qtd > 0)
+    .sort((a, b) => (a.ordem ?? 99) - (b.ordem ?? 99));
+  const totalExtras = extras.reduce((s, m) => s + m.qtd, 0);
+
   /* Totais por mês — Soma de Quantidade da tabela oficial.
      O peso é preservado do resumo calculado a partir dos registros brutos,
      pois a tabela dinâmica oficial só traz quantidades. */
   const pesoPorMes = new Map((avarias.meses ?? []).map((m) => [m.mes, m.peso ?? 0]));
   const custoPorMes = new Map((avarias.meses ?? []).map((m) => [m.mes, m.custo ?? 0]));
-  const meses = MESES_REF.map((mes, i) => ({
-    mes,
-    qtd: MESES_QTD_OFICIAL[i]!,
-    peso: pesoPorMes.get(mes) ?? 0,
-    custo: custoPorMes.get(mes) ?? 0,
-    ordem: i + 1,
-  }));
+  const meses = [
+    ...MESES_REF.map((mes, i) => ({
+      mes,
+      qtd: MESES_QTD_OFICIAL[i]!,
+      peso: pesoPorMes.get(mes) ?? 0,
+      custo: custoPorMes.get(mes) ?? 0,
+      ordem: i + 1,
+    })),
+    ...extras.map((m, i) => ({ ...m, ordem: MESES_REF.length + i + 1 })),
+  ];
 
   /* Motivo predominante de cada mês (maior contagem) */
-  const motivoMes = MESES_REF.map((mes, i) => {
-    const [motivo, qtd] = REFERENCIA.reduce(
-      ([bM, bQ], [tipo, ...ms]) => (ms[i]! > bQ ? [tipo, ms[i]!] : [bM, bQ]),
-      ["", 0] as [string, number],
-    );
-    return { mes, motivo, qtd };
+  const motivoMes = [
+    ...MESES_REF.map((mes, i) => {
+      const [motivo, qtd] = REFERENCIA.reduce(
+        ([bM, bQ], [tipo, ...ms]) => (ms[i]! > bQ ? [tipo, ms[i]!] : [bM, bQ]),
+        ["", 0] as [string, number],
+      );
+      return { mes, motivo, qtd };
+    }),
+    ...extras.flatMap((m) => avarias.motivoMes?.filter((x) => x.mes === m.mes) ?? []),
+  ];
+
+  const totalGeral = TOTAL_CONTAGEM_REF + totalExtras;
+  const tipos = REFERENCIA.map(([tipo, ...ms]) => {
+    const anterior = avarias.tipos?.find((t) => t.tipo === tipo);
+    const mesesTipo = [
+      ...MESES_REF.map((mes, i) => ({ mes: mes as string, qtd: ms[i]! })),
+      ...extras.map((m) => ({
+        mes: m.mes,
+        qtd: anterior?.meses?.find((x) => x.mes === m.mes)?.qtd ?? 0,
+      })),
+    ];
+    const total = mesesTipo.reduce((a, b) => a + b.qtd, 0);
+    return {
+      tipo,
+      imagem: anterior?.imagem ?? imagemAvaria(tipo),
+      cor: anterior?.cor ?? "#6b7280",
+      total,
+      pct: (total / totalGeral) * 100,
+      meses: mesesTipo,
+    };
   });
 
   return {
     ...avarias,
-    total: TOTAL_QTD_OFICIAL,
+    total: TOTAL_QTD_OFICIAL + totalExtras,
     referenciaParcial: true,
     meses,
     motivoMes,
-    tipos: REFERENCIA.map(([tipo, ...ms]) => {
-      const anterior = avarias.tipos?.find((t) => t.tipo === tipo);
-      const total = ms.reduce((a, b) => a + b, 0);
-      return {
-        tipo,
-        imagem: anterior?.imagem ?? imagemAvaria(tipo),
-        cor: anterior?.cor ?? "#6b7280",
-        total,
-        pct: (total / TOTAL_CONTAGEM_REF) * 100,
-        meses: MESES_REF.map((mes, i) => ({ mes, qtd: ms[i]! })),
-      };
-    }),
+    tipos,
   };
 }
