@@ -863,6 +863,13 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     console.info(
       `[auto-import] paletes: ${resumoPaletes.totalPaletes} paletes (${resumoPaletes.porTamanho.map((t) => `${t.tamanho}: ${t.paletes}`).join(", ")})`,
     );
+    resumoPaletesFinal = { ...resumoPaletes };
+    /* Paletes recebidos por tamanho — cruza QTD_RECEBIDA da Base Recebimento
+       com a configuração de pallet de cada item. */
+    if (melhorRecebimento?.recebimentoQtd?.length) {
+      resumoPaletesFinal.recebimento = calcularResumoPaletes(melhorRecebimento.recebimentoQtd, melhorPaletes);
+      resumoPaletesFinal.diasRecebidos = melhorRecebimento.diasRecebidos;
+    }
   }
 
   /* Fallback: se a leitura direta da aba de reservas não encontrou totais,
