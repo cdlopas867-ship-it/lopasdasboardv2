@@ -236,6 +236,7 @@ export default function VideoResumoDashboard({
     producaoSemanal,
     resumo,
     onReiniciar: () => setCena(0),
+    onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
     onPausar: () => setPausado(true),
   };
 
@@ -316,13 +317,6 @@ export default function VideoResumoDashboard({
               )}
             </div>
           )}
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setPausado(true); setRelatorio(true); }}
-            className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20"
-          >
-            Gerar relatório
-          </button>
           {onLogout && (
             <button
               type="button"

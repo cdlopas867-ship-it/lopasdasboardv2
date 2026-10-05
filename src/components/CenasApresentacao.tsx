@@ -59,6 +59,7 @@ type Props = {
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   onReiniciar: () => void;
+  onGerarRelatorio?: (() => void) | undefined;
   onPausar?: (() => void) | undefined;
 };
 
@@ -84,6 +85,7 @@ export default function CenasApresentacao({
   producaoSemanal,
   resumo,
   onReiniciar,
+  onGerarRelatorio,
   onPausar,
 }: Props) {
   /* Mostra todos os meses com recebimento ou carregamento — meses sem
@@ -298,6 +300,16 @@ export default function CenasApresentacao({
           >
             ↻ Reiniciar agora
           </button>
+          {onGerarRelatorio && (
+            <button
+              type="button"
+              onClick={onGerarRelatorio}
+              className="video-sobe mt-3 cursor-pointer rounded-full border border-white/40 bg-white/10 px-8 py-3 text-xs font-bold tracking-widest text-white uppercase shadow-xl backdrop-blur-sm transition-transform hover:scale-105"
+              style={{ animationDelay: "0.55s" }}
+            >
+              Gerar relatório
+            </button>
+          )}
         </div>
       )}
 
