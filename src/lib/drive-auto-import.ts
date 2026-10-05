@@ -953,6 +953,27 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(melhorReservados ? { reservados: melhorReservados.itens } : {}),
     ...(melhorItens ? { itens: melhorItens } : {}),
     ...(resumoPaletes ? { paletas: resumoPaletesFinal } : {}),
+    ...((() => {
+      if (!melhorRecebimento?.diasItemQtd?.length || !melhorPaletes || melhorPaletes.size === 0) return {};
+      const nomes = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+      const recebimentoSemanal = melhorRecebimento.diasItemQtd.map((d) => {
+        const itensEstoque = d.porItem.map(({ item, qtd }) => ({ item, saldo: qtd }));
+        const resumo = calcularResumoPaletes(itensEstoque, melhorPaletes);
+        const dia = melhorRecebimento.dias.find((x) => x.iso === d.iso);
+        return {
+          iso: d.iso,
+          dia: dia?.dia ?? nomes[new Date(`${d.iso}T12:00:00Z`).getUTCDay()]!,
+          data: dia?.data ?? `${d.iso.slice(8, 10)}/${d.iso.slice(5, 7)}/${d.iso.slice(2, 4)}`,
+          ton: dia?.ton ?? 0,
+          meta: 330,
+          pctMeta: dia ? (dia.ton / 330) * 100 : 0,
+          porTamanho: resumo.porTamanho,
+          totalQtd: resumo.porTamanho.reduce((s, t) => s + t.und, 0),
+          totalPaletes: resumo.totalPaletes,
+        };
+      });
+      return { recebimentoSemanal };
+    })()),
     ...(melhorItens || abcRecebimento
       ? {
           abc: {

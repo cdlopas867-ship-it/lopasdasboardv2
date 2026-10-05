@@ -83,6 +83,18 @@ export type VideoPaletas = {
   totalQtdRecebido?: number;
 } | null;
 
+export type RecebimentoSemanalDia = {
+  iso: string;
+  dia: string;
+  data: string;
+  ton: number;
+  meta: number;
+  pctMeta: number;
+  porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
+  totalQtd: number;
+  totalPaletes: number;
+};
+
 type Props = {
   kpis: VideoKpi[];
   unidades: VideoUnidade[];
@@ -98,14 +110,15 @@ type Props = {
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
+  recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   onFechar?: () => void;
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 10;
-const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 12000];
+const TOTAL_CENAS = 11;
+const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 9000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
@@ -123,6 +136,7 @@ export default function VideoResumoDashboard({
   foraDeLinha,
   resumo,
   paletas,
+  recebimentoSemanal,
   sincronizacao,
   onFechar,
   onLogout,
@@ -205,6 +219,7 @@ export default function VideoResumoDashboard({
     saidasCD,
     foraDeLinha,
     paletas,
+    recebimentoSemanal,
     resumo,
     onReiniciar: () => setCena(0),
     onPausar: () => setPausado(true),

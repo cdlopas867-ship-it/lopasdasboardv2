@@ -8,6 +8,7 @@ import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
 import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
+import CenaRecebimentoSemanal from "@/components/CenaRecebimentoSemanal";
 import CenaReservados from "@/components/CenaReservados";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
@@ -31,6 +32,7 @@ import type {
   VideoSaidasCD,
   VideoTurno,
   VideoUnidade,
+  RecebimentoSemanalDia,
 } from "./VideoResumoDashboard";
 
 /* Cenas da apresentação — conteúdo de cada slide, isolado em um componente
@@ -53,6 +55,7 @@ type Props = {
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
+  recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   onReiniciar: () => void;
   onPausar?: (() => void) | undefined;
@@ -75,6 +78,7 @@ export default function CenasApresentacao({
   saidasCD,
   foraDeLinha,
   paletas,
+  recebimentoSemanal,
   resumo,
   onReiniciar,
   onPausar,
@@ -279,8 +283,13 @@ export default function CenasApresentacao({
         <CenaSaudeEstoque anim={anim} mensal={mensal} cena={cena} />
       )}
 
-      {/* Cena 10 — encerramento */}
+      {/* Cena 10 — Recebimento da semana com tipo de palete */}
       {cena === 9 && (
+        <CenaRecebimentoSemanal anim={anim} dias={recebimentoSemanal} onPausar={onPausar} />
+      )}
+
+      {/* Cena 11 — encerramento */}
+      {cena === 10 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
