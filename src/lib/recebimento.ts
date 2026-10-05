@@ -80,7 +80,7 @@ function encontrarSheet(wb: XLSX.WorkBook): XLSX.WorkSheet | null {
  * Encontra a linha de cabeçalho dinamicamente (pode haver título antes). */
 export function calcularRecebimento(
   wb: XLSX.WorkBook,
-): { turnos: Turno[]; dias: Dia[]; recebimentoItens: { nome: string; ton: number }[]; mensal: { mes: string; recebido: number }[]; totalRecebido: number } | null {
+): { turnos: Turno[]; dias: Dia[]; recebimentoItens: { nome: string; ton: number }[]; recebimentoQtd: { item: string; saldo: number }[]; diasRecebidos: number; mensal: { mes: string; recebido: number }[]; totalRecebido: number } | null {
   const ws = encontrarSheet(wb);
   if (!ws) return null;
 
@@ -101,6 +101,8 @@ export function calcularRecebimento(
   const colItem = headers.findIndex((h) => /^(ITEM|COD|C[ÓO]DIGO)/i.test(h));
   const colDesc = headers.findIndex((h) => /(DESC|PRODUTO|DESCRI)/i.test(h));
   const colPeso = headers.findIndex((h) => /PESO.*RECEBIDO/i.test(h));
+  const colQtd = headers.findIndex((h) => /QTD.*RECEBIDA|QUANTIDADE.*RECEBIDA/i.test(h));
+  const porItemQtd = new Map<string, number>();
 
   if ((colFim < 0 && colInicio < 0) || colPeso < 0) return null;
 
@@ -124,6 +126,12 @@ export function calcularRecebimento(
     if (turno) turno.ton += peso / 1000;
 
     porDia.set(iso, (porDia.get(iso) ?? 0) + peso);
+
+    if (colItem >= 0 && colQtd >= 0) {
+      const cod = String(r?.[colItem] ?? "").trim();
+      const qtd = Number(r?.[colQtd] ?? 0) || 0;
+      if (cod && qtd > 0) porItemQtd.set(cod, (porItemQtd.get(cod) ?? 0) + qtd);
+    }
 
     if (colItem >= 0) {
       const chave = String(r?.[colItem] ?? "").trim();
@@ -190,5 +198,8 @@ export function calcularRecebimento(
     .map(([mi, peso]) => ({ mes: MESES_CURTO[mi]!, recebido: +(peso / 1000).toFixed(1) }));
   const totalRecebido = +(totalKg / 1000).toFixed(1);
 
-  return { turnos, dias, recebimentoItens, mensal, totalRecebido };
+  const recebimentoQtd = [...porItemQtd.entries()].map(([item, saldo]) => ({ item, saldo }));
+  const diasRecebidos = porDia.size;
+
+  return { turnos, dias, recebimentoItens, recebimentoQtd, diasRecebidos, mensal, totalRecebido };
 }

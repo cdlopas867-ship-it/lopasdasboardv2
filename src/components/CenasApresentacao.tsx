@@ -1,3 +1,4 @@
+import CenaPaletesTamanho from "./CenaPaletesTamanho";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtMoeda, fmtPct, fmtPeso } from "@/lib/format";
@@ -279,8 +280,10 @@ export default function CenasApresentacao({
         <CenaSaudeEstoque anim={anim} mensal={mensal} cena={cena} />
       )}
 
-      {/* Cena 10 — encerramento */}
-      {cena === 9 && (
+      {cena === 9 && <CenaPaletesTamanho anim={anim} paletas={paletas} />}
+
+      {/* Cena 11 — encerramento */}
+      {cena === 10 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -549,6 +552,7 @@ function CardFocoPaletas({
       <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
         {fmtInt(itens)} itens mapeados distribuídos em {fmtInt(total)} paletes,
         organizados por tamanho de pallet.
+        {paletas?.recebimento ? ` Recebidos: ${fmtInt(paletas.recebimento.totalPaletes)} paletes.` : ""}
       </p>
       {paletas?.porTamanho?.length ? (
         <dl className="mt-3 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
@@ -563,6 +567,7 @@ function CardFocoPaletas({
                 </dt>
                 <dd className="font-medium text-white/90">
                   {fmtInt(t.paletes)} <span className="text-white/40">({fmtBrMax(pct, 0)}%)</span>
+                  {paletas.recebimento ? <span className="ml-1.5 text-white/40">· rec. {fmtInt(paletas.recebimento.porTamanho.find((x) => x.tamanho === t.tamanho)?.paletes ?? 0)}</span> : null}
                 </dd>
               </div>
             );

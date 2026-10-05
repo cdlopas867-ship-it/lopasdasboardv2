@@ -76,6 +76,8 @@ export type VideoPaletas = {
   porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
   totalPaletes: number;
   totalItens: number;
+  recebimento?: { porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[]; totalPaletes: number; totalItens: number } | null;
+  diasRecebidos?: number;
 } | null;
 
 type Props = {
@@ -99,8 +101,8 @@ type Props = {
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 10;
-const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 12000];
+const TOTAL_CENAS = 11;
+const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 9000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
