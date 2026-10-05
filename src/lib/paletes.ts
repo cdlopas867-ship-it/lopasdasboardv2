@@ -156,7 +156,13 @@ export function calcularResumoPaletes(
     const chave = normalizarTexto(it.item).replace(/\s+/g, "").trim();
     if (!chave) continue;
 
-    const pallet = paletes.get(chave);
+    /* Tenta casamento exato; se falhar, tenta o prefixo antes do ponto
+       (a Base Recebimento usa códigos compostos como "2103.13945",
+       enquanto a planilha de paletes usa o código simples "2103"). */
+    let pallet = paletes.get(chave);
+    if (!pallet && chave.includes(".")) {
+      pallet = paletes.get(chave.split(".")[0]!);
+    }
     if (!pallet || pallet.undPorPalete <= 0) continue;
 
     const paletesItem = Math.ceil(it.saldo / pallet.undPorPalete);
