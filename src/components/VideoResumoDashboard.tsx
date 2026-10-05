@@ -107,6 +107,7 @@ type Props = {
   abc?: VideoAbc | undefined;
   pendentes?: VideoPendentes | undefined;
   reservados?: VideoReservados | undefined;
+  semReserva?: VideoReservados | undefined;
   valorFaturado?: number | undefined;
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
@@ -119,8 +120,8 @@ type Props = {
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 10;
-const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 12000];
+const TOTAL_CENAS = 9;
+const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
@@ -133,6 +134,7 @@ export default function VideoResumoDashboard({
   avarias,
   pendentes,
   reservados,
+  semReserva,
   valorFaturado,
   saidasCD,
   foraDeLinha,
@@ -221,6 +223,7 @@ export default function VideoResumoDashboard({
     avarias,
     pendentes,
     reservados,
+    semReserva,
     valorFaturado,
     saidasCD,
     foraDeLinha,

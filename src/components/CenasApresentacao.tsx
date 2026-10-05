@@ -4,7 +4,6 @@ import { fmtBrMax, fmtInt, fmtMoeda, fmtPct, fmtPeso } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
-import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
 import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
@@ -51,6 +50,7 @@ type Props = {
   abc?: VideoAbc | undefined;
   pendentes?: VideoPendentes | undefined;
   reservados?: VideoReservados | undefined;
+  semReserva?: VideoReservados | undefined;
   valorFaturado?: number | undefined;
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
@@ -75,6 +75,7 @@ export default function CenasApresentacao({
   avarias,
   pendentes,
   reservados,
+  semReserva,
   valorFaturado,
   saidasCD,
   foraDeLinha,
@@ -249,7 +250,7 @@ export default function CenasApresentacao({
 
       {/* Cena 6 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
       {cena === 5 && reservados && (
-        <CenaReservados anim={anim} reservados={reservados} valorFaturado={valorFaturado} cena={cena} onPausar={onPausar} />
+        <CenaReservados anim={anim} reservados={reservados} semReserva={semReserva} valorFaturado={valorFaturado} cena={cena} onPausar={onPausar} />
       )}
 
       {/* Cena 6 fallback — sem dados de reservados */}
@@ -280,13 +281,8 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 9 — Saúde do estoque (donut) */}
+      {/* Cena 9 — encerramento */}
       {cena === 8 && (
-        <CenaSaudeEstoque anim={anim} mensal={mensal} cena={cena} />
-      )}
-
-      {/* Cena 10 — encerramento */}
-      {cena === 9 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.

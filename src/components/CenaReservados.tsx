@@ -1,5 +1,6 @@
 /* Cena Estoque Reservado — donut interativo com toggle Peso / Quantidade / Valor. */
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtMoeda, fmtMoeda2, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
@@ -10,18 +11,23 @@ const CORES = ["#00FFCC", "#FFA500", "#A78BFA"];
 
 export default function CenaReservados({
   anim,
-  reservados,
+  reservados: reservadosCom,
+  semReserva,
   valorFaturado,
   cena,
   onPausar,
 }: {
   anim: boolean;
   reservados: NonNullable<VideoReservados>;
+  semReserva?: VideoReservados | undefined;
   valorFaturado?: number;
   cena: number;
   onPausar?: () => void;
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
+  const [modo, setModo] = useState<"reservado" | "sem">("reservado");
+  const ehSem = modo === "sem" && !!semReserva;
+  const reservados = ehSem ? semReserva! : reservadosCom;
 
   const secoes: SecaoDonut[] = [
     { id: "peso", label: "peso", cor: CORES[0]!, pct: reservados.pctPeso },
@@ -39,9 +45,26 @@ export default function CenaReservados({
     <div className="flex w-full flex-col items-center">
       <div className="flex items-center gap-2">
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-          Estoque Reservado
+          {ehSem ? "Estoque Sem Reserva" : "Estoque Reservado"}
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Itens com reserva comercial. % do valor = valor reservado ÷ valor total do estoque × 100. Cálculo por item: qtd reservada × custo médio = valor reservado; qtd reservada × peso bruto = peso reservado. Fonte: planilha 'COMERCIAL 024 - SALDO DE ITENS COM RESERVA' do Drive. Atualizado em 28/09/2026." />
+        <InfoTooltip onOpen={onPausar} texto={ehSem ? "Itens em estoque sem reserva comercial (saldo disponível = saldo atual − qtd reservada). % = quantidade, peso ou valor sem reserva ÷ total do estoque. Fonte: planilha 'COMERCIAL 024 - SALDO DE ITENS COM RESERVA' do Drive." : "Itens com reserva comercial. % do valor = valor reservado ÷ valor total do estoque × 100. Cálculo por item: qtd reservada × custo médio = valor reservado; qtd reservada × peso bruto = peso reservado. Fonte: planilha 'COMERCIAL 024 - SALDO DE ITENS COM RESERVA' do Drive. Atualizado em 28/09/2026."} />
+      </div>
+
+      <div className="video-sobe mt-2 flex items-center gap-2">
+        {([["reservado", "Reservado"], ["sem", "Sem reserva"]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setModo(id)}
+            disabled={id === "sem" && !semReserva}
+            className={cn(
+              "rounded-full px-3 py-1 text-[9px] font-bold tracking-widest uppercase transition-all duration-300 disabled:opacity-30",
+              modo === id ? "bg-white text-brand-dark" : "border border-white/15 text-white/50 hover:text-white/80",
+            )}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <DonutInterativo
@@ -61,7 +84,7 @@ export default function CenaReservados({
             <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
               <th className="pb-0.5 font-bold">Atributo</th>
               <th className="pb-0.5 text-center font-bold">Und.</th>
-              <th className="pb-0.5 text-right font-bold">Reserv.</th>
+              <th className="pb-0.5 text-right font-bold">{ehSem ? "S/ reserva" : "Reserv."}</th>
               <th className="pb-0.5 text-right font-bold">Estoque</th>
               <th className="pb-0.5 text-right font-bold">%</th>
             </tr>
@@ -94,7 +117,7 @@ export default function CenaReservados({
       </div>
 
       {/* Valor previsto da reserva — integrado na mesma cena */}
-      {valorFaturado && (
+      {valorFaturado && !ehSem && (
         <div className="video-sobe mt-5 w-full max-w-sm mx-auto border-t border-white/10 pt-5" style={{ animationDelay: "0.7s" }}>
           <div className="flex items-center justify-center gap-2">
             <p className="text-[10px] font-bold tracking-[0.3em] text-white/60 uppercase">
