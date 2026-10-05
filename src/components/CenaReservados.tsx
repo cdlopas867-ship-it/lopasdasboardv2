@@ -30,9 +30,9 @@ export default function CenaReservados({
   ];
 
   const linhasTabela = [
-    { focoIdx: 0, rotulo: "Peso", und: "t", reserv: fmtBrMax(reservados.totalTon, 1), estoque: fmtBrMax(reservados.totalPesoEstoque, 1), pct: fmtBrMax(reservados.pctPeso, 1) },
-    { focoIdx: 1, rotulo: "Quantidade", und: "un", reserv: fmtInt(reservados.totalQtd), estoque: fmtInt(reservados.totalSaldo), pct: fmtBrMax(reservados.pctQtd, 1) },
-    { focoIdx: 2, rotulo: "Valor", und: "R$", reserv: `${fmtBrMax(reservados.totalValor / 1e6, 2)} mi`, estoque: `${fmtBrMax(reservados.totalValorEstoque / 1e6, 2)} mi`, pct: fmtBrMax(reservados.pctValor, 1) },
+    { focoIdx: 0, rotulo: "Peso", und: "t", reserv: fmtBrMax(reservados.totalTon, 1), semReserv: fmtBrMax(reservados.totalPesoEstoque - reservados.totalTon, 1), estoque: fmtBrMax(reservados.totalPesoEstoque, 1), pct: fmtBrMax(reservados.pctPeso, 1), pctSem: fmtBrMax(100 - reservados.pctPeso, 1) },
+    { focoIdx: 1, rotulo: "Quantidade", und: "un", reserv: fmtInt(reservados.totalQtd), semReserv: fmtInt(reservados.totalSaldo - reservados.totalQtd), estoque: fmtInt(reservados.totalSaldo), pct: fmtBrMax(reservados.pctQtd, 1), pctSem: fmtBrMax(100 - reservados.pctQtd, 1) },
+    { focoIdx: 2, rotulo: "Valor", und: "R$", reserv: `${fmtBrMax(reservados.totalValor / 1e6, 2)} mi`, semReserv: `${fmtBrMax((reservados.totalValorEstoque - reservados.totalValor) / 1e6, 2)} mi`, estoque: `${fmtBrMax(reservados.totalValorEstoque / 1e6, 2)} mi`, pct: fmtBrMax(reservados.pctValor, 1), pctSem: fmtBrMax(100 - reservados.pctValor, 1) },
   ];
 
   return (
@@ -62,8 +62,10 @@ export default function CenaReservados({
               <th className="pb-0.5 font-bold">Atributo</th>
               <th className="pb-0.5 text-center font-bold">Und.</th>
               <th className="pb-0.5 text-right font-bold">Reserv.</th>
+              <th className="pb-0.5 text-right font-bold">S/Reserv.</th>
               <th className="pb-0.5 text-right font-bold">Estoque</th>
-              <th className="pb-0.5 text-right font-bold">%</th>
+              <th className="pb-0.5 text-right font-bold">%Res.</th>
+              <th className="pb-0.5 text-right font-bold">%S/R</th>
             </tr>
           </thead>
           <tbody>
@@ -81,8 +83,10 @@ export default function CenaReservados({
                   <td className="py-0.5" style={ativa ? { color: cor } : undefined}>{l.rotulo}</td>
                   <td className="py-0.5 text-center text-white/50">{l.und}</td>
                   <td className="py-0.5 text-right font-mono font-semibold" style={ativa ? { color: cor } : undefined}>{l.reserv}</td>
+                  <td className="py-0.5 text-right font-mono font-semibold text-white/70">{l.semReserv}</td>
                   <td className="py-0.5 text-right font-mono font-semibold" style={ativa ? { color: cor } : undefined}>{l.estoque}</td>
                   <td className="py-0.5 text-right font-mono font-bold" style={ativa ? { color: cor } : undefined}>{l.pct}%</td>
+                  <td className="py-0.5 text-right font-mono font-bold text-white/70">{l.pctSem}%</td>
                 </tr>
               );
             })}
