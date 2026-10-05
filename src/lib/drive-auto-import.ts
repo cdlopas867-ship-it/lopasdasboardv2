@@ -11,7 +11,7 @@
 import * as XLSX from "xlsx";
 import { addRegistro, getHistorico } from "./historico-store";
 import { setData, getLatestData } from "./sync-store";
-import { lerReservados, calcularReservados } from "./reservados";
+import { lerReservados, calcularReservados, resumirReservados } from "./reservados";
 import { lerPendentes } from "./pendentes";
 import { calcularPendentesResumo } from "./pendentes-resumo";
 import { lerAvarias, mesclarAvarias } from "./avarias";
@@ -689,6 +689,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let reservadoTon: number | undefined;
   let reservadoValor: number | undefined;
   let melhorReservados: ReturnType<typeof calcularReservados> | null = null;
+  let melhorSemReserva: ReturnType<typeof calcularReservados> | null = null;
   let pendentesResumo: ReturnType<typeof calcularPendentesResumo> | null = null;
   let melhorAvariasResumo: ReturnType<typeof calcularAvariasResumo> | null = null;
   let carregadoDriveMap: Map<string, number> | null = null;
@@ -723,6 +724,9 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         const reservados = calcularReservados(itensReservados);
         if (reservados.itens.length > 0) melhorReservados = reservados;
       }
+      /* Itens em estoque sem reserva (saldo disponível) */
+      const itensSemReserva = lerReservados(wb, "semReserva");
+      if (itensSemReserva && itensSemReserva.length > 0) melhorSemReserva = calcularReservados(itensSemReserva);
 
       /* Extrai pendências de produção */
       const itensPendentes = lerPendentes(wb);
@@ -1034,29 +1038,14 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     console.info("[auto-import] sem mudanças no histórico — atualizando sync-store apenas");
     const existing2 = await getLatestData() as Record<string, unknown> | null;
     if (melhorReservados || Object.keys(extras).length > 0) {
-      const reservadosResumo2 = melhorReservados ? {
-        totalQtd: melhorReservados.totalQtd,
-        totalTon: melhorReservados.totalTon,
-        totalValor: melhorReservados.totalValor,
-        custoMedioPonderado: melhorReservados.custoMedioPonderado,
-        totalSaldo: melhorReservados.totalSaldo,
-        totalValorEstoque: melhorReservados.totalValorEstoque,
-        totalPesoEstoque: melhorReservados.totalPesoEstoque,
-        pctQtd: melhorReservados.pctQtd,
-        pctValor: melhorReservados.pctValor,
-        pctPeso: melhorReservados.pctPeso,
-        topItens: melhorReservados.topItens.map((i) => ({
-          cod: i.cod, desc: i.desc, mascara: i.mascara,
-          qtdReservada: i.qtdReservada, pesoReservado: i.pesoReservado,
-          valorReservado: i.valorReservado, saldoAtual: i.saldoAtual,
-          pctReservado: i.pctReservado,
-        })),
-      } : (existing2?.["reservadosResumo"] ?? undefined);
+      const reservadosResumo2 = melhorReservados ? resumirReservados(melhorReservados) : (existing2?.["reservadosResumo"] ?? undefined);
+      const semReservaResumo2 = melhorSemReserva ? resumirReservados(melhorSemReserva) : (existing2?.["semReservaResumo"] ?? undefined);
 
       await setData({
         ...(existing2 ?? {}),
         ...(melhorResumo.data ? { atualizadoEm: melhorResumo.data } : {}),
         ...(reservadosResumo2 ? { reservadosResumo: reservadosResumo2 } : {}),
+        ...(semReservaResumo2 ? { semReservaResumo: semReservaResumo2 } : {}),
         sincronizacao,
         ...extras,
       });
@@ -1084,28 +1073,8 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   const existing = await getLatestData() as Record<string, unknown> | null;
 
   if (melhorReservados) {
-    const reservadosResumo = {
-      totalQtd: melhorReservados.totalQtd,
-      totalTon: melhorReservados.totalTon,
-      totalValor: melhorReservados.totalValor,
-      custoMedioPonderado: melhorReservados.custoMedioPonderado,
-      totalSaldo: melhorReservados.totalSaldo,
-      totalValorEstoque: melhorReservados.totalValorEstoque,
-      totalPesoEstoque: melhorReservados.totalPesoEstoque,
-      pctQtd: melhorReservados.pctQtd,
-      pctValor: melhorReservados.pctValor,
-      pctPeso: melhorReservados.pctPeso,
-      topItens: melhorReservados.topItens.map((i) => ({
-        cod: i.cod,
-        desc: i.desc,
-        mascara: i.mascara,
-        qtdReservada: i.qtdReservada,
-        pesoReservado: i.pesoReservado,
-        valorReservado: i.valorReservado,
-        saldoAtual: i.saldoAtual,
-        pctReservado: i.pctReservado,
-      })),
-    };
+    const reservadosResumo = resumirReservados(melhorReservados);
+    const semReservaResumo = melhorSemReserva ? resumirReservados(melhorSemReserva) : (existing?.["semReservaResumo"] ?? undefined);
 
     await setData({
       ...(existing ?? {}),
@@ -1118,6 +1087,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         previsto: melhorResumo.previsto,
       },
       reservadosResumo,
+      ...(semReservaResumo ? { semReservaResumo } : {}),
       sincronizacao,
       ...extras,
     });

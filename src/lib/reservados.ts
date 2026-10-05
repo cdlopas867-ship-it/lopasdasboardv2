@@ -52,7 +52,9 @@ function num(v: unknown): number {
 
 const str = (v: unknown) => (v == null ? "" : String(v).trim());
 
-export function lerReservados(wb: XLSX.WorkBook): ItemReservado[] | null {
+/* modo "semReserva": usa a parcela disponível (saldo − reservado) de cada item;
+   o resultado reaproveita o formato de ItemReservado (qtdReservada = qtd sem reserva). */
+export function lerReservados(wb: XLSX.WorkBook, modo: "reservado" | "semReserva" = "reservado"): ItemReservado[] | null {
   let ws: XLSX.WorkSheet | undefined;
   let headerRow = 0;
 
@@ -94,14 +96,19 @@ export function lerReservados(wb: XLSX.WorkBook): ItemReservado[] | null {
   const colSaldo = find([/SALDO\s*ATUAL/, /^SALDO/]);
   const colReserv = find([/(QUANTIDADE|QTD|QTDE)\s+RESERV/, /SALDO\s+RESERV/, /^RESERV/]);
   if (colReserv < 0) return null;
+  const colDisp = find([/(QUANTIDADE|QTD|QTDE)\s+DISPONIVEL/, /^DISPONIVEL/]);
 
   const pesoEmToneladas = colPeso >= 0 && /TON|TONELADA/.test(header[colPeso]!);
   const itens: ItemReservado[] = [];
   for (const r of rows) {
     const cod = str(r[colCod >= 0 ? colCod : 0]);
-    const qtdReservada = num(r[colReserv]);
-    if (!cod || qtdReservada <= 0) continue;
     const saldoAtual = num(r[colSaldo >= 0 ? colSaldo : -1]);
+    const qtdReservada = modo === "semReserva"
+      ? Math.max(0, colDisp >= 0 ? num(r[colDisp]) : saldoAtual - num(r[colReserv]))
+      : num(r[colReserv]);
+    /* Em "sem reserva" mantém itens totalmente reservados (qtd 0) para que os
+       percentuais usem o estoque total como base. */
+    if (!cod || (modo === "reservado" && qtdReservada <= 0)) continue;
     const pesoRaw = num(r[colPeso >= 0 ? colPeso : -1]);
     const pesoBrt = pesoEmToneladas ? pesoRaw * 1000 : pesoRaw;
     const custoMedio = num(r[colCusto >= 0 ? colCusto : -1]);
@@ -121,6 +128,7 @@ export function lerReservados(wb: XLSX.WorkBook): ItemReservado[] | null {
       pctReservado: saldoAtual > 0 ? (qtdReservada / saldoAtual) * 100 : 0,
     });
   }
+  if (modo === "semReserva" && !itens.some((i) => i.qtdReservada > 0)) return null;
   return itens.length ? itens.sort((a, b) => b.qtdReservada - a.qtdReservada) : null;
 }
 
@@ -139,5 +147,27 @@ export function calcularReservados(itens: ItemReservado[]): Reservados {
     pctValor: totalValorEstoque > 0 ? (totalValor / totalValorEstoque) * 100 : 0,
     pctPeso: totalPesoEstoque > 0 ? (totalTon / totalPesoEstoque) * 100 : 0,
     topItens: [...itens].sort((a, b) => b.pesoReservado - a.pesoReservado).slice(0, 8),
+  };
+}
+
+/* Versão enxuta (sem a lista completa de itens) gravada no sync-store. */
+export function resumirReservados(r: Reservados) {
+  return {
+    totalQtd: r.totalQtd,
+    totalTon: r.totalTon,
+    totalValor: r.totalValor,
+    custoMedioPonderado: r.custoMedioPonderado,
+    totalSaldo: r.totalSaldo,
+    totalValorEstoque: r.totalValorEstoque,
+    totalPesoEstoque: r.totalPesoEstoque,
+    pctQtd: r.pctQtd,
+    pctValor: r.pctValor,
+    pctPeso: r.pctPeso,
+    topItens: r.topItens.map((i) => ({
+      cod: i.cod, desc: i.desc, mascara: i.mascara,
+      qtdReservada: i.qtdReservada, pesoReservado: i.pesoReservado,
+      valorReservado: i.valorReservado, saldoAtual: i.saldoAtual,
+      pctReservado: i.pctReservado,
+    })),
   };
 }

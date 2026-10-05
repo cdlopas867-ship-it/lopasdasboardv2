@@ -3,6 +3,7 @@ import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 import ResumoBg from "./ResumoBg";
+import RelatorioLopas from "./RelatorioLopas";
 
 /* Vídeo-resumo do dashboard — cenas animadas com gráficos e o mínimo de texto,
    sobre o fundo da marca Móveis Lopas, tocando automaticamente ao iniciar o app.
@@ -96,6 +97,8 @@ export type RecebimentoSemanalDia = {
   totalPaletes: number;
 };
 
+export type VideoResumoProps = Props;
+
 type Props = {
   kpis: VideoKpi[];
   unidades: VideoUnidade[];
@@ -107,6 +110,7 @@ type Props = {
   abc?: VideoAbc | undefined;
   pendentes?: VideoPendentes | undefined;
   reservados?: VideoReservados | undefined;
+  semReserva?: VideoReservados | undefined;
   valorFaturado?: number | undefined;
   saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
@@ -119,8 +123,8 @@ type Props = {
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 10;
-const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 12000];
+const TOTAL_CENAS = 9;
+const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
@@ -133,6 +137,7 @@ export default function VideoResumoDashboard({
   avarias,
   pendentes,
   reservados,
+  semReserva,
   valorFaturado,
   saidasCD,
   foraDeLinha,
@@ -149,6 +154,7 @@ export default function VideoResumoDashboard({
   const [anim, setAnim] = useState(false);
   const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
   const [mostrarSync, setMostrarSync] = useState(false);
+  const [relatorio, setRelatorio] = useState(false);
   const cenaAnteriorRef = useRef(0);
 
   /* Data/hora da última sincronização com a pasta do Drive */
@@ -221,6 +227,7 @@ export default function VideoResumoDashboard({
     avarias,
     pendentes,
     reservados,
+    semReserva,
     valorFaturado,
     saidasCD,
     foraDeLinha,
@@ -229,6 +236,7 @@ export default function VideoResumoDashboard({
     producaoSemanal,
     resumo,
     onReiniciar: () => setCena(0),
+    onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
     onPausar: () => setPausado(true),
   };
 
@@ -262,6 +270,13 @@ export default function VideoResumoDashboard({
           Movidos pela fé
         </p>
       </div>
+
+      {relatorio && (
+        <RelatorioLopas
+          dados={{ kpis, unidades, ocupacao, semana, turnos, mensal, abc, avarias, pendentes, reservados, semReserva, valorFaturado, saidasCD, foraDeLinha, paletas, producaoSemanal, resumo, sincronizacao }}
+          onFechar={() => setRelatorio(false)}
+        />
+      )}
 
       {/* Conteúdo */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
