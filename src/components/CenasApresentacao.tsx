@@ -336,10 +336,14 @@ function CenaKpisFoco({
     return () => clearTimeout(t);
   }, [foco, pausado, total]);
 
-  /* Navegação por teclado: seta direita = próximo, seta esquerda = anterior */
+  /* Navegação por teclado: seta direita = próximo, seta esquerda = anterior,
+     espaço pausa/retoma o carrossel de cards */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") setFoco((f) => (f + 1) % total);
+      if (e.key === " ") {
+        e.preventDefault();
+        setPausado((p) => !p);
+      } else if (e.key === "ArrowRight") setFoco((f) => (f + 1) % total);
       else if (e.key === "ArrowLeft") setFoco((f) => (f - 1 + total) % total);
     };
     window.addEventListener("keydown", onKey);
