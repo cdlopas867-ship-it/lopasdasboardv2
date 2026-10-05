@@ -549,7 +549,6 @@ function CardFocoPaletas({
       <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
         {fmtInt(itens)} itens mapeados distribuídos em {fmtInt(total)} paletes,
         organizados por tamanho de pallet.
-        {paletas?.recebimento ? ` Recebidos: ${fmtInt(paletas.recebimento.totalPaletes)} paletes.` : ""}
       </p>
       {paletas?.porTamanho?.length ? (
         <dl className="mt-3 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
@@ -564,7 +563,6 @@ function CardFocoPaletas({
                 </dt>
                 <dd className="font-medium text-white/90">
                   {fmtInt(t.paletes)} <span className="text-white/40">({fmtBrMax(pct, 0)}%)</span>
-                  {paletas.recebimento ? <span className="ml-1.5 text-white/40">· rec. {fmtInt(paletas.recebimento.porTamanho.find((x) => x.tamanho === t.tamanho)?.paletes ?? 0)}</span> : null}
                 </dd>
               </div>
             );
