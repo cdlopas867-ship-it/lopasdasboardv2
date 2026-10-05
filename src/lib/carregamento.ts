@@ -174,3 +174,34 @@ export function lerCarregadoMensal(wb: XLSX.WorkBook): Map<string, number> | nul
 
   return porMes.size > 0 ? porMes : null;
 }
+
+/* Última data (ISO yyyy-mm-dd) com carregamento na aba/planilha de carregado. */
+export function lerUltimaDataCarregado(wb: XLSX.WorkBook): string | null {
+  let melhor: string | null = null;
+  for (const name of wb.SheetNames) {
+    const ws = wb.Sheets[name];
+    if (!ws) continue;
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
+    const hIdx = rows.findIndex((r) =>
+      r?.some((c) => String(c ?? "").toUpperCase().trim() === "DATA") &&
+      r?.some((c) => String(c ?? "").toUpperCase().trim() === "TONELADAS"),
+    );
+    if (hIdx < 0) continue;
+    const hs = rows[hIdx]!.map((c) => String(c ?? "").toUpperCase().trim());
+    const cData = hs.indexOf("DATA");
+    const cTon = hs.indexOf("TONELADAS");
+    for (const r of rows.slice(hIdx + 1)) {
+      const v = r?.[cData];
+      if (!r || (Number(r[cTon] ?? 0) || 0) <= 0) continue;
+      let iso: string | null = null;
+      if (typeof v === "number") iso = new Date(Math.round((v - 25569) * 86400000)).toISOString().slice(0, 10);
+      else if (v instanceof Date) iso = v.toISOString().slice(0, 10);
+      else {
+        const m = String(v ?? "").match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+        if (m) iso = `${m[3]}-${m[2]}-${m[1]}`;
+      }
+      if (iso && (!melhor || iso > melhor)) melhor = iso;
+    }
+  }
+  return melhor;
+}
