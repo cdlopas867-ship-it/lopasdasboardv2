@@ -96,7 +96,7 @@ export default function CenasApresentacao({
     <>
       {/* Cena 1 — KPIs de abertura em destaque (um card por vez, centralizado) */}
       {cena === 0 && (
-        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} paletas={paletas} onPausar={onPausar} />
+        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} paletas={paletas} producaoSemanal={producaoSemanal} onPausar={onPausar} />
       )}
 
       {/* Cena 2 — ocupação (donut interativo) */}
@@ -328,14 +328,17 @@ function CenaKpisFoco({
   kpis,
   foraDeLinha,
   paletas,
+  producaoSemanal,
   onPausar,
 }: {
   kpis: VideoKpi[];
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
+  producaoSemanal?: ProducaoSemanalDia[] | undefined;
   onPausar?: (() => void) | undefined;
 }) {
-  const total = kpis.length + 1 + (paletas && paletas.totalPaletes > 0 ? 1 : 0); // +1 Fora de linha, +1 Paletes
+  const temProducao = !!(producaoSemanal && producaoSemanal.length > 0);
+  const total = kpis.length + 1 + (paletas && paletas.totalPaletes > 0 ? 1 : 0) + (temProducao ? 1 : 0); // +1 Fora de linha, +1 Paletes, +1 Produção
   const [foco, setFoco] = useState(0);
   const [pausado, setPausado] = useState(false);
 
@@ -357,6 +360,7 @@ function CenaKpisFoco({
 
   const ehForaDeLinha = foco === kpis.length;
   const ehPaletas = foco === kpis.length + 1;
+  const ehProducao = temProducao && foco === kpis.length + 2;
   const kpi = foco < kpis.length ? kpis[foco] : null;
   const togglePausar = () => {
     const next = !pausado;
@@ -392,6 +396,8 @@ function CenaKpisFoco({
             <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} onAvancar={avancar} />
           ) : ehPaletas ? (
             <CardFocoPaletas paletas={paletas} onAvancar={avancar} />
+          ) : ehProducao ? (
+            <CardFocoProducao dias={producaoSemanal} onAvancar={avancar} />
           ) : (
             <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} onAvancar={avancar} />
           )}
@@ -587,6 +593,62 @@ function CardFocoPaletas({
           })}
         </dl>
       ) : null}
+    </button>
+  );
+}
+
+/* Card de "produção da semana" em destaque — mostra tonelagem prevista,
+   pendente, % entregue e breakdown por dia. */
+function CardFocoProducao({
+  dias,
+  onAvancar,
+}: {
+  dias?: ProducaoSemanalDia[] | undefined;
+  onAvancar: () => void;
+}) {
+  const semana = (dias ?? []).slice(-7);
+  const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
+  const totalEntregue = semana.reduce((s, d) => s + d.entregue, 0);
+  const totalPendente = semana.reduce((s, d) => s + d.pendente, 0);
+  const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
+  const totalTonPend = semana.reduce((s, d) => s + d.tonPendente, 0);
+  const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
+  const pctEntregue = totalPrevisto > 0 ? (totalEntregue / totalPrevisto) * 100 : 0;
+
+  return (
+    <button
+      type="button"
+      onClick={onAvancar}
+      className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
+    >
+      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
+        {fmtBrMax(totalTonPrev, 1)} t
+      </p>
+      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-brand-amber/80 uppercase">
+        Produção da Semana
+      </p>
+      <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
+        {fmtInt(totalOrdens)} ordens de produção previstas para os próximos{" "}
+        {semana.length} dias — {fmtBrMax(totalTonPend, 1)} t pendentes.
+      </p>
+      <dl className="mt-2.5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Previsto</dt>
+          <dd className="font-medium text-white/90">{fmtInt(totalPrevisto)} un · {fmtBrMax(totalTonPrev, 1)} t</dd>
+        </div>
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Entregue</dt>
+          <dd className="font-medium text-green-400">{fmtInt(totalEntregue)} un ({fmtBrMax(pctEntregue, 0)}%)</dd>
+        </div>
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Pendente</dt>
+          <dd className="font-medium text-brand-amber">{fmtInt(totalPendente)} un · {fmtBrMax(totalTonPend, 1)} t</dd>
+        </div>
+        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
+          <dt className="text-white/45">Ordens</dt>
+          <dd className="font-medium text-white/90">{fmtInt(totalOrdens)}</dd>
+        </div>
+      </dl>
     </button>
   );
 }
