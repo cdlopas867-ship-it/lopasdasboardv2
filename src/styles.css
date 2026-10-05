@@ -1195,3 +1195,12 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
   100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 .fase-movidos { animation: movidos-rise 1s ease-out forwards; }
+
+/* Relatório Lopas — impressão / PDF: mostra só o relatório */
+@media print {
+  body > *:not(.relatorio-lopas-root) { display: none !important; }
+  .relatorio-lopas-root { position: static !important; overflow: visible !important; background: #fff !important; }
+  .relatorio-lopas-root .no-print { display: none !important; }
+  .relatorio-lopas-root section { break-inside: avoid; }
+  @page { margin: 14mm; }
+}

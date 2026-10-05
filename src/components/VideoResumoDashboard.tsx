@@ -3,6 +3,7 @@ import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 import ResumoBg from "./ResumoBg";
+import RelatorioLopas from "./RelatorioLopas";
 
 /* Vídeo-resumo do dashboard — cenas animadas com gráficos e o mínimo de texto,
    sobre o fundo da marca Móveis Lopas, tocando automaticamente ao iniciar o app.
@@ -96,6 +97,8 @@ export type RecebimentoSemanalDia = {
   totalPaletes: number;
 };
 
+export type VideoResumoProps = Props;
+
 type Props = {
   kpis: VideoKpi[];
   unidades: VideoUnidade[];
@@ -151,6 +154,7 @@ export default function VideoResumoDashboard({
   const [anim, setAnim] = useState(false);
   const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
   const [mostrarSync, setMostrarSync] = useState(false);
+  const [relatorio, setRelatorio] = useState(false);
   const cenaAnteriorRef = useRef(0);
 
   /* Data/hora da última sincronização com a pasta do Drive */
@@ -266,6 +270,13 @@ export default function VideoResumoDashboard({
         </p>
       </div>
 
+      {relatorio && (
+        <RelatorioLopas
+          dados={{ kpis, unidades, ocupacao, semana, turnos, mensal, abc, avarias, pendentes, reservados, semReserva, valorFaturado, saidasCD, foraDeLinha, paletas, resumo, sincronizacao }}
+          onFechar={() => setRelatorio(false)}
+        />
+      )}
+
       {/* Conteúdo */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         {/* Topo — última sincronização + controle de saída */}
@@ -305,6 +316,13 @@ export default function VideoResumoDashboard({
               )}
             </div>
           )}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setPausado(true); setRelatorio(true); }}
+            className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20"
+          >
+            Gerar relatório
+          </button>
           {onLogout && (
             <button
               type="button"
