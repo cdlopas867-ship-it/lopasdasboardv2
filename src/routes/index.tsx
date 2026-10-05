@@ -69,7 +69,7 @@ function DashboardHome() {
       rotulo: "Saúde do Estoque",
       valor: `${fmtBrMax(saudePct, 1)}%`,
       detalhe: `De ${fmtTonDec(totRec)} recebidas, ${fmtTonDec(totCar)} foram carregadas — ${fmtBrMax(saudePct, 1)}% de eficiência no fluxo de estoque. ${periodoTxt}`,
-      extra: [[`Recebido${recebidoAte ? ` · até ${recebidoAte}` : ""}`, fmtTonDec(totRec)], [`Carregado${carregadoAte ? ` · até ${carregadoAte}` : ""}`, fmtTonDec(totCar)], ["Saldo", fmtTonDec(Math.abs(totRec - totCar))]],
+      extra: [[`Recebido${recebidoAte ? ` · 01/01 – ${recebidoAte.slice(0, 5)}` : ""}`, fmtTonDec(totRec)], [`Carregado${carregadoAte ? ` · 01/01 – ${carregadoAte.slice(0, 5)}` : ""}`, fmtTonDec(totCar)], ["Saldo", fmtTonDec(Math.abs(totRec - totCar))]],
     };
     const kpisComSaude = [...kpis, saudeKpi];
     return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, abc: p["abc"] as VideoAbc | undefined, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, semReserva: p["semReservaResumo"] as VideoReservados | undefined, saidasCD: p["saidasCD"] as VideoSaidasCD | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, paletas: PALETAS_FIXO as VideoPaletas, recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };

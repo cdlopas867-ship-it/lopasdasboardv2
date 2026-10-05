@@ -464,7 +464,14 @@ function CardFocoKpi({
         <dl className="mt-3 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
           {kpi.extra.map(([k, v], ki) => (
             <div key={`${k}-${ki}`} className="flex items-baseline justify-between py-1.5 text-[10px] sm:text-[11px]">
-              <dt className="text-white/45">{k}</dt>
+              <dt className="flex items-center gap-2 text-white/45">
+                {k.split(" · ")[0]}
+                {k.includes(" · ") && (
+                  <span className="whitespace-nowrap rounded bg-white/10 px-1.5 py-0.5 text-center font-mono text-[10px] font-semibold text-white/75">
+                    {k.split(" · ")[1]}
+                  </span>
+                )}
+              </dt>
               <dd className="font-medium text-white/90">{v}</dd>
             </div>
           ))}
