@@ -48,7 +48,7 @@ export default function CenaAvariasUnificada({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto="Volumes avariados registrados no CD. Total de 3.312 volumes (Soma de Quantidade). Distribuição mensal conferida com a tabela oficial. Custos parciais (em apuração). Fonte: planilha de avarias + tabela de referência de motivos. Janeiro a setembro de 2026."
+          texto={`Volumes avariados registrados no CD. Total de ${avarias.total.toLocaleString("pt-BR")} volumes (Soma de Quantidade). Distribuição mensal conferida com a tabela oficial. Custos parciais (em apuração). Fonte: planilha de avarias + tabela de referência de motivos. Janeiro a ${avarias.meses[avarias.meses.length - 1]?.mes ?? ""} de 2026.`}
         />
       </div>
 

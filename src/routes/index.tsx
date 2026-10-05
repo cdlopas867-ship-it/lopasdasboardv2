@@ -60,11 +60,13 @@ function DashboardHome() {
     const totRec = mensal.reduce((s, m) => s + m.recebido, 0);
     const totCar = mensal.reduce((s, m) => s + m.carregado, 0);
     const saudePct = totRec > 0 ? (totCar / totRec) * 100 : 0;
+    const atualizadoEm = p["atualizadoEm"] ? new Date(p["atualizadoEm"] as string) : new Date();
+    const periodoTxt = `Período: 01/01/2026 a ${atualizadoEm.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.`;
     const saudeKpi: VideoKpi = {
       id: "saude",
       rotulo: "Saúde do Estoque",
       valor: `${fmtBrMax(saudePct, 1)}%`,
-      detalhe: `De ${fmtTonDec(totRec)} recebidas, ${fmtTonDec(totCar)} foram carregadas — ${fmtBrMax(saudePct, 1)}% de eficiência no fluxo de estoque. Janeiro a setembro de 2026.`,
+      detalhe: `De ${fmtTonDec(totRec)} recebidas, ${fmtTonDec(totCar)} foram carregadas — ${fmtBrMax(saudePct, 1)}% de eficiência no fluxo de estoque. ${periodoTxt}`,
       extra: [["Recebido", fmtTonDec(totRec)], ["Carregado", fmtTonDec(totCar)], ["Saldo", fmtTonDec(Math.abs(totRec - totCar))]],
     };
     const kpisComSaude = [...kpis, saudeKpi];
