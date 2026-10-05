@@ -4,7 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtMoeda, fmtMoeda2, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoReservados } from "./VideoResumoDashboard";
 
 const CORES = ["#00FFCC", "#FFA500", "#A78BFA"];
@@ -73,7 +73,6 @@ export default function CenaReservados({
         onToggle={() => setFoco((f) => (f + 1) % secoes.length)}
         anim={anim}
       />
-      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
