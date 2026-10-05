@@ -272,7 +272,7 @@ export default function VideoResumoDashboard({
 
       {relatorio && (
         <RelatorioLopas
-          dados={{ kpis, unidades, ocupacao, semana, turnos, mensal, abc, avarias, pendentes, reservados, semReserva, valorFaturado, saidasCD, foraDeLinha, paletas, resumo, sincronizacao }}
+          dados={{ kpis, unidades, ocupacao, semana, turnos, mensal, abc, avarias, pendentes, reservados, semReserva, valorFaturado, saidasCD, foraDeLinha, paletas, producaoSemanal, resumo, sincronizacao }}
           onFechar={() => setRelatorio(false)}
         />
       )}

@@ -90,10 +90,17 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
   }
 
   if (d.pendentes) {
+    const prod = d.producaoSemanal ?? [];
     secoes.push({
       titulo: "Produção pendente",
-      explicacao: "Ordens de produção em aberto no sistema, com toneladas totais e média mensal.",
-      linhas: [["Itens pendentes", fmtInt(d.pendentes.itens)], ["Total", fmtTonDec(d.pendentes.totalTon)], ["Média mensal", fmtTonDec(d.pendentes.mediaTon)]],
+      explicacao: "Ordens de produção em aberto no sistema, com toneladas, datas de produção por mês e a programação diária.",
+      linhas: [
+        ["Itens pendentes", fmtInt(d.pendentes.itens)],
+        ["Total", fmtTonDec(d.pendentes.totalTon)],
+        ["Média mensal", fmtTonDec(d.pendentes.mediaTon)],
+        ...d.pendentes.meses.map((m) => [`${m.mes}${m.dtInicial || m.dtFinal ? ` (${m.dtInicial ?? "—"} a ${m.dtFinal ?? "—"})` : ""}`, fmtTonDec(m.ton)] as Linha),
+        ...prod.map((x) => [`${x.dia} ${x.data}`, `${fmtInt(x.ordens)} ordens · prev. ${fmtBrMax(x.tonPrevisto, 1)} t · pend. ${fmtBrMax(x.tonPendente, 1)} t`] as Linha),
+      ],
       resumo: `${fmtInt(d.pendentes.itens)} itens pendentes somam ${fmtTonDec(d.pendentes.totalTon)}.`,
     });
   }
@@ -131,30 +138,12 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
     destaques.push(`${pct(p)} do valor do estoque está em linha.`);
   }
 
-  if (d.saidasCD) {
-    secoes.push({
-      titulo: "Saídas do CD",
-      explicacao: "Toneladas expedidas e valor faturado por mês.",
-      linhas: [...d.saidasCD.meses.map((m) => [m.mes, `${fmtBrMax(m.tonelada, 1)} t · ${fmtMoeda(m.faturado)}`] as Linha), ["Total", `${fmtTonDec(d.saidasCD.totalTonelada)} · ${fmtMoeda(d.saidasCD.totalFaturado)}`]],
-      resumo: `Saíram ${fmtTonDec(d.saidasCD.totalTonelada)}, faturando ${fmtMoeda(d.saidasCD.totalFaturado)}.`,
-    });
-  }
-
   if (d.paletas && d.paletas.totalPaletes > 0) {
     secoes.push({
       titulo: "Paletes",
       explicacao: "Paletes armazenados por tamanho, com itens e unidades.",
       linhas: [...d.paletas.porTamanho.map((x) => [x.tamanho, `${fmtInt(x.paletes)} paletes · ${fmtInt(x.und)} un`] as Linha), ["Total", `${fmtInt(d.paletas.totalPaletes)} paletes`]],
       resumo: `${fmtInt(d.paletas.totalPaletes)} paletes com ${fmtInt(d.paletas.totalItens)} itens.`,
-    });
-  }
-
-  if (d.abc?.estoque?.length) {
-    secoes.push({
-      titulo: "Curva ABC do estoque",
-      explicacao: "Classifica os itens pelo valor: A concentra a maior parte do valor com poucos itens; C tem muitos itens de baixo valor.",
-      linhas: d.abc.estoque.map((c) => [`Classe ${c.classe}`, `${fmtInt(c.itens)} itens (${pct(c.pctItens)}) · ${pct(c.pctValor)} do valor`] as Linha),
-      resumo: "Priorize controle e acuracidade nos itens da classe A.",
     });
   }
 
