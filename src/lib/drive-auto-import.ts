@@ -19,6 +19,7 @@ import { calcularAvariasResumo } from "./avarias-resumo";
 import { buscarCarregamentoMensal, lerCarregadoMensal, CARREGADO_SEM_DRIVE } from "./carregamento";
 import { lerSaidasCD } from "./saidas-cd";
 import { calcularRecebimento } from "./recebimento";
+import { calcularProducaoSemanal, type ProducaoSemanalDia } from "./producao-semanal";
 import { lerItensEstoque, curvaAbcEstoque, curvaAbcRecebimento } from "./base-estoque";
 import { lerPaletes, calcularResumoPaletes } from "./paletes";
 import { existsSync, readFileSync, statSync } from "./fs-compat";
@@ -702,6 +703,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
   let melhorOcupacao: OcupacaoData | null = null;
   let melhorPaletes: ReturnType<typeof lerPaletes> | null = null;
+  let wbProducao: XLSX.WorkBook | null = null;
 
   for (const arq of arquivos) {
     try {
@@ -740,6 +742,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       /* Extrai recebimento (turnos, dias e itens) da aba Base Recebimento */
       const receb = calcularRecebimento(wb);
       if (receb && receb.dias.length > 0) melhorRecebimento = receb;
+
+      /* Guarda a workbook de produção para processar após ter os itens de estoque */
+      const prod = calcularProducaoSemanal(wb, undefined);
+      if (prod && prod.length > 0) wbProducao = wb;
 
       /* Extrai a base de itens de estoque (Top Produtos, Curva ABC, fichas) */
       const itensEstoque = lerItensEstoque(wb);
@@ -836,6 +842,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }
+  }
+
+  /* Processa a produção da semana agora que os itens de estoque estão disponíveis */
+  let melhorProducao: ProducaoSemanalDia[] | null = null;
+  if (wbProducao && melhorItens) {
+    melhorProducao = calcularProducaoSemanal(wbProducao, melhorItens);
   }
 
   /* Mescla as avarias de todas as planilhas (base histórica + lançamentos novos).
@@ -989,6 +1001,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
           recebimentoItens: melhorRecebimento.recebimentoItens,
         }
       : {}),
+    ...(melhorProducao ? { producaoSemanal: melhorProducao } : {}),
     ...(kpisRecomputed.length > 0 ? { kpis: kpisRecomputed } : {}),
     ...(unidadesRecomputed.length > 0 ? { unidades: unidadesRecomputed } : {}),
     ...(melhorForaDeLinha ? { foraDeLinha: comCustos(melhorForaDeLinha, melhorReservados) } : {}),

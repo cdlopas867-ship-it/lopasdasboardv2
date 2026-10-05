@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
+import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 import ResumoBg from "./ResumoBg";
 
@@ -111,14 +112,15 @@ type Props = {
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
+  producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   onFechar?: () => void;
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 11;
-const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 9000, 12000];
+const TOTAL_CENAS = 12;
+const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 7000, 9000, 9000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
@@ -137,6 +139,7 @@ export default function VideoResumoDashboard({
   resumo,
   paletas,
   recebimentoSemanal,
+  producaoSemanal,
   sincronizacao,
   onFechar,
   onLogout,
@@ -220,6 +223,7 @@ export default function VideoResumoDashboard({
     foraDeLinha,
     paletas,
     recebimentoSemanal,
+    producaoSemanal,
     resumo,
     onReiniciar: () => setCena(0),
     onPausar: () => setPausado(true),

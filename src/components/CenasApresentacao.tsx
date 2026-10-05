@@ -9,6 +9,7 @@ import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
 import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
 import CenaRecebimentoSemanal from "@/components/CenaRecebimentoSemanal";
+import CenaProducaoSemanal from "@/components/CenaProducaoSemanal";
 import CenaReservados from "@/components/CenaReservados";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
@@ -34,6 +35,7 @@ import type {
   VideoUnidade,
   RecebimentoSemanalDia,
 } from "./VideoResumoDashboard";
+import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 /* Cenas da apresentação — conteúdo de cada slide, isolado em um componente
    para permitir renderizar também a cópia da cena que sai na transição suave. */
@@ -56,6 +58,7 @@ type Props = {
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
+  producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   onReiniciar: () => void;
   onPausar?: (() => void) | undefined;
@@ -79,6 +82,7 @@ export default function CenasApresentacao({
   foraDeLinha,
   paletas,
   recebimentoSemanal,
+  producaoSemanal,
   resumo,
   onReiniciar,
   onPausar,
@@ -288,8 +292,13 @@ export default function CenasApresentacao({
         <CenaRecebimentoSemanal anim={anim} dias={recebimentoSemanal} onPausar={onPausar} />
       )}
 
-      {/* Cena 11 — encerramento */}
+      {/* Cena 11 — Produção da semana (o que vai descer) */}
       {cena === 10 && (
+        <CenaProducaoSemanal anim={anim} dias={producaoSemanal} onPausar={onPausar} />
+      )}
+
+      {/* Cena 12 — encerramento */}
+      {cena === 11 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.

@@ -13,6 +13,7 @@ import { normalizarDiasExibicao } from "@/lib/recebimento";
 import { calcularPendentesResumo } from "@/lib/pendentes-resumo";
 import type { PendenteProducao } from "@/lib/pendentes";
 import { MENSAL_FIXO_JAN_ABR, PENDENTES_RESUMO_FIXO, PALETAS_FIXO } from "@/data/valores-fixos";
+import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 import { fmtBrMax, fmtTonDec } from "@/lib/format";
 
 export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Painel de Estoque · Lopas 2026" }, { name: "description", content: "Indicadores de estoque, ocupação e recebimento do Centro de Distribuição Lopas." }, { property: "og:title", content: "Painel de Estoque · Lopas 2026" }, { property: "og:description", content: "Indicadores do Centro de Distribuição Lopas em uma apresentação interativa." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: DashboardHome });
@@ -67,7 +68,7 @@ function DashboardHome() {
       extra: [["Recebido", fmtTonDec(totRec)], ["Carregado", fmtTonDec(totCar)], ["Saldo", fmtTonDec(Math.abs(totRec - totCar))]],
     };
     const kpisComSaude = [...kpis, saudeKpi];
-    return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, abc: p["abc"] as VideoAbc | undefined, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, saidasCD: p["saidasCD"] as VideoSaidasCD | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, paletas: (() => { const pl = p["paletas"] as VideoPaletas | undefined; if (!pl?.porTamanho?.length) return PALETAS_FIXO as VideoPaletas; return pl; })(), recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
+    return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, abc: p["abc"] as VideoAbc | undefined, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, saidasCD: p["saidasCD"] as VideoSaidasCD | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, paletas: (() => { const pl = p["paletas"] as VideoPaletas | undefined; if (!pl?.porTamanho?.length) return PALETAS_FIXO as VideoPaletas; return pl; })(), recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
   }, [dados]);
   if (!pronto || !autenticado) return null;
   if (!loaded) return <LoadingApresentacao />;
