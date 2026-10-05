@@ -35,13 +35,13 @@ export const PENDENTES_RESUMO_FIXO: VideoPendentes = {
  * Usado quando os dados sincronizados não trazem os paletes. */
 export const PALETAS_FIXO = {
   porTamanho: [
-    { tamanho: "P", paletes: 2784, itens: 187, und: 59954 },
-    { tamanho: "M", paletes: 1383, itens: 140, und: 34340 },
-    { tamanho: "G", paletes: 1782, itens: 172, und: 43588 },
-    { tamanho: "GG", paletes: 278, itens: 38, und: 6651 },
+    { tamanho: "P", paletes: 2448, itens: 217, und: 51565 },
+    { tamanho: "M", paletes: 1442, itens: 164, und: 34712 },
+    { tamanho: "G", paletes: 1768, itens: 225, und: 42706 },
+    { tamanho: "GG", paletes: 305, itens: 52, und: 7427 },
   ],
-  totalPaletes: 6227,
-  totalItens: 537,
+  totalPaletes: 5963,
+  totalItens: 658,
   recebimento: {
     porTamanho: [
       { tamanho: "P", paletes: 1225, itens: 11, und: 96436 },
