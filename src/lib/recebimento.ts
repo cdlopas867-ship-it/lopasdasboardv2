@@ -80,7 +80,7 @@ function encontrarSheet(wb: XLSX.WorkBook): XLSX.WorkSheet | null {
  * Encontra a linha de cabeçalho dinamicamente (pode haver título antes). */
 export function calcularRecebimento(
   wb: XLSX.WorkBook,
-): { turnos: Turno[]; dias: Dia[]; recebimentoItens: { nome: string; ton: number }[]; recebimentoQtd: { item: string; saldo: number }[]; diasRecebidos: number; mensal: { mes: string; recebido: number }[]; totalRecebido: number } | null {
+): { turnos: Turno[]; dias: Dia[]; recebimentoItens: { nome: string; ton: number }[]; recebimentoQtd: { item: string; saldo: number }[]; diasRecebidos: number; mensal: { mes: string; recebido: number }[]; totalRecebido: number; diasQtd: { dia: string; data: string; qtd: number; iso?: string }[]; mensalQtd: { mes: string; qtd: number }[]; totalQtdRecebido: number } | null {
   const ws = encontrarSheet(wb);
   if (!ws) return null;
 
@@ -108,6 +108,7 @@ export function calcularRecebimento(
 
   const pesoTurno = TURNOS_FIXOS.map((t) => ({ ...t, ton: 0 }));
   const porDia = new Map<string, number>();
+  const porDiaQtd = new Map<string, number>();
   const porItem = new Map<string, { nome: string; ton: number }>();
 
   for (const r of dataRows) {
@@ -130,7 +131,10 @@ export function calcularRecebimento(
     if (colItem >= 0 && colQtd >= 0) {
       const cod = String(r?.[colItem] ?? "").trim();
       const qtd = Number(r?.[colQtd] ?? 0) || 0;
-      if (cod && qtd > 0) porItemQtd.set(cod, (porItemQtd.get(cod) ?? 0) + qtd);
+      if (cod && qtd > 0) {
+        porItemQtd.set(cod, (porItemQtd.get(cod) ?? 0) + qtd);
+        porDiaQtd.set(iso, (porDiaQtd.get(iso) ?? 0) + qtd);
+      }
     }
 
     if (colItem >= 0) {
@@ -165,6 +169,11 @@ export function calcularRecebimento(
       .slice(0, 10);
     porDia.set(sab, (porDia.get(sab) ?? 0) + (porDia.get(iso) ?? 0));
     porDia.delete(iso);
+    /* Repete a junta para QTD (volumes) — mantém o mesmo padrão do peso. */
+    if (porDiaQtd.has(iso)) {
+      porDiaQtd.set(sab, (porDiaQtd.get(sab) ?? 0) + (porDiaQtd.get(iso) ?? 0));
+      porDiaQtd.delete(iso);
+    }
   }
 
   const nomes = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -201,5 +210,29 @@ export function calcularRecebimento(
   const recebimentoQtd = [...porItemQtd.entries()].map(([item, saldo]) => ({ item, saldo }));
   const diasRecebidos = porDia.size;
 
-  return { turnos, dias, recebimentoItens, recebimentoQtd, diasRecebidos, mensal, totalRecebido };
+  /* QTD (volumes) recebida por dia — mesma janela e formato dos dias de peso. */
+  const diasQtd: { dia: string; data: string; qtd: number; iso?: string }[] = [...porDiaQtd.entries()]
+    .sort()
+    .slice(-12)
+    .map(([iso, qtd]) => ({
+      dia: nomes[new Date(`${iso}T12:00:00Z`).getUTCDay()]!,
+      data: `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(2, 4)}`,
+      qtd,
+      iso,
+    }));
+
+  /* QTD (volumes) recebida por mês — ano completo, sempre atualizada. */
+  const porMesQtd = new Map<number, number>();
+  let totalQtdRecebido = 0;
+  for (const [iso, qtd] of porDiaQtd) {
+    const mi = parseInt(iso.slice(5, 7), 10) - 1;
+    if (mi < 0 || mi > 11) continue;
+    porMesQtd.set(mi, (porMesQtd.get(mi) ?? 0) + qtd);
+    totalQtdRecebido += qtd;
+  }
+  const mensalQtd = [...porMesQtd.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([mi, qtd]) => ({ mes: MESES_CURTO[mi]!, qtd }));
+
+  return { turnos, dias, recebimentoItens, recebimentoQtd, diasRecebidos, mensal, totalRecebido, diasQtd, mensalQtd, totalQtdRecebido };
 }

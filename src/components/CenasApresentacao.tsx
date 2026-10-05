@@ -1,4 +1,3 @@
-import CenaPaletesTamanho from "./CenaPaletesTamanho";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtMoeda, fmtPct, fmtPeso } from "@/lib/format";
@@ -280,10 +279,8 @@ export default function CenasApresentacao({
         <CenaSaudeEstoque anim={anim} mensal={mensal} cena={cena} />
       )}
 
-      {cena === 9 && <CenaPaletesTamanho anim={anim} paletas={paletas} />}
-
-      {/* Cena 11 — encerramento */}
-      {cena === 10 && (
+      {/* Cena 10 — encerramento */}
+      {cena === 9 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
