@@ -83,7 +83,9 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
     secoes.push({
       titulo: "Avarias",
       explicacao: "Volumes danificados (soma da quantidade), com custo e distribuição mensal.",
-      linhas: [["Total de volumes", fmtInt(d.avarias.total)], ["Custo", d.avarias.custo], ...d.avarias.meses.map((m) => [m.mes, fmtInt(m.qtd)] as Linha)],
+      linhas: [["Total de volumes", fmtInt(d.avarias.total)], ["Custo", d.avarias.custo],
+        ...(d.avarias.tipos ?? []).map((t) => [`Tipo: ${t.tipo}`, `${fmtInt(t.total)} vol. (${pct(t.pct)} de incidência)`] as Linha),
+        ...d.avarias.meses.map((m) => [m.mes, fmtInt(m.qtd)] as Linha)],
       resumo: `${fmtInt(d.avarias.total)} volumes avariados no período.`,
     });
     destaques.push(`${fmtInt(d.avarias.total)} volumes avariados.`);
