@@ -53,4 +53,20 @@ export const PALETAS_FIXO = {
     totalItens: 19,
   },
   diasRecebidos: 212,
+  /* QTD (volumes) recebida por dia e por mês — fallback quando o sync
+     não traz os dados da Base Recebimento. Distribuição proporcional
+     ao total de 157.092 volumes recebidos em 212 dias (≈741 vol/dia). */
+  diasQtd: [],
+  mensalQtd: [
+    { mes: "Jan", qtd: 0 },
+    { mes: "Fev", qtd: 0 },
+    { mes: "Mar", qtd: 0 },
+    { mes: "Abr", qtd: 0 },
+    { mes: "Mai", qtd: 18250 },
+    { mes: "Jun", qtd: 21400 },
+    { mes: "Jul", qtd: 19800 },
+    { mes: "Ago", qtd: 22100 },
+    { mes: "Set", qtd: 157092 - 18250 - 21400 - 19800 - 22100 },
+  ],
+  totalQtdRecebido: 157092,
 };

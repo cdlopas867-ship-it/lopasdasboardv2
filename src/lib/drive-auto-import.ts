@@ -869,6 +869,13 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     if (melhorRecebimento?.recebimentoQtd?.length) {
       resumoPaletesFinal.recebimento = calcularResumoPaletes(melhorRecebimento.recebimentoQtd, melhorPaletes);
       resumoPaletesFinal.diasRecebidos = melhorRecebimento.diasRecebidos;
+      /* QTD (volumes) recebida por dia e por mês — para o relatório
+         Recebido × Estoque na seção de Paletes. */
+      if (melhorRecebimento.diasQtd?.length) {
+        resumoPaletesFinal.diasQtd = melhorRecebimento.diasQtd;
+        resumoPaletesFinal.mensalQtd = melhorRecebimento.mensalQtd;
+        resumoPaletesFinal.totalQtdRecebido = melhorRecebimento.totalQtdRecebido;
+      }
     }
   }
 

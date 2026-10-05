@@ -78,6 +78,9 @@ export type VideoPaletas = {
   totalItens: number;
   recebimento?: { porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[]; totalPaletes: number; totalItens: number } | null;
   diasRecebidos?: number;
+  diasQtd?: { dia: string; data: string; qtd: number; iso?: string }[];
+  mensalQtd?: { mes: string; qtd: number }[];
+  totalQtdRecebido?: number;
 } | null;
 
 type Props = {
