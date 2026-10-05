@@ -1,12 +1,13 @@
-/* Cena Estoque Reservado — donut interativo com toggle Peso / Quantidade / Valor. */
+/* Cena Estoque Reservado — donut interativo com toggle Reservado / Sem Reserva. */
 
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtMoeda, fmtMoeda2, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoReservados } from "./VideoResumoDashboard";
 
-const CORES = ["#00FFCC", "#FFA500", "#A78BFA"];
+const COR_RESERV = "#00FFCC";
+const COR_SEM_RESERV = "#FFA500";
 
 export default function CenaReservados({
   anim,
@@ -21,12 +22,15 @@ export default function CenaReservados({
   cena: number;
   onPausar?: () => void;
 }) {
-  const [foco, setFoco] = useFocoCena<number>(cena, 0);
+  const [foco, setFoco] = useFocoCena<number>(cena, 0); // métrica: 0=peso, 1=qtd, 2=valor
+  const [modo, setModo] = useFocoCena<number>(cena, 0); // 0=reservado, 1=sem reserva
+
+  const corAtiva = modo === 0 ? COR_RESERV : COR_SEM_RESERV;
 
   const secoes: SecaoDonut[] = [
-    { id: "peso", label: "peso", cor: CORES[0]!, pct: reservados.pctPeso },
-    { id: "qtd", label: "quantidade", cor: CORES[1]!, pct: reservados.pctQtd },
-    { id: "valor", label: "valor", cor: CORES[2]!, pct: reservados.pctValor },
+    { id: "peso", label: "peso", cor: corAtiva, pct: modo === 0 ? reservados.pctPeso : 100 - reservados.pctPeso },
+    { id: "qtd", label: "quantidade", cor: corAtiva, pct: modo === 0 ? reservados.pctQtd : 100 - reservados.pctQtd },
+    { id: "valor", label: "valor", cor: corAtiva, pct: modo === 0 ? reservados.pctValor : 100 - reservados.pctValor },
   ];
 
   const linhasTabela = [
@@ -50,7 +54,32 @@ export default function CenaReservados({
         onToggle={() => setFoco((f) => (f + 1) % secoes.length)}
         anim={anim}
       />
-      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
+
+      {/* Toggle Reservado / Sem Reserva */}
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setModo(0)}
+          className={cn(
+            "rounded-full px-4 py-1 text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
+            modo === 0 ? "text-brand-dark" : "text-white/50 border border-white/15 hover:text-white/80",
+          )}
+          style={modo === 0 ? { background: COR_RESERV } : undefined}
+        >
+          Reservado
+        </button>
+        <button
+          type="button"
+          onClick={() => setModo(1)}
+          className={cn(
+            "rounded-full px-4 py-1 text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
+            modo === 1 ? "text-brand-dark" : "text-white/50 border border-white/15 hover:text-white/80",
+          )}
+          style={modo === 1 ? { background: COR_SEM_RESERV } : undefined}
+        >
+          Sem Reserva
+        </button>
+      </div>
 
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
@@ -71,7 +100,9 @@ export default function CenaReservados({
           <tbody>
             {linhasTabela.map((l) => {
               const ativa = l.focoIdx === foco;
-              const cor = secoes[l.focoIdx]?.cor;
+              const cor = corAtiva;
+              const hlReserv = modo === 0;
+              const hlSemReserv = modo === 1;
               return (
                 <tr
                   key={l.rotulo}
@@ -82,11 +113,11 @@ export default function CenaReservados({
                 >
                   <td className="py-0.5" style={ativa ? { color: cor } : undefined}>{l.rotulo}</td>
                   <td className="py-0.5 text-center text-white/50">{l.und}</td>
-                  <td className="py-0.5 text-right font-mono font-semibold" style={ativa ? { color: cor } : undefined}>{l.reserv}</td>
-                  <td className="py-0.5 text-right font-mono font-semibold text-white/70">{l.semReserv}</td>
-                  <td className="py-0.5 text-right font-mono font-semibold" style={ativa ? { color: cor } : undefined}>{l.estoque}</td>
-                  <td className="py-0.5 text-right font-mono font-bold" style={ativa ? { color: cor } : undefined}>{l.pct}%</td>
-                  <td className="py-0.5 text-right font-mono font-bold text-white/70">{l.pctSem}%</td>
+                  <td className="py-0.5 text-right font-mono font-semibold" style={ativa && hlReserv ? { color: cor } : undefined}>{l.reserv}</td>
+                  <td className="py-0.5 text-right font-mono font-semibold" style={ativa && hlSemReserv ? { color: cor } : undefined}>{l.semReserv}</td>
+                  <td className="py-0.5 text-right font-mono font-semibold text-white/70">{l.estoque}</td>
+                  <td className="py-0.5 text-right font-mono font-bold" style={ativa && hlReserv ? { color: cor } : undefined}>{l.pct}%</td>
+                  <td className="py-0.5 text-right font-mono font-bold" style={ativa && hlSemReserv ? { color: cor } : undefined}>{l.pctSem}%</td>
                 </tr>
               );
             })}
