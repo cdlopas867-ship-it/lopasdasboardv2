@@ -371,7 +371,7 @@ function CenaKpisFoco({
       </div>
 
       {/* Apenas o card aberto aparece, centralizado e em destaque */}
-      <div className="relative mt-10 flex w-full max-w-[19rem] items-center justify-center">
+      <div className="relative mt-10 flex w-full max-w-[23rem] items-center justify-center">
         {/* halo suave atrás do card para destacar sem peso */}
         <div className="card-foco-halo pointer-events-none absolute inset-0" aria-hidden />
         {/* Seta esquerda */}
@@ -385,13 +385,13 @@ function CenaKpisFoco({
         </button>
         <div key={foco} className="card-foco-entra relative w-full">
           {kpi ? (
-            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} onAvancar={avancar} />
+            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} />
           ) : ehPaletas ? (
-            <CardFocoPaletas paletas={paletas} onAvancar={avancar} />
+            <CardFocoPaletas paletas={paletas} onTogglePausar={togglePausar} />
           ) : ehProducao ? (
-            <CardFocoProducao dias={producaoSemanal} onAvancar={avancar} />
+            <CardFocoProducao dias={producaoSemanal} onTogglePausar={togglePausar} />
           ) : (
-            <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} onAvancar={avancar} />
+            <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} />
           )}
         </div>
         {/* Seta direita */}
@@ -421,7 +421,7 @@ function CenaKpisFoco({
         ))}
       </div>
       <p className="mt-4 text-[8px] font-medium tracking-[0.4em] text-white/30 uppercase">
-        Clique no card ou use as setas ← →
+        Clique no card para pausar · use as setas ← →
       </p>
     </div>
   );
@@ -429,20 +429,18 @@ function CenaKpisFoco({
 
 /* Vidro refinado compartilhado pelos cards de destaque */
 const cardFocoBase =
-  "group block w-full cursor-pointer rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4 text-center backdrop-blur-xl shadow-[0_20px_50px_-36px_rgba(0,0,0,0.7)] transition-all duration-500 hover:border-white/20 hover:bg-white/[0.06] sm:p-5";
+  "group block w-full cursor-pointer rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-5 text-center backdrop-blur-xl shadow-[0_20px_50px_-36px_rgba(0,0,0,0.7)] transition-all duration-500 hover:border-white/20 hover:bg-white/[0.06] sm:p-6";
 
 /* Card de KPI em destaque — centralizado, grande, com o resumo sempre aberto */
 function CardFocoKpi({
   kpi,
   onTogglePausar,
-  onAvancar,
 }: {
   kpi: VideoKpi;
   onTogglePausar: () => void;
-  onAvancar: () => void;
 }) {
   return (
-    <button type="button" onClick={onAvancar} className={cardFocoBase}>
+    <button type="button" onClick={onTogglePausar} className={cardFocoBase}>
       <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
         {kpi.valor}
       </p>
@@ -472,11 +470,9 @@ function CardFocoKpi({
 function CardFocoForaDeLinha({
   foraDeLinha,
   onTogglePausar,
-  onAvancar,
 }: {
   foraDeLinha?: VideoForaDeLinha | undefined;
   onTogglePausar: () => void;
-  onAvancar: () => void;
 }) {
   const pos = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const total = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
@@ -484,7 +480,7 @@ function CardFocoForaDeLinha({
   return (
     <button
       type="button"
-      onClick={onAvancar}
+      onClick={onTogglePausar}
       className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
     >
       <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
@@ -543,17 +539,17 @@ const CORES_TAMANHO: Record<string, string> = {
 
 function CardFocoPaletas({
   paletas,
-  onAvancar,
+  onTogglePausar,
 }: {
   paletas?: VideoPaletas | undefined;
-  onAvancar: () => void;
+  onTogglePausar: () => void;
 }) {
   const total = paletas?.totalPaletes ?? 0;
   const itens = paletas?.totalItens ?? 0;
   return (
     <button
       type="button"
-      onClick={onAvancar}
+      onClick={onTogglePausar}
       className={cn(cardFocoBase, "border-primary/20 bg-primary/[0.05] hover:border-primary/35 hover:bg-primary/[0.08]")}
     >
       <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
@@ -593,10 +589,10 @@ function CardFocoPaletas({
    pendente, % entregue e breakdown por dia. */
 function CardFocoProducao({
   dias,
-  onAvancar,
+  onTogglePausar,
 }: {
   dias?: ProducaoSemanalDia[] | undefined;
-  onAvancar: () => void;
+  onTogglePausar: () => void;
 }) {
   const semana = (dias ?? []).slice(-7);
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
@@ -610,7 +606,7 @@ function CardFocoProducao({
   return (
     <button
       type="button"
-      onClick={onAvancar}
+      onClick={onTogglePausar}
       className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
     >
       <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">

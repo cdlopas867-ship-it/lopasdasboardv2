@@ -191,12 +191,15 @@ export default function VideoResumoDashboard({
         e.preventDefault();
         setPausado((p) => !p);
       }
-      if (e.key === "ArrowRight") setCena((s) => Math.min(s + 1, TOTAL_CENAS - 1));
-      if (e.key === "ArrowLeft") setCena((s) => Math.max(s - 1, 0));
+      /* Na cena 0 o carrossel de cards trata as setas; nas demais, setas navegam cenas */
+      if (cena !== 0) {
+        if (e.key === "ArrowRight") setCena((s) => Math.min(s + 1, TOTAL_CENAS - 1));
+        if (e.key === "ArrowLeft") setCena((s) => Math.max(s - 1, 0));
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [cena]);
 
   /* Trava o scroll enquanto o vídeo está aberto */
   useEffect(() => {
