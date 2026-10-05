@@ -80,7 +80,7 @@ function encontrarSheet(wb: XLSX.WorkBook): XLSX.WorkSheet | null {
  * Encontra a linha de cabeçalho dinamicamente (pode haver título antes). */
 export function calcularRecebimento(
   wb: XLSX.WorkBook,
-): { turnos: Turno[]; dias: Dia[]; recebimentoItens: { nome: string; ton: number }[]; recebimentoQtd: { item: string; saldo: number }[]; diasRecebidos: number; mensal: { mes: string; recebido: number }[]; totalRecebido: number; diasQtd: { dia: string; data: string; qtd: number; iso?: string }[]; mensalQtd: { mes: string; qtd: number }[]; totalQtdRecebido: number } | null {
+): { turnos: Turno[]; dias: Dia[]; recebimentoItens: { nome: string; ton: number }[]; recebimentoQtd: { item: string; saldo: number }[]; diasRecebidos: number; mensal: { mes: string; recebido: number }[]; totalRecebido: number; diasQtd: { dia: string; data: string; qtd: number; iso?: string }[]; mensalQtd: { mes: string; qtd: number }[]; totalQtdRecebido: number; diasItemQtd: { iso: string; porItem: { item: string; qtd: number }[] }[] } | null {
   const ws = encontrarSheet(wb);
   if (!ws) return null;
 
@@ -109,6 +109,7 @@ export function calcularRecebimento(
   const pesoTurno = TURNOS_FIXOS.map((t) => ({ ...t, ton: 0 }));
   const porDia = new Map<string, number>();
   const porDiaQtd = new Map<string, number>();
+  const porDiaItemQtd = new Map<string, Map<string, number>>();
   const porItem = new Map<string, { nome: string; ton: number }>();
 
   for (const r of dataRows) {
@@ -134,6 +135,9 @@ export function calcularRecebimento(
       if (cod && qtd > 0) {
         porItemQtd.set(cod, (porItemQtd.get(cod) ?? 0) + qtd);
         porDiaQtd.set(iso, (porDiaQtd.get(iso) ?? 0) + qtd);
+        const diaItems = porDiaItemQtd.get(iso) ?? new Map<string, number>();
+        diaItems.set(cod, (diaItems.get(cod) ?? 0) + qtd);
+        porDiaItemQtd.set(iso, diaItems);
       }
     }
 
@@ -173,6 +177,13 @@ export function calcularRecebimento(
     if (porDiaQtd.has(iso)) {
       porDiaQtd.set(sab, (porDiaQtd.get(sab) ?? 0) + (porDiaQtd.get(iso) ?? 0));
       porDiaQtd.delete(iso);
+    }
+    if (porDiaItemQtd.has(iso)) {
+      const domItems = porDiaItemQtd.get(iso)!;
+      const sabItems = porDiaItemQtd.get(sab) ?? new Map<string, number>();
+      for (const [k, v] of domItems) sabItems.set(k, (sabItems.get(k) ?? 0) + v);
+      porDiaItemQtd.set(sab, sabItems);
+      porDiaItemQtd.delete(iso);
     }
   }
 
@@ -234,5 +245,13 @@ export function calcularRecebimento(
     .sort((a, b) => a[0] - b[0])
     .map(([mi, qtd]) => ({ mes: MESES_CURTO[mi]!, qtd }));
 
-  return { turnos, dias, recebimentoItens, recebimentoQtd, diasRecebidos, mensal, totalRecebido, diasQtd, mensalQtd, totalQtdRecebido };
+  const diasItemQtd: { iso: string; porItem: { item: string; qtd: number }[] }[] = [...porDiaItemQtd.entries()]
+    .sort()
+    .slice(-12)
+    .map(([iso, items]) => ({
+      iso,
+      porItem: [...items.entries()].map(([item, qtd]) => ({ item, qtd })),
+    }));
+
+  return { turnos, dias, recebimentoItens, recebimentoQtd, diasRecebidos, mensal, totalRecebido, diasQtd, mensalQtd, totalQtdRecebido, diasItemQtd };
 }
