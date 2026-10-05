@@ -30,3 +30,27 @@ export const PENDENTES_RESUMO_FIXO: VideoPendentes = {
     { mes: "Set/26", ton: 38.8, pct: 58, itens: 49, dtFinal: "2026-09-11", lotes: 13 },
   ],
 };
+
+/* Paletes por tamanho (planilha ENGENHARIA 014 × estoque e Base Recebimento).
+ * Usado quando os dados sincronizados não trazem os paletes. */
+export const PALETAS_FIXO = {
+  porTamanho: [
+    { tamanho: "P", paletes: 2784, itens: 187, und: 59954 },
+    { tamanho: "M", paletes: 1383, itens: 140, und: 34340 },
+    { tamanho: "G", paletes: 1782, itens: 172, und: 43588 },
+    { tamanho: "GG", paletes: 278, itens: 38, und: 6651 },
+  ],
+  totalPaletes: 6227,
+  totalItens: 537,
+  recebimento: {
+    porTamanho: [
+      { tamanho: "P", paletes: 1225, itens: 11, und: 96436 },
+      { tamanho: "M", paletes: 492, itens: 5, und: 54737 },
+      { tamanho: "G", paletes: 138, itens: 2, und: 4344 },
+      { tamanho: "GG", paletes: 14, itens: 1, und: 1575 },
+    ],
+    totalPaletes: 1869,
+    totalItens: 19,
+  },
+  diasRecebidos: 212,
+};
