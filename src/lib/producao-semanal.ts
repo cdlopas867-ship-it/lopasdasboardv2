@@ -57,7 +57,7 @@ function extrairCodItem(volume: string): string {
  * Soma peso e saldo de todas as variantes do mesmo item. */
 function mapaPesoUnitario(itens: ItemEstoque[] | undefined): Map<string, number> {
   const mapa = new Map<string, { peso: number; saldo: number }>();
-  if (!itens) return mapa;
+  if (!itens) return new Map<string, number>();
   for (const it of itens) {
     const cod = it.item.trim();
     if (!cod) continue;
