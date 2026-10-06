@@ -47,8 +47,13 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
   secoes.push({
     titulo: "Ocupação do CD",
     explicacao: "Percentual de posições de armazenagem ocupadas, considerando os dois centros de distribuição.",
-    linhas: [["Ocupação", pct(d.ocupacao.pct * 100)], ["Posições ocupadas", fmtInt(d.ocupacao.ocupados)], ["Posições livres", fmtInt(d.ocupacao.livres)]],
-    resumo: `${pct(d.ocupacao.pct * 100)} das posições estão ocupadas; ${fmtInt(d.ocupacao.livres)} seguem livres.`,
+    linhas: [
+      ["Ocupação", pct(d.ocupacao.pct * 100)],
+      ["Posições ocupadas", fmtInt(d.ocupacao.ocupados)],
+      ["Posições livres", fmtInt(d.ocupacao.livres)],
+      ...(d.ocupacao.bloqueados ? [["Posições bloqueadas", fmtInt(d.ocupacao.bloqueados)] as [string, string]] : []),
+    ],
+    resumo: `${pct(d.ocupacao.pct * 100)} das posições estão ocupadas; ${fmtInt(d.ocupacao.livres)} seguem livres${d.ocupacao.bloqueados ? `; ${fmtInt(d.ocupacao.bloqueados)} bloqueadas.` : "."}`,
   });
   destaques.push(`Ocupação do CD em ${pct(d.ocupacao.pct * 100)}.`);
 
@@ -116,7 +121,7 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
       linhas: [
         ["Reservado · quantidade", fmtInt(r.totalQtd)], ["Reservado · peso", fmtTonDec(r.totalTon)], ["Reservado · valor", fmtMoeda(r.totalValor)],
         ...(s ? [["Sem reserva · quantidade", fmtInt(s.totalQtd)], ["Sem reserva · peso", fmtTonDec(s.totalTon)], ["Sem reserva · valor", fmtMoeda(s.totalValor)]] as Linha[] : []),
-        ...(d.valorFaturado ? [["Valor previsto da reserva", fmtMoeda(r.totalTon * d.valorFaturado)]] as Linha[] : []),
+        ...(d.valorFaturado ? [["Valor previsto da reserva", fmtMoeda(r.previsao ?? r.totalTon * d.valorFaturado)]] as Linha[] : []),
       ],
       resumo: `${fmtTonDec(r.totalTon)} (${fmtMoeda(r.totalValor)}) estão reservadas${s ? ` e ${fmtTonDec(s.totalTon)} (${fmtMoeda(s.totalValor)}) seguem disponíveis sem reserva` : ""}.`,
     });

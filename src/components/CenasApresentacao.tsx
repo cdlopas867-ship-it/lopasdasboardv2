@@ -8,6 +8,10 @@ import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
 import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
 import CenaReservados from "@/components/CenaReservados";
+import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
+import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
+import CenaPaletes from "@/components/CenaPaletes";
+import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -95,9 +99,21 @@ export default function CenasApresentacao({
 
   return (
     <>
-      {/* Cena 1 — KPIs de abertura em destaque (um card por vez, centralizado) */}
-      {cena === 0 && (
-        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} paletas={paletas} producaoSemanal={producaoSemanal} onPausar={onPausar} />
+      {/* Cena 1 — Estoque × Previsto (donut interativo com toggle) */}
+      {cena === 0 && resumo && (
+        <CenaEstoquePrevisto anim={anim} resumo={resumo} valorFaturado={valorFaturado} unidades={unidades} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 1 fallback — sem dados de resumo */}
+      {cena === 0 && !resumo && (
+        <div className="flex flex-col items-center py-6 text-center">
+          <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
+            Estoque × Previsto
+          </p>
+          <p className="video-sobe font-serif text-3xl text-white/70">
+            Sem dados de estoque.
+          </p>
+        </div>
       )}
 
       {/* Cena 2 — ocupação (donut interativo) */}
@@ -110,13 +126,28 @@ export default function CenasApresentacao({
         <CenaRecebimentoTurno anim={anim} turnos={turnos} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 4 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
-      {cena === 3 && (
+      {/* Cena 4 — Saúde do Estoque (donut interativo com toggle Carregado/Recebido) */}
+      {cena === 3 && listaMes.length > 0 && (
+        <CenaSaudeEstoque anim={anim} mensal={listaMes} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 5 — Paletes em Estoque (donut interativo com toggle por tamanho) */}
+      {cena === 4 && paletas && paletas.totalPaletes > 0 && (
+        <CenaPaletes anim={anim} paletas={paletas} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 6 — Produção da Semana (donut interativo com toggle Entregue/Pendente) */}
+      {cena === 5 && producaoSemanal && producaoSemanal.length > 0 && (
+        <CenaProducaoSemana anim={anim} dias={producaoSemanal} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 7 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
+      {cena === 6 && (
         <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
       )}
 
-      {/* Cena 5 — pendências de produção */}
-      {cena === 4 && (
+      {/* Cena 8 — pendências de produção */}
+      {cena === 7 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -250,13 +281,13 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 6 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
-      {cena === 5 && reservados && (
+      {/* Cena 9 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
+      {cena === 8 && reservados && (
         <CenaReservados anim={anim} reservados={reservados} semReserva={semReserva} valorFaturado={valorFaturado} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 6 fallback — sem dados de reservados */}
-      {cena === 5 && !reservados && (
+      {/* Cena 9 fallback — sem dados de reservados */}
+      {cena === 8 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -273,18 +304,18 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 7 — Fora de linha por categoria */}
-      {cena === 6 && (
+      {/* Cena 10 — Fora de linha por categoria */}
+      {cena === 9 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 8 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 7 && (
+      {/* Cena 11 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 10 && (
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 9 — encerramento */}
-      {cena === 8 && (
+      {/* Cena 12 — encerramento */}
+      {cena === 11 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -631,20 +662,20 @@ function CardFocoProducao({
         Produção da Semana
       </p>
       <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
-        {fmtInt(totalOrdens)} ordens de produção previstas para os próximos{" "}
-        {semana.length} dias — {fmtBrMax(totalTonPend, 1)} t pendentes.
+        {fmtInt(totalOrdens)} ordens de produção programadas para os próximos{" "}
+        {semana.length} dias — {fmtBrMax(totalTonPend, 1)} t a descer.
       </p>
       <dl className="mt-2.5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
         <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Previsto</dt>
+          <dt className="text-white/45">Programado</dt>
           <dd className="font-medium text-white/90">{fmtInt(totalPrevisto)} un · {fmtBrMax(totalTonPrev, 1)} t</dd>
         </div>
         <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Entregue</dt>
+          <dt className="text-white/45">Recebido</dt>
           <dd className="font-medium text-green-400">{fmtInt(totalEntregue)} un ({fmtBrMax(pctEntregue, 0)}%)</dd>
         </div>
         <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Pendente</dt>
+          <dt className="text-white/45">Previsto</dt>
           <dd className="font-medium text-brand-amber">{fmtInt(totalPendente)} un · {fmtBrMax(totalTonPend, 1)} t</dd>
         </div>
         <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">

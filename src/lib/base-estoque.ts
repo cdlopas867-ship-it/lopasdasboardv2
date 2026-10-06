@@ -67,7 +67,7 @@ export function lerItensEstoque(wb: XLSX.WorkBook): ItemEstoque[] {
         saldo,
         peso: num(r, cPeso),
         custo: num(r, cCusto),
-        valor: num(r, cValor),
+        valor: num(r, cValor) || saldo * num(r, cCusto),
         unidade: str(r, cUnid),
         curva: str(r, cCurva),
       });

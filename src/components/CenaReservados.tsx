@@ -92,6 +92,16 @@ export default function CenaReservados({
                 </tr>
               );
             })}
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1 text-white">Total</td>
+              <td className="py-1 text-right font-mono text-white">
+                {fmtInt(reservadosCom.totalQtd + (semReserva?.totalQtd ?? 0))} un
+                {" · "}
+                {fmtBrMax(reservadosCom.totalTon + (semReserva?.totalTon ?? 0), 1)} t
+                {" · "}
+                {fmtMoeda(reservadosCom.totalValor + (semReserva?.totalValor ?? 0))}
+              </td>
+            </tr>
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
@@ -109,7 +119,7 @@ export default function CenaReservados({
             <InfoTooltip onOpen={onPausar} texto="Valor previsto da reserva = toneladas reservadas × valor faturado por tonelada. O valor faturado por tonelada é configurado manualmente. Fonte: dados de reservados × valor faturado. Atualizado em 28/09/2026." />
           </div>
           <p className="mt-2 text-center font-serif text-3xl text-primary sm:text-4xl">
-            {fmtMoeda(reservadosCom.totalTon * valorFaturado)}
+            {fmtMoeda(reservadosCom.previsao ?? (reservadosCom.totalTon * (valorFaturado ?? 0)))}
           </p>
           <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
             <div className="rounded-xl border border-white/15 bg-white/5 p-2.5 text-center">

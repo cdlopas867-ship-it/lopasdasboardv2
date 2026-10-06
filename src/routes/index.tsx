@@ -27,14 +27,15 @@ function DashboardHome() {
   const presentation = useMemo(() => {
     const p = dados as unknown as Record<string, any>; const resumo = p["resumo"] ?? {};
     const kpis = (p["kpis"] ?? []) as VideoKpi[];
-    const unidades = ((p["unidades"] ?? []) as any[]).map(u => ({ nome: u.nome, share: Number(u.share ?? 0), valor: u.stats?.find((x: string[]) => x[0] === "Valor")?.[1] ?? "—" })) as VideoUnidade[];
+    const unidades = ((p["unidades"] ?? []) as any[]).map(u => ({ nome: u.nome, share: Number(u.share ?? 0), valor: u.stats?.find((x: string[]) => x[0] === "Valor")?.[1] ?? "—", ...(u.stats ? { stats: u.stats as [string, string][] } : {}), ...(u.previsto ? { previsto: u.previsto } : {}) })) as VideoUnidade[];
     const detalhe = (p["ocupacaoDetalhes"] ?? []) as VideoOcupacao["detalhes"];
-    const ocup = p["ocupacao"] as { pct?: number; ocupados?: number; livres?: number; total?: number } | undefined;
+    const ocup = p["ocupacao"] as { pct?: number; ocupados?: number; livres?: number; bloqueados?: number; total?: number } | undefined;
     const pos = detalhe?.find(x => x.atributo === "POSIÇÕES"); const ocupacaoKpi = kpis.find(k => k.rotulo.includes("Ocupação"));
     const pct = ocup?.pct ?? Number(String(ocupacaoKpi?.valor ?? "0").replace("%", "").replace(",", ".")) / 100;
     const ocupados = ocup?.ocupados ?? (pos ? Math.round(pos.total * pct) : 0);
-    const livres = ocup?.livres ?? (pos ? Math.round(pos.total * (1-pct)) : 0);
-    const ocupacao: VideoOcupacao = { pct, ocupados, livres, ...(detalhe ? { detalhes: detalhe } : {}) };
+    const bloqueados = ocup?.bloqueados ?? 0;
+    const livres = ocup?.livres ?? (pos ? Math.round(pos.total * (1-pct)) - bloqueados : 0);
+    const ocupacao: VideoOcupacao = { pct, ocupados, livres, ...(bloqueados ? { bloqueados } : {}), ...(detalhe ? { detalhes: detalhe } : {}) };
     const dias = normalizarDiasExibicao((p["dias"] ?? []) as VideoDia[]); const semana = dias.length ? { rotulo: "Recebimento", total: `${dias.reduce((s,d)=>s+d.ton,0).toLocaleString("pt-BR",{maximumFractionDigits:1})} t`, dias } : null;
     const turnos = ((p["turnos"] ?? []) as any[]).map(t => ({ nome: t.nome, faixa: t.faixa, ton: Number(t.ton ?? 0), pct: Number(t.pct) })) as VideoTurno[];
     const avarias = aplicarReferenciaMotivos(

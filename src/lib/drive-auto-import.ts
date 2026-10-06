@@ -11,7 +11,7 @@
 import * as XLSX from "xlsx";
 import { addRegistro, getHistorico } from "./historico-store";
 import { setData, getLatestData } from "./sync-store";
-import { lerReservados, calcularReservados, resumirReservados } from "./reservados";
+import { lerReservados, calcularReservados, resumirReservados, calcularPrevisaoReservados } from "./reservados";
 import { lerPendentes } from "./pendentes";
 import { calcularPendentesResumo } from "./pendentes-resumo";
 import { lerAvarias, mesclarAvarias } from "./avarias";
@@ -19,9 +19,10 @@ import { calcularAvariasResumo } from "./avarias-resumo";
 import { buscarCarregamentoMensal, lerCarregadoMensal, lerUltimaDataCarregado, CARREGADO_SEM_DRIVE } from "./carregamento";
 import { lerSaidasCD } from "./saidas-cd";
 import { calcularRecebimento } from "./recebimento";
-import { calcularProducaoSemanal, type ProducaoSemanalDia } from "./producao-semanal";
+import { calcularProducaoSemanal, calcularRecebidoPorDia, type ProducaoSemanalDia } from "./producao-semanal";
 import { lerItensEstoque, curvaAbcEstoque, curvaAbcRecebimento } from "./base-estoque";
 import { lerPaletes, calcularResumoPaletes } from "./paletes";
+import { faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado";
 import { existsSync, readFileSync, statSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
@@ -51,12 +52,6 @@ const FOLDER_ID = "16WJaYavcR8B1QgpVsT51Kg0_ADJsSGtQ";
 const DRIVE_GATEWAY = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
 const PLANILHAS_HISTORICAS = ["1KJ7LbljnIPqa6caCtqyt6T418Q0-Xgpk"];
 
-/* Fator de markup médio do CD (valor previsto ÷ valor de custo), medido na
-   última planilha com a coluna "Valor Previsto" preenchida
-   (27.132.099,26 ÷ 17.019.363,35 ≈ 1,5942). Usado quando a exportação nova
-   deixa a coluna em branco. */
-const FATOR_PREVISTO = 1.5942;
-
 /* Planilhas locais em public/planilhas/ — processadas além das do Drive.
    Último recurso: se o Drive estiver indisponível, os dados locais garantem
    que o painel tenha conteúdo atualizado. */
@@ -67,6 +62,7 @@ const PLANILHAS_LOCAIS = [
   "public/planilhas/estoque.xlsx",
   "public/planilhas/paletes.xlsx",
   "public/planilhas/estoque-em-linha.xlsx",
+  "public/planilhas/ocupacao-cd.xlsx",
 ];
 
 type ArquivoDrive = { id: string; nome: string; modificado?: string | undefined };
@@ -290,27 +286,30 @@ function extrairResumo(wb: XLSX.WorkBook): ResumoData | null {
       let valor = num(r, cValor);
       let saldo = num(r, cSaldo);
       let itens = num(r, cItens);
-      let previsto = num(r, cPrevisto);
+      /* Valor previsto = toneladas × valor faturado por tonelada (R$/t),
+         fixado por unidade. A coluna "Valor Previsto" da planilha é
+         ignorada — o cálculo parte sempre do peso × faturado fixo. */
+      let previsto = 0;
 
       /* Exportações novas vêm com a linha TOTAL sem valores (só as linhas
-         de categoria preenchidas) — soma as categorias acima dela. */
+         de categoria preenchidas) — soma as categorias acima dela, usando
+         o faturado da unidade de cada linha. */
       if (ton === 0 && valor === 0 && saldo === 0 && itens === 0) {
         for (let j = hi + 1; j < i; j++) {
           const cat = rows[j];
           if (!cat || cat[0] == null) break;
-          ton += tonDaLinha(cat);
+          const t = tonDaLinha(cat);
+          ton += t;
           valor += num(cat, cValor);
           saldo += num(cat, cSaldo);
           itens += num(cat, cItens);
-          previsto += num(cat, cPrevisto);
+          previsto += t * faturadoPorUnidade(MAPA_UNIDADES[String(cat[0]).toUpperCase().trim()]);
         }
       }
 
-      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso
-         aplica o fator de markup médio do CD (previsto ÷ valor ≈ 1,594,
-         medido na última planilha com a coluna preenchida) em vez de
-         repetir o valor de custo. */
-      return { valor, previsto: previsto || valor * FATOR_PREVISTO, ton, saldo, itens, data };
+      /* Quando a linha TOTAL já vem preenchida (sem detalhe por categoria),
+         aplica a média do CD sobre o peso total. */
+      return { valor, previsto: previsto || ton * VALOR_FATURADO_MEDIO, ton, saldo, itens, data };
     }
   }
   return null;
@@ -477,10 +476,10 @@ function extrairUnidadesResumo(wb: XLSX.WorkBook): UnidadeResumo[] | null {
       saldo: num(r, cSaldo),
       pesoTon: ton,
       valor,
-      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso
-         aplica o fator de markup médio do CD (≈ 1,594) em vez de repetir
-         o valor de custo. */
-      previsto: num(r, cPrevisto) || valor * FATOR_PREVISTO,
+      /* Valor previsto = toneladas da unidade × valor faturado por tonelada
+         (R$/t) fixado por unidade. A coluna "Valor Previsto" da planilha é
+         ignorada — o cálculo parte sempre do peso × faturado fixo. */
+      previsto: ton * faturadoPorUnidade(MAPA_UNIDADES[label]),
       share: num(r, cShare) * (cShare >= 0 && num(r, cShare) <= 1 ? 100 : 1),
     });
   }
@@ -498,30 +497,113 @@ function extrairUnidadesResumo(wb: XLSX.WorkBook): UnidadeResumo[] | null {
    A planilha traz uma seção "OCUPAÇÃO DO CENTRO DE DISTRIBUIÇÃO" com as
    linhas Livre/Ocupado/TOTAL (quantidade de posições e fração ocupada).
    Retorna null se a seção não existir. */
-type OcupacaoData = { pct: number; ocupados: number; livres: number; total: number };
+type OcupacaoData = { pct: number; ocupados: number; livres: number; bloqueados: number; total: number };
 
+/* Extrai a ocupação do CD de uma planilha. Suporta dois formatos:
+   1. Aba "Resumo" com seção "Situação" (Livre/Ocupado/TOTAL) — formato antigo.
+   2. Aba "Resultado" do relatório WF0126 (Tipo LA, Situação, Quantidade) —
+      formato novo com Livre/Ocupado/Bloqueado. */
 function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
-  const ws = wb.Sheets["Resumo"];
-  if (!ws) return null;
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
-  /* Cabeçalho "Situação" é exclusivo da seção de ocupação do CD. */
-  const hi = rows.findIndex((r) => /SITUAÇ/i.test(String(r?.[0] ?? "").trim()));
-  if (hi < 0) return null;
-  const num = (r: unknown[], i: number) =>
-    i >= 0 ? (typeof r[i] === "number" ? (r[i] as number) : Number(r[i] ?? 0) || 0) : 0;
-  let ocupados = 0, livres = 0, total = 0, pct = 0;
-  for (let i = hi + 1; i < Math.min(hi + 12, rows.length); i++) {
-    const r = rows[i] ?? [];
-    const label = String(r[0] ?? "").toUpperCase().trim();
-    if (!label) break;
-    if (label === "TOTAL" || label === "TOTAL GERAL") { total = num(r, 1); break; }
-    if (label.includes("OCUPAD")) { ocupados = num(r, 1); pct = num(r, 2); }
-    else if (label.includes("LIVRE")) { livres = num(r, 1); }
+  /* Formato 1: aba "Resumo" com seção "Situação" */
+  const wsResumo = wb.Sheets["Resumo"];
+  if (wsResumo) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(wsResumo, { header: 1, defval: null });
+    const hi = rows.findIndex((r) => /SITUAÇ/i.test(String(r?.[0] ?? "").trim()));
+    if (hi >= 0) {
+      const num = (r: unknown[], i: number) =>
+        i >= 0 ? (typeof r[i] === "number" ? (r[i] as number) : Number(r[i] ?? 0) || 0) : 0;
+      let ocupados = 0, livres = 0, bloqueados = 0, total = 0, pct = 0;
+      for (let i = hi + 1; i < Math.min(hi + 12, rows.length); i++) {
+        const r = rows[i] ?? [];
+        const label = String(r[0] ?? "").toUpperCase().trim();
+        if (!label) break;
+        if (label === "TOTAL" || label === "TOTAL GERAL") { total = num(r, 1); break; }
+        if (label.includes("OCUPAD")) { ocupados = num(r, 1); pct = num(r, 2); }
+        else if (label.includes("LIVRE")) { livres = num(r, 1); }
+        else if (label.includes("BLOQUE")) { bloqueados = num(r, 1); }
+      }
+      if (total <= 0) total = ocupados + livres + bloqueados;
+      if (total > 0) {
+        if (!pct || pct > 1) pct = ocupados / total;
+        return { pct, ocupados, livres, bloqueados, total };
+      }
+    }
   }
-  if (total <= 0) total = ocupados + livres;
-  if (total <= 0) return null;
-  if (!pct || pct > 1) pct = ocupados / total;
-  return { pct, ocupados, livres, total };
+
+  /* Formato 2: aba "Resultado" do WF0126 (Tipo LA, Situação, Quantidade) */
+  const wsResultado = wb.Sheets["Resultado"];
+  if (wsResultado) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(wsResultado, { header: 1, defval: null });
+    const hi = rows.findIndex((r) =>
+      r?.some((c) => /SITUAÇ/i.test(String(c ?? "").trim())),
+    );
+    if (hi >= 0) {
+      const headers = (rows[hi] ?? []).map((c) => String(c ?? "").toUpperCase().trim());
+      const colSituacao = headers.findIndex((h) => /SITUAÇ/i.test(h));
+      const colQtd = headers.findIndex((h) => /QUANTIDADE/i.test(h));
+      if (colSituacao >= 0 && colQtd >= 0) {
+        let ocupados = 0, livres = 0, bloqueados = 0;
+        for (let i = hi + 1; i < rows.length; i++) {
+          const r = rows[i] ?? [];
+          const situacao = String(r[colSituacao] ?? "").toUpperCase().trim();
+          if (!situacao) continue;
+          const qtd = Number(r[colQtd] ?? 0) || 0;
+          if (situacao.includes("OCUPAD")) ocupados += qtd;
+          else if (situacao.includes("LIVRE")) livres += qtd;
+          else if (situacao.includes("BLOQUE")) bloqueados += qtd;
+        }
+        const total = ocupados + livres + bloqueados;
+        if (total > 0) {
+          return { pct: ocupados / total, ocupados, livres, bloqueados, total };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/* Constrói o resumo (tons, valor, saldo, itens, previsto) a partir dos
+   itens de estoque quando a planilha não tem aba "Resumo" — modelo
+   "ESTOQUE 001 - POSIÇÃO DE ESTOQUE" com colunas ITEM, SALDO, PESO LIQ
+   TOTAL, CLASSIFICACAO N1 e CUSTO MEDIO. Calcula o valor previsto por
+   unidade usando o faturado (R$/t) de cada CLASSIFICAÇÃO N1. */
+function resumoDeItens(itens: ItemEstoque[]): { resumo: ResumoData; unidades: UnidadeResumo[] } | null {
+  if (!itens.length) return null;
+  let ton = 0, valor = 0, saldo = 0, itensCount = 0, previsto = 0;
+  const porUnidade = new Map<string, { itens: number; saldo: number; pesoTon: number; valor: number; previsto: number }>();
+  for (const it of itens) {
+    const pesoTon = it.peso / 1000;
+    const v = it.valor > 0 ? it.valor : it.saldo * it.custo;
+    ton += pesoTon;
+    valor += v;
+    saldo += it.saldo;
+    itensCount++;
+    const id = MAPA_UNIDADES[it.unidade.toUpperCase().trim()];
+    const fat = faturadoPorUnidade(id);
+    previsto += pesoTon * fat;
+    const nome = it.unidade.toUpperCase().trim() || "OUTROS";
+    const atual = porUnidade.get(nome) ?? { itens: 0, saldo: 0, pesoTon: 0, valor: 0, previsto: 0 };
+    atual.itens++;
+    atual.saldo += it.saldo;
+    atual.pesoTon += pesoTon;
+    atual.valor += v;
+    atual.previsto += pesoTon * fat;
+    porUnidade.set(nome, atual);
+  }
+  const unidades: UnidadeResumo[] = [...porUnidade.entries()].map(([nome, u]) => ({
+    nome,
+    itens: u.itens,
+    saldo: u.saldo,
+    pesoTon: u.pesoTon,
+    valor: u.valor,
+    previsto: u.previsto,
+    share: valor > 0 ? (u.valor / valor) * 100 : 0,
+  }));
+  return {
+    resumo: { valor, previsto, ton, saldo, itens: itensCount, data: "" },
+    unidades,
+  };
 }
 
 /* Mapeia nome do Drive → ID do dashboard. */
@@ -550,6 +632,7 @@ function recomputeKpis(
       const subs: Record<string, string> = {
         "Ocupados": fmtInt(ocupacaoData.ocupados),
         "Livres": fmtInt(ocupacaoData.livres),
+        "Bloqueados": fmtInt(ocupacaoData.bloqueados),
         "Total de endereços": fmtInt(ocupacaoData.total),
         "POSIÇÕES": `${fmtInt(ocupacaoData.total)} qtd`,
       };
@@ -701,12 +784,14 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorPendentes: PendenteProducao[] | null = null;
   let melhorRecebimento: ReturnType<typeof calcularRecebimento> | null = null;
   let melhorItens: ItemEstoque[] | null = null;
+  let melhorItensMod: Date | undefined;
   let abcRecebimento: ReturnType<typeof curvaAbcRecebimento> | null = null;
   let melhorUnidadesResumo: UnidadeResumo[] | null = null;
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
   let melhorOcupacao: OcupacaoData | null = null;
   let melhorPaletes: ReturnType<typeof lerPaletes> | null = null;
   let wbProducao: XLSX.WorkBook | null = null;
+  let melhorRecebidoPorDia: Map<string, { qtd: number; peso: number }> | null = null;
 
   for (const arq of arquivos) {
     try {
@@ -753,9 +838,18 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const prod = calcularProducaoSemanal(wb, undefined);
       if (prod && prod.length > 0) wbProducao = wb;
 
+      /* Detecta a planilha PESO RECEBIDO POR PERÍODO para cruzar com produção */
+      const recebidoPorDia = calcularRecebidoPorDia(wb);
+      if (recebidoPorDia && recebidoPorDia.size > (melhorRecebidoPorDia?.size ?? 0)) {
+        melhorRecebidoPorDia = recebidoPorDia;
+      }
+
       /* Extrai a base de itens de estoque (Top Produtos, Curva ABC, fichas) */
       const itensEstoque = lerItensEstoque(wb);
-      if (itensEstoque.length > (melhorItens?.length ?? 0)) melhorItens = itensEstoque;
+      if (itensEstoque.length > (melhorItens?.length ?? 0)) {
+        melhorItens = itensEstoque;
+        melhorItensMod = parseModificado(arq.modificado ?? "");
+      }
 
       /* Curva ABC do recebimento */
       const abcReceb = curvaAbcRecebimento(wb);
@@ -849,6 +943,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 
       const saidasCD = lerSaidasCD(wb);
       if (saidasCD && saidasCD.meses.length > 0 && !melhorSaidasCD) melhorSaidasCD = saidasCD;
+
+      /* Extrai ocupação do CD do relatório WF0126 local */
+      const ocupacao = extrairOcupacao(wb);
+      if (ocupacao) melhorOcupacao = ocupacao;
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }
@@ -857,7 +955,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   /* Processa a produção da semana agora que os itens de estoque estão disponíveis */
   let melhorProducao: ProducaoSemanalDia[] | null = null;
   if (wbProducao && melhorItens) {
-    melhorProducao = calcularProducaoSemanal(wbProducao, melhorItens);
+    melhorProducao = calcularProducaoSemanal(wbProducao, melhorItens, melhorRecebidoPorDia);
   }
 
   /* Mescla as avarias de todas as planilhas (base histórica + lançamentos novos).
@@ -946,9 +1044,59 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     }));
   }
 
+  /* Quando o arquivo de itens (modelo sem aba Resumo) é mais recente que
+     o arquivo que forneceu a aba Resumo, recalcula o resumo a partir dos
+     itens — o novo formato deve prevalecer sobre a planilha antiga. */
+  if (melhorResumo && melhorItens && melhorItens.length > 0 && melhorItensMod &&
+      (!melhorResumoMod || melhorItensMod > melhorResumoMod)) {
+    const r = resumoDeItens(melhorItens);
+    if (r) {
+      melhorResumo = r.resumo;
+      melhorUnidadesResumo = r.unidades;
+      console.info(`[auto-import] resumo recalculado a partir de ${melhorItens.length} itens (planilha mais recente)`);
+    }
+  }
+
+  /* Fallback: quando a planilha não tem aba "Resumo" (modelo "ESTOQUE 001
+     - POSIÇÃO DE ESTOQUE"), calcula o resumo a partir dos itens lidos. */
+  if (!melhorResumo && melhorItens && melhorItens.length > 0) {
+    const r = resumoDeItens(melhorItens);
+    if (r) {
+      melhorResumo = r.resumo;
+      if (!melhorUnidadesResumo) melhorUnidadesResumo = r.unidades;
+      console.info(`[auto-import] resumo calculado a partir de ${melhorItens.length} itens (sem aba Resumo)`);
+    }
+  }
+
   if (!melhorResumo) {
     console.warn("[auto-import] nenhuma aba Resumo válida encontrada");
     return false;
+  }
+
+  /* Recomputa o valor previsto total como a soma do previsto por unidade
+     (toneladas × faturado por unidade) — mais preciso que tom × média e
+     consistente com o detalhamento por unidade exibido no dashboard. */
+  if (melhorUnidadesResumo && melhorUnidadesResumo.length > 0) {
+    melhorResumo.previsto = melhorUnidadesResumo.reduce((s, u) => s + u.previsto, 0);
+  }
+
+  /* Recomputa o valor previsto da reserva por unidade. A planilha de
+     reservas nem sempre traz a coluna de unidade, então monta um mapa
+     código→unidade a partir da Base Estoque (que tem CLASSIFICAÇÃO N1)
+     para classificar os itens reservados e aplicar o faturado por
+     unidade em vez da média. */
+  if (melhorItens && (melhorReservados || melhorSemReserva)) {
+    const unidadePorCod = new Map<string, string>();
+    for (const it of melhorItens) {
+      const id = MAPA_UNIDADES[it.unidade.toUpperCase().trim()];
+      if (id) unidadePorCod.set(it.item, id);
+    }
+    if (melhorReservados) {
+      melhorReservados.previsao = calcularPrevisaoReservados(melhorReservados.itens, melhorReservados.totalTon, unidadePorCod);
+    }
+    if (melhorSemReserva) {
+      melhorSemReserva.previsao = calcularPrevisaoReservados(melhorSemReserva.itens, melhorSemReserva.totalTon, unidadePorCod);
+    }
   }
 
   /* Recomputa KPIs e unidades a partir dos dados do Drive, substituindo

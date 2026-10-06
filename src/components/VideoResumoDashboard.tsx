@@ -10,8 +10,8 @@ import RelatorioLopas from "./RelatorioLopas";
    Na troca de cenas, a anterior sai suave (fade + desfoque) enquanto a nova entra. */
 
 export type VideoKpi = { id?: string; rotulo: string; valor: string; detalhe?: string; extra?: [string, string][] };
-export type VideoUnidade = { nome: string; share: number; valor: string };
-export type VideoOcupacao = { pct: number; ocupados: number; livres: number; detalhes?: { atributo: string; unidade: string; cd1: number; cd2: number; total: number }[] };
+export type VideoUnidade = { nome: string; share: number; valor: string; stats?: [string, string][]; previsto?: string };
+export type VideoOcupacao = { pct: number; ocupados: number; livres: number; bloqueados?: number; detalhes?: { atributo: string; unidade: string; cd1: number; cd2: number; total: number }[] };
 export type VideoDia = { dia: string; data: string; ton: number; meta: number };
 export type VideoTurno = { nome: string; faixa?: string; ton?: number; pct: number };
 export type VideoMes = { mes: string; recebido: number; carregado: number };
@@ -52,6 +52,7 @@ export type VideoReservados = {
   pctQtd: number;
   pctValor: number;
   pctPeso: number;
+  previsao: number;
   topItens: {
     cod: string;
     desc: string;
@@ -123,8 +124,8 @@ type Props = {
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 9;
-const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 12000];
+const TOTAL_CENAS = 12;
+const DURACOES = [8000, 5000, 6500, 5000, 5000, 5000, 9000, 5500, 8000, 7000, 7000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,

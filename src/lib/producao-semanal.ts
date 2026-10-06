@@ -75,11 +75,65 @@ function mapaPesoUnitario(itens: ItemEstoque[] | undefined): Map<string, number>
 
 const NOMES_DIA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
+/* Calcula o total recebido no estoque por dia a partir da planilha
+ * "PESO RECEBIDO POR PERÍODO" (DT_INICIO, DT_FIM, ITEM, QTD_RECEBIDA,
+ * PESO_RECEBIDO). Retorna um mapa ISO → { qtd, peso } para cruzar
+ * com as datas de produção (DT FINAL). */
+export function calcularRecebidoPorDia(
+  wb: XLSX.WorkBook,
+): Map<string, { qtd: number; peso: number }> | null {
+  for (const name of wb.SheetNames) {
+    const ws = wb.Sheets[name];
+    if (!ws) continue;
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
+    if (!rows.length) continue;
+
+    const headerIdx = rows.findIndex((r) =>
+      r?.some((c) => normalizeHeader(c) === "DTINICIO"),
+    );
+    if (headerIdx < 0) continue;
+
+    const headers = rows[headerIdx]!.map((c) => normalizeHeader(c));
+    const colFim = headers.findIndex((h) => h.includes("DTFIM"));
+    const colInicio = headers.findIndex((h) => h.includes("DTINICIO"));
+    const colQtd = headers.findIndex((h) => h.includes("QTDRECEBIDA"));
+    const colPeso = headers.findIndex((h) => h.includes("PESORECEBIDO"));
+
+    /* Precisa de pelo menos data e peso para ser a planilha certa */
+    if ((colFim < 0 && colInicio < 0) || colPeso < 0) continue;
+
+    const porDia = new Map<string, { qtd: number; peso: number }>();
+
+    for (const r of rows.slice(headerIdx + 1)) {
+      if (!r) continue;
+      const iso = serialToIso(r[colFim >= 0 ? colFim : colInicio]);
+      if (!iso) continue;
+
+      const qtd = colQtd >= 0 ? (Number(r[colQtd] ?? 0) || 0) : 0;
+      const peso = Number(r[colPeso] ?? 0) || 0;
+
+      const atual = porDia.get(iso) ?? { qtd: 0, peso: 0 };
+      atual.qtd += qtd;
+      atual.peso += peso;
+      porDia.set(iso, atual);
+    }
+
+    if (porDia.size === 0) continue;
+    return porDia;
+  }
+
+  return null;
+}
+
 /* Lê a planilha de produção e retorna os dias com métricas.
- * Detecta a aba pelos cabeçalhos NUM ORDEM + DT INICIAL + PENDENTE. */
+ * Detecta a aba pelos cabeçalhos NUM ORDEM + DT INICIAL + PENDENTE.
+ * Se recebidoPorDia for fornecido (planilha PESO RECEBIDO POR PERÍODO),
+ * substitui o ENTREGUE da produção pelo que foi efetivamente recebido
+ * no estoque em cada data, e recalcula o PENDENTE = PREVISTO − RECEBIDO. */
 export function calcularProducaoSemanal(
   wb: XLSX.WorkBook,
   itensEstoque: ItemEstoque[] | undefined,
+  recebidoPorDia?: Map<string, { qtd: number; peso: number }> | null,
 ): ProducaoSemanalDia[] | null {
   const pesoUnit = mapaPesoUnitario(itensEstoque);
 
@@ -165,6 +219,20 @@ export function calcularProducaoSemanal(
       if (cOrdem >= 0) dia.ordens.add(str(r, cOrdem));
       if (cLote >= 0) dia.lotes.add(str(r, cLote));
       porDia.set(iso, dia);
+    }
+
+    /* Cruzamento: se houver dados de recebido por dia (PESO RECEBIDO POR
+       PERÍODO), substitui o ENTREGUE da planilha de produção pelo que foi
+       efetivamente recebido no estoque naquela data. O PENDENTE passa a ser
+       PREVISTO − RECEBIDO (o que ainda falta descer). */
+    if (recebidoPorDia) {
+      for (const [iso, dia] of porDia) {
+        const rec = recebidoPorDia.get(iso);
+        dia.entregue = rec?.qtd ?? 0;
+        dia.tonEntregue = rec ? rec.peso / 1000 : 0;
+        dia.pendente = Math.max(0, dia.previsto - dia.entregue);
+        dia.tonPendente = Math.max(0, dia.tonPrevisto - dia.tonEntregue);
+      }
     }
 
     if (porDia.size === 0) continue;
