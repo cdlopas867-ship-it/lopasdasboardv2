@@ -60,6 +60,7 @@ export default function CenaProducaoSemana({
         onToggle={() => setFoco((f) => (f + 1) % secoes.length)}
         anim={anim}
       />
+      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
       <div className="mt-2 w-full max-w-xs mx-auto space-y-1.5">
         <div className="rounded-lg bg-white/10 px-4 py-2 text-center">

@@ -45,6 +45,7 @@ export default function CenaRecebimentoTurno({
         onToggle={() => setFoco((f) => (f + 1) % secoes.length)}
         anim={anim}
       />
+      <ToggleSecoes secoes={secoes} foco={Math.min(foco, secoes.length - 1)} onChange={setFoco} />
 
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">

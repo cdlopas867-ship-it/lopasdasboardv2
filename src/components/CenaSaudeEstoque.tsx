@@ -58,6 +58,7 @@ export default function CenaSaudeEstoque({
         onToggle={() => setFoco((f) => (f + 1) % secoes.length)}
         anim={anim}
       />
+      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
       <div className="mt-2 w-full max-w-xs mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
         <p className="text-[12px] font-bold text-white">
