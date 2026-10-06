@@ -47,10 +47,10 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
   secoes.push({
     titulo: "Ocupação do CD",
     explicacao: "Percentual de posições de armazenagem ocupadas, considerando os dois centros de distribuição.",
-    linhas: [["Ocupação", pct(d.ocupacao.pct)], ["Posições ocupadas", fmtInt(d.ocupacao.ocupados)], ["Posições livres", fmtInt(d.ocupacao.livres)]],
-    resumo: `${pct(d.ocupacao.pct)} das posições estão ocupadas; ${fmtInt(d.ocupacao.livres)} seguem livres.`,
+    linhas: [["Ocupação", pct(d.ocupacao.pct * 100)], ["Posições ocupadas", fmtInt(d.ocupacao.ocupados)], ["Posições livres", fmtInt(d.ocupacao.livres)]],
+    resumo: `${pct(d.ocupacao.pct * 100)} das posições estão ocupadas; ${fmtInt(d.ocupacao.livres)} seguem livres.`,
   });
-  destaques.push(`Ocupação do CD em ${pct(d.ocupacao.pct)}.`);
+  destaques.push(`Ocupação do CD em ${pct(d.ocupacao.pct * 100)}.`);
 
   if (d.semana) {
     secoes.push({
@@ -83,7 +83,9 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
     secoes.push({
       titulo: "Avarias",
       explicacao: "Volumes danificados (soma da quantidade), com custo e distribuição mensal.",
-      linhas: [["Total de volumes", fmtInt(d.avarias.total)], ["Custo", d.avarias.custo], ...d.avarias.meses.map((m) => [m.mes, fmtInt(m.qtd)] as Linha)],
+      linhas: [["Total de volumes", fmtInt(d.avarias.total)], ["Custo", d.avarias.custo],
+        ...(d.avarias.tipos ?? []).map((t) => [`Tipo: ${t.tipo}`, `${fmtInt(t.total)} vol. (${pct(t.pct)} de incidência)`] as Linha),
+        ...d.avarias.meses.map((m) => [m.mes, fmtInt(m.qtd)] as Linha)],
       resumo: `${fmtInt(d.avarias.total)} volumes avariados no período.`,
     });
     destaques.push(`${fmtInt(d.avarias.total)} volumes avariados.`);
@@ -157,6 +159,12 @@ export default function RelatorioLopas({ dados, onFechar }: { dados: VideoResumo
     ? new Date(dados.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
     : null;
 
+  const meses = (dados.mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0).map((m) => m.mes);
+  const periodo = [
+    dados.semana ? `semana ${dados.semana.rotulo}` : null,
+    meses.length ? `meses de ${meses[0]}${meses.length > 1 ? ` a ${meses[meses.length - 1]}` : ""}` : null,
+  ].filter(Boolean).join(" · ");
+
   return createPortal(
     <div onClick={(e) => e.stopPropagation()} className="relatorio-lopas-root fixed inset-0 z-[200] overflow-y-auto bg-neutral-100 text-neutral-900">
       <div className="no-print sticky top-0 z-10 flex items-center justify-end gap-2 border-b bg-white px-4 py-2 shadow-sm">
@@ -174,6 +182,7 @@ export default function RelatorioLopas({ dados, onFechar }: { dados: VideoResumo
           <div>
             <h1 className="font-serif text-2xl font-bold">Relatório de Estoque — CD Lopas</h1>
             <p className="text-xs text-neutral-600">Gerado em {agora}{sync ? ` · dados sincronizados em ${sync}` : ""}</p>
+            {periodo && <p className="text-xs font-semibold text-neutral-800">Período analisado: {periodo}</p>}
             <p className="text-[10px] font-semibold tracking-[0.25em] text-[#73ae37] uppercase">Movidos pela fé</p>
           </div>
         </header>

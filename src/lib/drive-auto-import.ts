@@ -66,6 +66,7 @@ const PLANILHAS_LOCAIS = [
   "public/planilhas/saidascd.xlsx",
   "public/planilhas/estoque.xlsx",
   "public/planilhas/paletes.xlsx",
+  "public/planilhas/estoque-em-linha.xlsx",
 ];
 
 type ArquivoDrive = { id: string; nome: string; modificado?: string | undefined };
