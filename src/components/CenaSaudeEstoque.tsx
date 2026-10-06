@@ -121,6 +121,12 @@ export default function CenaSaudeEstoque({
               <td className="py-1 text-right font-mono text-white">{fmtTonDec(base)}</td>
               <td className="py-1 text-right font-mono text-white">100%</td>
             </tr>
+            <tr className="border-b border-white/10 bg-white/[0.06] font-bold">
+              <td className="py-1" style={{ color: COR_CARREGADO }}>Carregado até agora</td>
+              <td className="py-1 text-center text-white/50">{periodoAcumulado}</td>
+              <td className="py-1 text-right font-mono" style={{ color: COR_CARREGADO }}>{fmtTonDec(totCarregado)}</td>
+              <td className="py-1 text-right font-mono" style={{ color: COR_CARREGADO }}>{base > 0 ? fmtBrMax((totCarregado / base) * 100, 1) : 0}%</td>
+            </tr>
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
