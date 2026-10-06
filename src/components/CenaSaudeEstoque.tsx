@@ -117,7 +117,6 @@ export default function CenaSaudeEstoque({
         </p>
       </div>
 
-      <BannerResumo texto={`${fmtTonDec(totRecebido)} recebidas · ${fmtTonDec(totCarregado)} carregadas · ${fmtBrMax(saudePct, 1)}%`} />
     </div>
   );
 }
