@@ -118,7 +118,6 @@ export default function CenaSaudeEstoque({
       </div>
 
       <BannerResumo texto={`${fmtTonDec(totRecebido)} recebidas · ${fmtTonDec(totCarregado)} carregadas · ${fmtBrMax(saudePct, 1)}%`} />
-      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
     </div>
   );
 }

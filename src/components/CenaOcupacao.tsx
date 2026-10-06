@@ -90,7 +90,6 @@ export default function CenaOcupacao({
       </div>
 
       <BannerResumo texto={`${fmtInt(total)} posições · ${fmtInt(ocupacao.ocupados)} ocupadas · ${fmtInt(ocupacao.livres)} livres`} />
-      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
     </div>
   );
 }

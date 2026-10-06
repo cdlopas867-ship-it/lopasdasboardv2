@@ -96,7 +96,6 @@ export default function CenaRecebimentoTurno({
       </div>
 
       <BannerResumo texto={`${fmtTonDec(totalTon)} recebidas · turno ${turnoPrincipal?.nome?.toLowerCase() ?? "—"} principal`} />
-      <ToggleSecoes secoes={secoes} foco={Math.min(foco, secoes.length - 1)} onChange={setFoco} />
     </div>
   );
 }

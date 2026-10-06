@@ -174,7 +174,6 @@ export default function CenaEstoquePrevisto({
       </div>
 
       <BannerResumo texto={`${fmtInt(resumo.itens)} itens · ${fmtTonDec(resumo.ton)} · ${fmtMoeda(resumo.valor + resumo.previsto)} total`} />
-      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
     </div>
   );
 }

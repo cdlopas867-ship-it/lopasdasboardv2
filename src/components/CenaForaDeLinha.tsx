@@ -148,7 +148,6 @@ export default function CenaForaDeLinha({
       </div>
 
       <BannerResumo texto={`${fmtInt(posicaoTotal.itens)} itens · ${fmtBrMax(posicaoTotal.pesoTon, 1)} t · ${fmtMoeda(posicaoTotal.valorEstoque)}`} />
-      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
     </div>
   );
 }

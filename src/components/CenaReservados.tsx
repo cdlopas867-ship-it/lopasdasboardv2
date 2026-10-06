@@ -110,7 +110,6 @@ export default function CenaReservados({
       </div>
 
       <BannerResumo texto={`${fmtInt(reservadosCom.totalQtd + (semReserva?.totalQtd ?? 0))} un · ${fmtBrMax(reservadosCom.totalTon + (semReserva?.totalTon ?? 0), 1)} t · ${fmtMoeda(reservadosCom.totalValor + (semReserva?.totalValor ?? 0))}`} />
-      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
       {/* Valor previsto da reserva — integrado na mesma cena */}
       {valorFaturado && foco === 0 && (

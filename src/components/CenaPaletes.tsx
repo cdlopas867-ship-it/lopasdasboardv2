@@ -115,7 +115,6 @@ export default function CenaPaletes({
       </div>
 
       <BannerResumo texto={`${fmtInt(itens)} itens em ${fmtInt(total)} paletes`} />
-      <ToggleSecoes secoes={secoes} foco={Math.min(foco, secoes.length - 1)} onChange={setFoco} />
     </div>
   );
 }
