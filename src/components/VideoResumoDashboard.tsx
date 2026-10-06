@@ -125,7 +125,7 @@ type Props = {
 };
 
 const TOTAL_CENAS = 10;
-const DURACOES = [130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 8000, 12000];
+const DURACOES = [8000, 130000, 5000, 6500, 9000, 5500, 8000, 7000, 7000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
