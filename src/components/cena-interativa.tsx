@@ -123,3 +123,42 @@ export function useFocoCena<T extends number>(cena: number, inicial: T = 0 as T)
   useEffect(() => setFoco(inicial), [cena]);
   return [foco, setFoco] as const;
 }
+
+/* Totais destacados — cards coloridos no rodapé de cada cena com donut.
+   Cada card mostra um rótulo, valor principal (serif) e até duas linhas
+   secundárias, com a cor da seção aplicada na borda, fundo e texto. */
+export type TotalCard = {
+  label: string;
+  cor: string;
+  linhas: [string, string, string];
+};
+
+export function TotaisDestacados({
+  cards,
+  delay = "0.6s",
+}: {
+  cards: TotalCard[];
+  delay?: string;
+}) {
+  return (
+    <div
+      className="video-sobe mt-3 grid w-full max-w-sm mx-auto gap-2"
+      style={{ animationDelay: delay, gridTemplateColumns: `repeat(${cards.length}, minmax(0, 1fr))` }}
+    >
+      {cards.map((c, i) => (
+        <div
+          key={i}
+          className="rounded-xl border p-2.5 backdrop-blur-md"
+          style={{ borderColor: `${c.cor}55`, background: `${c.cor}11` }}
+        >
+          <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: c.cor }}>
+            {c.label}
+          </p>
+          <p className="mt-0.5 font-serif text-base text-white">{c.linhas[0]}</p>
+          <p className="text-[10px] font-mono text-white/80">{c.linhas[1]}</p>
+          <p className="text-[9px] text-white/50">{c.linhas[2]}</p>
+        </div>
+      ))}
+    </div>
+  );
+}

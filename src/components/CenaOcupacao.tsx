@@ -2,7 +2,7 @@
 
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoOcupacao } from "./VideoResumoDashboard";
 
 const COR_OCUPADO = "#00FFCC";
@@ -88,6 +88,13 @@ export default function CenaOcupacao({
           * 1.800 kg/posição CD1. * 2.500 kg/posição CD2. * 20 volumes/posição.
         </p>
       </div>
+
+      <TotaisDestacados
+        cards={[
+          { label: "Ocupado", cor: COR_OCUPADO, linhas: [`${fmtInt(ocupacao.ocupados)} end.`, `${fmtBrMax(total > 0 ? (ocupacao.ocupados / total) * 100 : ocupacao.pct * 100, 1)}%`, `de ${fmtInt(total)} posições`] },
+          { label: "Livre", cor: COR_LIVRE, linhas: [`${fmtInt(ocupacao.livres)} pos.`, `${fmtBrMax(total > 0 ? (ocupacao.livres / total) * 100 : (1 - ocupacao.pct) * 100, 1)}%`, `de ${fmtInt(total)} posições`] },
+        ]}
+      />
     </div>
   );
 }

@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtMoeda, fmtBrMax, fmtMoeda2, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoReservados } from "./VideoResumoDashboard";
 
 const COR_RESERVADO = "#00FFCC";
@@ -108,6 +108,15 @@ export default function CenaReservados({
           * Participação no valor do estoque. Clique no gráfico para alternar.
         </p>
       </div>
+
+      <TotaisDestacados
+        cards={[
+          { label: "Reservado", cor: COR_RESERVADO, linhas: [`${fmtInt(reservadosCom.totalQtd)} un`, `${fmtBrMax(reservadosCom.totalTon, 1)} t`, fmtMoeda(reservadosCom.totalValor)] },
+          ...(semReserva
+            ? [{ label: "Sem reserva", cor: COR_SEM, linhas: [`${fmtInt(semReserva.totalQtd)} un`, `${fmtBrMax(semReserva.totalTon, 1)} t`, fmtMoeda(semReserva.totalValor)] as [string, string, string] }]
+            : []),
+        ]}
+      />
 
       {/* Valor previsto da reserva — integrado na mesma cena */}
       {valorFaturado && foco === 0 && (

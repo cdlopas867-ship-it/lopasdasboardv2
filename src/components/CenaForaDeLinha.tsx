@@ -5,7 +5,7 @@
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtMoeda, fmtPct, fmtBrMax } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import {
   POSICAO_EM_LINHA,
   POSICAO_FORA_DE_LINHA,
@@ -147,31 +147,12 @@ export default function CenaForaDeLinha({
         </p>
       </div>
 
-      {/* Totais destacados — resumo visual com as duas seções lado a lado */}
-      <div className="video-sobe mt-3 grid w-full max-w-sm mx-auto grid-cols-2 gap-2" style={{ animationDelay: "0.6s" }}>
-        <div
-          className="rounded-xl border p-2.5 backdrop-blur-md"
-          style={{ borderColor: `${COR_EM_LINHA}55`, background: `${COR_EM_LINHA}11` }}
-        >
-          <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: COR_EM_LINHA }}>
-            Em linha
-          </p>
-          <p className="mt-0.5 font-serif text-base text-white">{fmtInt(posicaoEmLinha.itens)} itens</p>
-          <p className="text-[10px] font-mono text-white/80">{fmtMoeda(posicaoEmLinha.valorEstoque)}</p>
-          <p className="text-[9px] text-white/50">{fmtBrMax(posicaoEmLinha.pesoTon, 1)} t · {fmtPct(pctEmLinha / 100)}</p>
-        </div>
-        <div
-          className="rounded-xl border p-2.5 backdrop-blur-md"
-          style={{ borderColor: `${COR_FORA}55`, background: `${COR_FORA}11` }}
-        >
-          <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: COR_FORA }}>
-            Fora de linha
-          </p>
-          <p className="mt-0.5 font-serif text-base text-white">{fmtInt(posicaoFora.itens)} itens</p>
-          <p className="text-[10px] font-mono text-white/80">{fmtMoeda(posicaoFora.valorEstoque)}</p>
-          <p className="text-[9px] text-white/50">{fmtBrMax(posicaoFora.pesoTon, 1)} t · {fmtPct(pctFora / 100)}</p>
-        </div>
-      </div>
+      <TotaisDestacados
+        cards={[
+          { label: "Em linha", cor: COR_EM_LINHA, linhas: [`${fmtInt(posicaoEmLinha.itens)} itens`, fmtMoeda(posicaoEmLinha.valorEstoque), `${fmtBrMax(posicaoEmLinha.pesoTon, 1)} t · ${fmtPct(pctEmLinha / 100)}`] },
+          { label: "Fora de linha", cor: COR_FORA, linhas: [`${fmtInt(posicaoFora.itens)} itens`, fmtMoeda(posicaoFora.valorEstoque), `${fmtBrMax(posicaoFora.pesoTon, 1)} t · ${fmtPct(pctFora / 100)}`] },
+        ]}
+      />
     </div>
   );
 }

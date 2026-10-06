@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 const COR_RECEBIDO = "#33D953";
@@ -131,6 +131,13 @@ export default function CenaProducaoSemana({
           * Programado: ordens dos próximos 7 dias. Recebido: já recebido no estoque. Previsto: o que falta descer. Fonte: sistema Focco.
         </p>
       </div>
+
+      <TotaisDestacados
+        cards={[
+          { label: "Recebido", cor: COR_RECEBIDO, linhas: [`${fmtInt(totalEntregue)} un`, `${fmtBrMax(totalTonPrev, 1)} t`, `${fmtBrMax(pctEntregue, 1)}%`] },
+          { label: "Previsto", cor: COR_PREVISTO, linhas: [`${fmtInt(totalPendente)} un`, `${fmtBrMax(totalTonPend, 1)} t`, `${fmtBrMax(pctPendente, 1)}%`] },
+        ]}
+      />
     </div>
   );
 }

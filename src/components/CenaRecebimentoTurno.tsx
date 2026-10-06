@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoTurno } from "./VideoResumoDashboard";
 
 const CORES_TURNO = ["#00FFCC", "#FFA500", "#A78BFA"];
@@ -94,6 +94,18 @@ export default function CenaRecebimentoTurno({
           * Turno dia: 06:00–17:59. * Turno noite: 18:00–02:30. Fonte: sistema Focco.
         </p>
       </div>
+
+      <TotaisDestacados
+        cards={turnos.map((t, i) => ({
+          label: `Turno ${t.nome}`,
+          cor: CORES_TURNO[i % CORES_TURNO.length]!,
+          linhas: [
+            t.ton ? `${fmtTonDec(t.ton)}` : "—",
+            `${fmtBrMax(t.pct, 1)}%`,
+            t.faixa ?? "—",
+          ],
+        }))}
+      />
     </div>
   );
 }

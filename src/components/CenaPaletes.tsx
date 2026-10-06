@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoPaletas } from "./VideoResumoDashboard";
 
 const CORES_TAMANHO: Record<string, string> = {
@@ -113,6 +113,18 @@ export default function CenaPaletes({
           * Paletes distribuídos por tamanho no CD Lopas. Clique no gráfico para alternar.
         </p>
       </div>
+
+      <TotaisDestacados
+        cards={tamanhos.slice(0, 4).map((t) => {
+          const cor = CORES_TAMANHO[t.tamanho] ?? "#6b7280";
+          const pct = total > 0 ? (t.paletes / total) * 100 : 0;
+          return {
+            label: `Tam. ${t.tamanho}`,
+            cor,
+            linhas: [`${fmtInt(t.paletes)} pal.`, `${fmtInt(t.itens)} itens`, `${fmtBrMax(pct, 0)}%`],
+          };
+        })}
+      />
     </div>
   );
 }
