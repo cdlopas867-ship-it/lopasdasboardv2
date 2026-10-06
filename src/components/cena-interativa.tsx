@@ -98,15 +98,17 @@ export function ToggleSecoes({
   onChange: (i: number) => void;
 }) {
   return (
-    <div className="mt-2 flex items-center gap-2">
+    <div className="mt-2 flex items-center justify-center gap-2">
       {secoes.map((s, i) => (
         <button
           key={s.id}
           type="button"
           onClick={() => onChange(i)}
           className={cn(
-            "rounded-full px-3 py-1 text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
-            i === foco ? "text-brand-dark" : "text-white/50 border border-white/15 hover:text-white/80",
+            "rounded-full px-4 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-all duration-300",
+            i === foco
+              ? "text-brand-dark"
+              : "text-white/80 border border-white/30 hover:text-white hover:border-white/50",
           )}
           style={i === foco ? { background: s.cor } : undefined}
         >
@@ -122,4 +124,27 @@ export function useFocoCena<T extends number>(cena: number, inicial: T = 0 as T)
   const [foco, setFoco] = useState<T>(inicial);
   useEffect(() => setFoco(inicial), [cena]);
   return [foco, setFoco] as const;
+}
+
+/* Banner resumo — pílula centralizada com texto de resumo da cena. */
+export function BannerResumo({
+  texto,
+  delay = "0.6s",
+}: {
+  texto: string;
+  delay?: string;
+}) {
+  return (
+    <div
+      className="video-sobe mt-3 flex justify-center"
+      style={{ animationDelay: delay }}
+    >
+      <p
+        className="rounded-full px-5 py-2 text-center text-xs font-semibold text-white"
+        style={{ background: "rgba(138, 146, 121, 0.45)" }}
+      >
+        {texto}
+      </p>
+    </div>
+  );
 }

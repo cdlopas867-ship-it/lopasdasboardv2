@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtMoeda, fmtBrMax, fmtMoeda2, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoReservados } from "./VideoResumoDashboard";
 
 const COR_RESERVADO = "#00FFCC";
@@ -37,9 +37,9 @@ export default function CenaReservados({
     ...(semReserva ? [{ id: "sem", label: "sem reserva", cor: COR_SEM, pct: pctSem }] : []),
   ];
 
-  const linhasDe = (grupo: number, nome: string, d: NonNullable<VideoReservados>) => [
+  const linhasDe = (grupo: number, nome: string, d: NonNullable<VideoReservados>): { grupo: number; rotulo: string; valor: string; destaque?: boolean }[] => [
     { grupo, rotulo: `${nome} · quantidade`, valor: fmtInt(d.totalQtd) },
-    { grupo, rotulo: `${nome} · toneladas`, valor: `${fmtBrMax(d.totalTon, 1)} t` },
+    { grupo, rotulo: `${nome} · toneladas`, valor: `${fmtBrMax(d.totalTon, 1)} t`, destaque: true },
     { grupo, rotulo: `${nome} · valor`, valor: fmtMoeda(d.totalValor) },
   ];
   const linhas = [
@@ -63,6 +63,10 @@ export default function CenaReservados({
         anim={anim}
       />
       <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
+
+      <BannerResumo texto={foco === 0
+        ? `${fmtInt(reservadosCom.totalQtd)} un · ${fmtBrMax(reservadosCom.totalTon, 1)} t`
+        : `${fmtInt(semReserva?.totalQtd ?? 0)} un · ${fmtBrMax(semReserva?.totalTon ?? 0, 1)} t`} delay="0.4s" />
 
       <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
@@ -88,7 +92,7 @@ export default function CenaReservados({
                   )}
                 >
                   <td className="py-0.5" style={ativa ? { color: cor } : undefined}>{l.rotulo}</td>
-                  <td className="py-0.5 text-right font-mono font-semibold" style={ativa ? { color: cor } : undefined}>{l.valor}</td>
+                  <td className={cn("py-0.5 text-right font-mono", l.destaque ? "font-extrabold text-base" : "font-semibold")} style={ativa ? { color: cor } : undefined}>{l.valor}</td>
                 </tr>
               );
             })}
@@ -97,9 +101,7 @@ export default function CenaReservados({
               <td className="py-1 text-right font-mono text-white">
                 {fmtInt(reservadosCom.totalQtd + (semReserva?.totalQtd ?? 0))} un
                 {" · "}
-                {fmtBrMax(reservadosCom.totalTon + (semReserva?.totalTon ?? 0), 1)} t
-                {" · "}
-                {fmtMoeda(reservadosCom.totalValor + (semReserva?.totalValor ?? 0))}
+                <span className="text-base font-extrabold">{fmtBrMax(reservadosCom.totalTon + (semReserva?.totalTon ?? 0), 1)} t</span>
               </td>
             </tr>
           </tbody>

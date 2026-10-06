@@ -5,7 +5,7 @@
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtMoeda, fmtPct, fmtBrMax } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import {
   POSICAO_EM_LINHA,
   POSICAO_FORA_DE_LINHA,
@@ -29,6 +29,7 @@ type LinhaTabela = {
   grupo: number;
   rotulo: string;
   valor: string;
+  destaque?: boolean;
 };
 
 export default function CenaForaDeLinha({
@@ -46,11 +47,11 @@ export default function CenaForaDeLinha({
   const posicaoFora = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const posicaoTotal = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
 
-  const pctEmLinha = posicaoTotal.valorEstoque > 0
-    ? (posicaoEmLinha.valorEstoque / posicaoTotal.valorEstoque) * 100
+  const pctEmLinha = posicaoTotal.pesoTon > 0
+    ? (posicaoEmLinha.pesoTon / posicaoTotal.pesoTon) * 100
     : 0;
-  const pctFora = posicaoTotal.valorEstoque > 0
-    ? (posicaoFora.valorEstoque / posicaoTotal.valorEstoque) * 100
+  const pctFora = posicaoTotal.pesoTon > 0
+    ? (posicaoFora.pesoTon / posicaoTotal.pesoTon) * 100
     : 0;
 
   const [foco, setFoco] = useFocoCena<Foco>(cena, 0);
@@ -66,14 +67,14 @@ export default function CenaForaDeLinha({
     { grupo: 0, rotulo: "Em linha · reservados qtd", valor: fmtInt(posicaoEmLinha.reservas) },
     { grupo: 0, rotulo: "Em linha · reservados ton", valor: `${fmtBrMax(posicaoEmLinha.pesoReservadoTon, 1)} t` },
     { grupo: 0, rotulo: "Em linha · reservados R$", valor: fmtMoeda(posicaoEmLinha.valorReservado) },
-    { grupo: 0, rotulo: "Em linha · tonelagem", valor: `${fmtBrMax(posicaoEmLinha.pesoTon, 1)} t` },
+    { grupo: 0, rotulo: "Em linha · tonelagem", valor: `${fmtBrMax(posicaoEmLinha.pesoTon, 1)} t`, destaque: true },
     { grupo: 0, rotulo: "Em linha · valor", valor: fmtMoeda(posicaoEmLinha.valorEstoque) },
     { grupo: 1, rotulo: "Fora de linha · itens", valor: fmtInt(posicaoFora.itens) },
     { grupo: 1, rotulo: "Fora de linha · saldo", valor: fmtInt(posicaoFora.saldoFocco) },
     { grupo: 1, rotulo: "Fora de linha · reservados qtd", valor: fmtInt(posicaoFora.reservas) },
-    { grupo: 1, rotulo: "Fora de linha · reservados ton", valor: `${fmtBrMax(posicaoFora.pesoReservadoTon, 1)} t` },
+    { grupo: 1, rotulo: "Fora de linha · reservados ton", valor: `${fmtBrMax(posicaoFora.pesoReservadoTon, 1)} t`, destaque: true },
     { grupo: 1, rotulo: "Fora de linha · reservados R$", valor: fmtMoeda(posicaoFora.valorReservado) },
-    { grupo: 1, rotulo: "Fora de linha · tonelagem", valor: `${fmtBrMax(posicaoFora.pesoTon, 1)} t` },
+    { grupo: 1, rotulo: "Fora de linha · tonelagem", valor: `${fmtBrMax(posicaoFora.pesoTon, 1)} t`, destaque: true },
     { grupo: 1, rotulo: "Fora de linha · valor", valor: fmtMoeda(posicaoFora.valorEstoque) },
   ];
 
@@ -96,6 +97,10 @@ export default function CenaForaDeLinha({
         anim={anim}
       />
       <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
+
+      <BannerResumo texto={foco === 0
+        ? `${fmtInt(posicaoEmLinha.itens)} itens · ${fmtBrMax(posicaoEmLinha.pesoTon, 1)} t`
+        : `${fmtInt(posicaoFora.itens)} itens · ${fmtBrMax(posicaoFora.pesoTon, 1)} t`} delay="0.4s" />
 
       <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
@@ -124,7 +129,7 @@ export default function CenaForaDeLinha({
                   <td className="py-0.5" style={ativa ? { color: cor } : undefined}>
                     {linha.rotulo}
                   </td>
-                  <td className="py-0.5 text-right font-mono font-semibold" style={ativa ? { color: cor } : undefined}>
+                  <td className={cn("py-0.5 text-right font-mono", linha.destaque ? "font-extrabold text-base" : "font-semibold")} style={ativa ? { color: cor } : undefined}>
                     {linha.valor}
                   </td>
                 </tr>
@@ -135,17 +140,16 @@ export default function CenaForaDeLinha({
               <td className="py-1 text-right font-mono text-white">
                 {fmtInt(posicaoTotal.itens)} itens
                 {" · "}
-                {fmtBrMax(posicaoTotal.pesoTon, 1)} t
-                {" · "}
-                {fmtMoeda(posicaoTotal.valorEstoque)}
+                <span className="text-base font-extrabold">{fmtBrMax(posicaoTotal.pesoTon, 1)} t</span>
               </td>
             </tr>
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * % em linha = valor em linha ÷ valor total × 100. {fmtPct(pctEmLinha / 100)} em linha · {fmtPct(pctFora / 100)} fora de linha. Clique para alternar.
+          * % em linha = tonelagem em linha ÷ tonelagem total × 100. {fmtPct(pctEmLinha / 100)} em linha · {fmtPct(pctFora / 100)} fora de linha. Clique para alternar.
         </p>
       </div>
+
     </div>
   );
 }

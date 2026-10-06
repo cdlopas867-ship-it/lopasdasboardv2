@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 const COR_RECEBIDO = "#33D953";
@@ -65,18 +65,20 @@ export default function CenaProducaoSemana({
       <div className="mt-2 w-full max-w-xs mx-auto space-y-1.5">
         <div className="rounded-lg bg-white/10 px-4 py-2 text-center">
           <p className="text-[10px] font-bold tracking-[0.2em] text-white/60 uppercase">
-            Recebido da Semana
+            {foco === 0 ? "Recebido da Semana" : "Previsto da Semana"}
           </p>
           <p className="text-[20px] font-extrabold text-white leading-tight">
-            {fmtBrMax(pctEntregue, 1)}%
+            {foco === 0 ? `${fmtBrMax(pctEntregue, 1)}%` : `${fmtBrMax(pctPendente, 1)}%`}
           </p>
           <p className="text-[10px] text-white/55">
-            {fmtInt(totalEntregue)} de {fmtInt(totalPrevisto)} un · {fmtBrMax(totalTonPrev, 1)} t previstas
+            {foco === 0
+              ? `${fmtInt(totalEntregue)} de ${fmtInt(totalPrevisto)} un · ${fmtBrMax(totalTonPrev, 1)} t previstas`
+              : `${fmtInt(totalPendente)} de ${fmtInt(totalPrevisto)} un · ${fmtBrMax(totalTonPend, 1)} t a receber`}
           </p>
         </div>
         <div className="rounded-lg bg-white/5 px-4 py-1.5 text-center">
           <p className="text-[12px] font-bold text-white">
-            {fmtInt(totalOrdens)} ordens · {fmtBrMax(totalTonPend, 1)} t a receber
+            {fmtInt(totalOrdens)} ordens · {foco === 0 ? `${fmtBrMax(totalTonPrev, 1)} t previstas` : `${fmtBrMax(totalTonPend, 1)} t a receber`}
           </p>
         </div>
       </div>
@@ -131,6 +133,7 @@ export default function CenaProducaoSemana({
           * Programado: ordens dos próximos 7 dias. Recebido: já recebido no estoque. Previsto: o que falta descer. Fonte: sistema Focco.
         </p>
       </div>
+
     </div>
   );
 }

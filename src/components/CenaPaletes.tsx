@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoPaletas } from "./VideoResumoDashboard";
 
 const CORES_TAMANHO: Record<string, string> = {
@@ -57,7 +57,7 @@ export default function CenaPaletes({
 
       <div className="mt-2 w-full max-w-xs mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
         <p className="text-[12px] font-bold text-white">
-          {fmtInt(itens)} itens em {fmtInt(total)} paletes
+          {(() => { const t = tamanhos[Math.min(foco, tamanhos.length - 1)]; return t ? `${fmtInt(t.itens)} itens em ${fmtInt(t.paletes)} paletes` : `${fmtInt(itens)} itens em ${fmtInt(total)} paletes`; })()}
         </p>
       </div>
 
@@ -113,6 +113,7 @@ export default function CenaPaletes({
           * Paletes distribuídos por tamanho no CD Lopas. Clique no gráfico para alternar.
         </p>
       </div>
+
     </div>
   );
 }

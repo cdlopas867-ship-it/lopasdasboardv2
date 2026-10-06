@@ -522,7 +522,7 @@ function CardFocoForaDeLinha({
 }) {
   const pos = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const total = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
-  const pctValor = pos.valorEstoque / total.valorEstoque;
+  const pctPeso = total.pesoTon > 0 ? pos.pesoTon / total.pesoTon : 0;
   return (
     <button
       type="button"
@@ -530,15 +530,14 @@ function CardFocoForaDeLinha({
       className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
     >
       <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
-        {fmtPct(pctValor)}
+        {fmtPct(pctPeso)}
       </p>
       <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-brand-amber/80 uppercase">
         Fora de linha
       </p>
       <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
-        {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtMoeda(pos.valorEstoque)} em
-        custo ({fmtPct(pctValor)} do valor total) e {fmtPeso(pos.pesoTon * 1000)} de massa
-        ({fmtPct(pos.pesoTon / total.pesoTon)} do peso total).
+        {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtPeso(pos.pesoTon * 1000)} de
+        massa ({fmtPct(pctPeso)} do peso total) e {fmtMoeda(pos.valorEstoque)} em custo.
       </p>
       <dl className="mt-2.5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
         <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">

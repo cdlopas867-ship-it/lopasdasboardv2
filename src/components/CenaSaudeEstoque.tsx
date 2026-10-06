@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoMes } from "./VideoResumoDashboard";
 
 const COR_CARREGADO = "#00FFCC";
@@ -33,14 +33,15 @@ export default function CenaSaudeEstoque({
   const periodo = `01/01 – ${hoje.slice(0, 5)}`;
 
   const secoes: SecaoDonut[] = [
-    { id: "carregado", label: "carregado", cor: COR_CARREGADO, pct: saudePct },
-    { id: "recebido", label: "recebido", cor: COR_SALDO, pct: saldoPct },
+    { id: "carregado", label: "total", cor: COR_CARREGADO, pct: saudePct },
+    { id: "recebido", label: "diferença", cor: COR_SALDO, pct: saldoPct },
   ];
 
   /* Tabela: Recebido (total) e Carregado (foco 0). */
   const linhas = [
     { rotulo: "Recebido", periodo, ton: totRecebido, pct: 100, idx: -1 },
     { rotulo: "Carregado", periodo, ton: totCarregado, pct: saudePct, idx: 0 },
+    { rotulo: "Diferença", periodo, ton: saldo, pct: saldoPct, idx: 1 },
   ];
 
   return (
@@ -63,8 +64,8 @@ export default function CenaSaudeEstoque({
       <div className="mt-2 w-full max-w-xs mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
         <p className="text-[12px] font-bold text-white">
           {foco === 0
-            ? `${fmtTonDec(totCarregado)} carregadas`
-            : `${fmtTonDec(saldo)} recebido`}
+            ? `${fmtBrMax(saudePct, 1)}% total · ${fmtTonDec(totCarregado)} t`
+            : `${fmtBrMax(saldoPct, 1)}% de diferença · ${fmtTonDec(saldo)} t`}
         </p>
       </div>
 
@@ -116,6 +117,7 @@ export default function CenaSaudeEstoque({
           * Eficiência = carregado ÷ recebido × 100. Fonte: sistema Focco. Período acumulado de 2026.
         </p>
       </div>
+
     </div>
   );
 }

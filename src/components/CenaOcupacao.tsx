@@ -1,8 +1,8 @@
 /* Cena Ocupação do CD — donut interativo com toggle Ocupado / Livre. */
 
-import { fmtBrMax, fmtInt } from "@/lib/format";
+import { fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoOcupacao } from "./VideoResumoDashboard";
 
 const COR_OCUPADO = "#00FFCC";
@@ -88,6 +88,7 @@ export default function CenaOcupacao({
           * 1.800 kg/posição CD1. * 2.500 kg/posição CD2. * 20 volumes/posição.
         </p>
       </div>
+
     </div>
   );
 }
