@@ -62,6 +62,7 @@ const PLANILHAS_LOCAIS = [
   "public/planilhas/estoque.xlsx",
   "public/planilhas/paletes.xlsx",
   "public/planilhas/estoque-em-linha.xlsx",
+  "public/planilhas/ocupacao-cd.xlsx",
 ];
 
 type ArquivoDrive = { id: string; nome: string; modificado?: string | undefined };
@@ -496,30 +497,70 @@ function extrairUnidadesResumo(wb: XLSX.WorkBook): UnidadeResumo[] | null {
    A planilha traz uma seção "OCUPAÇÃO DO CENTRO DE DISTRIBUIÇÃO" com as
    linhas Livre/Ocupado/TOTAL (quantidade de posições e fração ocupada).
    Retorna null se a seção não existir. */
-type OcupacaoData = { pct: number; ocupados: number; livres: number; total: number };
+type OcupacaoData = { pct: number; ocupados: number; livres: number; bloqueados: number; total: number };
 
+/* Extrai a ocupação do CD de uma planilha. Suporta dois formatos:
+   1. Aba "Resumo" com seção "Situação" (Livre/Ocupado/TOTAL) — formato antigo.
+   2. Aba "Resultado" do relatório WF0126 (Tipo LA, Situação, Quantidade) —
+      formato novo com Livre/Ocupado/Bloqueado. */
 function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
-  const ws = wb.Sheets["Resumo"];
-  if (!ws) return null;
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
-  /* Cabeçalho "Situação" é exclusivo da seção de ocupação do CD. */
-  const hi = rows.findIndex((r) => /SITUAÇ/i.test(String(r?.[0] ?? "").trim()));
-  if (hi < 0) return null;
-  const num = (r: unknown[], i: number) =>
-    i >= 0 ? (typeof r[i] === "number" ? (r[i] as number) : Number(r[i] ?? 0) || 0) : 0;
-  let ocupados = 0, livres = 0, total = 0, pct = 0;
-  for (let i = hi + 1; i < Math.min(hi + 12, rows.length); i++) {
-    const r = rows[i] ?? [];
-    const label = String(r[0] ?? "").toUpperCase().trim();
-    if (!label) break;
-    if (label === "TOTAL" || label === "TOTAL GERAL") { total = num(r, 1); break; }
-    if (label.includes("OCUPAD")) { ocupados = num(r, 1); pct = num(r, 2); }
-    else if (label.includes("LIVRE")) { livres = num(r, 1); }
+  /* Formato 1: aba "Resumo" com seção "Situação" */
+  const wsResumo = wb.Sheets["Resumo"];
+  if (wsResumo) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(wsResumo, { header: 1, defval: null });
+    const hi = rows.findIndex((r) => /SITUAÇ/i.test(String(r?.[0] ?? "").trim()));
+    if (hi >= 0) {
+      const num = (r: unknown[], i: number) =>
+        i >= 0 ? (typeof r[i] === "number" ? (r[i] as number) : Number(r[i] ?? 0) || 0) : 0;
+      let ocupados = 0, livres = 0, bloqueados = 0, total = 0, pct = 0;
+      for (let i = hi + 1; i < Math.min(hi + 12, rows.length); i++) {
+        const r = rows[i] ?? [];
+        const label = String(r[0] ?? "").toUpperCase().trim();
+        if (!label) break;
+        if (label === "TOTAL" || label === "TOTAL GERAL") { total = num(r, 1); break; }
+        if (label.includes("OCUPAD")) { ocupados = num(r, 1); pct = num(r, 2); }
+        else if (label.includes("LIVRE")) { livres = num(r, 1); }
+        else if (label.includes("BLOQUE")) { bloqueados = num(r, 1); }
+      }
+      if (total <= 0) total = ocupados + livres + bloqueados;
+      if (total > 0) {
+        if (!pct || pct > 1) pct = ocupados / total;
+        return { pct, ocupados, livres, bloqueados, total };
+      }
+    }
   }
-  if (total <= 0) total = ocupados + livres;
-  if (total <= 0) return null;
-  if (!pct || pct > 1) pct = ocupados / total;
-  return { pct, ocupados, livres, total };
+
+  /* Formato 2: aba "Resultado" do WF0126 (Tipo LA, Situação, Quantidade) */
+  const wsResultado = wb.Sheets["Resultado"];
+  if (wsResultado) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(wsResultado, { header: 1, defval: null });
+    const hi = rows.findIndex((r) =>
+      r?.some((c) => /SITUAÇ/i.test(String(c ?? "").trim())),
+    );
+    if (hi >= 0) {
+      const headers = (rows[hi] ?? []).map((c) => String(c ?? "").toUpperCase().trim());
+      const colSituacao = headers.findIndex((h) => /SITUAÇ/i.test(h));
+      const colQtd = headers.findIndex((h) => /QUANTIDADE/i.test(h));
+      if (colSituacao >= 0 && colQtd >= 0) {
+        let ocupados = 0, livres = 0, bloqueados = 0;
+        for (let i = hi + 1; i < rows.length; i++) {
+          const r = rows[i] ?? [];
+          const situacao = String(r[colSituacao] ?? "").toUpperCase().trim();
+          if (!situacao) continue;
+          const qtd = Number(r[colQtd] ?? 0) || 0;
+          if (situacao.includes("OCUPAD")) ocupados += qtd;
+          else if (situacao.includes("LIVRE")) livres += qtd;
+          else if (situacao.includes("BLOQUE")) bloqueados += qtd;
+        }
+        const total = ocupados + livres + bloqueados;
+        if (total > 0) {
+          return { pct: ocupados / total, ocupados, livres, bloqueados, total };
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 /* Constrói o resumo (tons, valor, saldo, itens, previsto) a partir dos
@@ -591,6 +632,7 @@ function recomputeKpis(
       const subs: Record<string, string> = {
         "Ocupados": fmtInt(ocupacaoData.ocupados),
         "Livres": fmtInt(ocupacaoData.livres),
+        "Bloqueados": fmtInt(ocupacaoData.bloqueados),
         "Total de endereços": fmtInt(ocupacaoData.total),
         "POSIÇÕES": `${fmtInt(ocupacaoData.total)} qtd`,
       };
@@ -894,6 +936,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 
       const saidasCD = lerSaidasCD(wb);
       if (saidasCD && saidasCD.meses.length > 0 && !melhorSaidasCD) melhorSaidasCD = saidasCD;
+
+      /* Extrai ocupação do CD do relatório WF0126 local */
+      const ocupacao = extrairOcupacao(wb);
+      if (ocupacao) melhorOcupacao = ocupacao;
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }

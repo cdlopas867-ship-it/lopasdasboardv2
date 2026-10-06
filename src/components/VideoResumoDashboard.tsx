@@ -11,7 +11,7 @@ import RelatorioLopas from "./RelatorioLopas";
 
 export type VideoKpi = { id?: string; rotulo: string; valor: string; detalhe?: string; extra?: [string, string][] };
 export type VideoUnidade = { nome: string; share: number; valor: string };
-export type VideoOcupacao = { pct: number; ocupados: number; livres: number; detalhes?: { atributo: string; unidade: string; cd1: number; cd2: number; total: number }[] };
+export type VideoOcupacao = { pct: number; ocupados: number; livres: number; bloqueados?: number; detalhes?: { atributo: string; unidade: string; cd1: number; cd2: number; total: number }[] };
 export type VideoDia = { dia: string; data: string; ton: number; meta: number };
 export type VideoTurno = { nome: string; faixa?: string; ton?: number; pct: number };
 export type VideoMes = { mes: string; recebido: number; carregado: number };

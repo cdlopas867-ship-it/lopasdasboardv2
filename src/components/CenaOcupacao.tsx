@@ -7,6 +7,7 @@ import type { VideoOcupacao } from "./VideoResumoDashboard";
 
 const COR_OCUPADO = "#00FFCC";
 const COR_LIVRE = "#FFA500";
+const COR_BLOQUEADO = "#FF4444";
 
 export default function CenaOcupacao({
   anim,
@@ -21,9 +22,12 @@ export default function CenaOcupacao({
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
 
+  const bloqueados = ocupacao.bloqueados ?? 0;
+  const total = ocupacao.ocupados + ocupacao.livres + bloqueados;
   const secoes: SecaoDonut[] = [
-    { id: "ocupado", label: "ocupado", cor: COR_OCUPADO, pct: ocupacao.pct * 100 },
-    { id: "livre", label: "livre", cor: COR_LIVRE, pct: (1 - ocupacao.pct) * 100 },
+    { id: "ocupado", label: "ocupado", cor: COR_OCUPADO, pct: total > 0 ? (ocupacao.ocupados / total) * 100 : ocupacao.pct * 100 },
+    { id: "livre", label: "livre", cor: COR_LIVRE, pct: total > 0 ? (ocupacao.livres / total) * 100 : (1 - ocupacao.pct) * 100 },
+    ...(bloqueados > 0 ? [{ id: "bloqueado", label: "bloqueado", cor: COR_BLOQUEADO, pct: total > 0 ? (bloqueados / total) * 100 : 0 }] : []),
   ];
 
   return (
@@ -32,7 +36,7 @@ export default function CenaOcupacao({
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Ocupação do CD
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Taxa de ocupação das posições de armazenagem. Cálculo: posições ocupadas ÷ total de posições (5.970). Capacidades: CD1 = 1.800 kg/posição, CD2 = 2.500 kg/posição, 20 volumes/posição. Área total: 18.300 m². Fonte: inventário físico do CD. Atualizado em 28/09/2026." />
+        <InfoTooltip onOpen={onPausar} texto="Taxa de ocupação das posições de armazenagem. Cálculo: posições ocupadas ÷ total de posições (livres + ocupadas + bloqueadas). Fonte: relatório WF0126 — Ocupação do Centro de Distribuição." />
       </div>
 
       <DonutInterativo
@@ -47,7 +51,9 @@ export default function CenaOcupacao({
       <p className="mt-1.5 text-center text-[11px] text-white/70">
         {foco === 0
           ? `${fmtInt(ocupacao.ocupados)} endereços ocupados`
-          : `${fmtInt(ocupacao.livres)} posições livres`}
+          : foco === 1
+            ? `${fmtInt(ocupacao.livres)} posições livres`
+            : `${fmtInt(bloqueados)} posições bloqueadas`}
       </p>
 
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
