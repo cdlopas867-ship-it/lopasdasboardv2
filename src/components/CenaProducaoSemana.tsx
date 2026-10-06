@@ -62,9 +62,11 @@ export default function CenaProducaoSemana({
       />
       <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
-      <p className="mt-1.5 text-center text-[11px] text-white/70">
-        {fmtInt(totalOrdens)} ordens · {fmtBrMax(totalTonPrev, 1)} t previstas
-      </p>
+      <div className="mt-2 w-full max-w-xs mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
+        <p className="text-[12px] font-bold text-white">
+          {fmtInt(totalOrdens)} ordens · {fmtBrMax(totalTonPrev, 1)} t previstas
+        </p>
+      </div>
 
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">

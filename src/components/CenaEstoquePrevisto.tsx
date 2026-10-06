@@ -89,11 +89,13 @@ export default function CenaEstoquePrevisto({
       <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
       {/* Resumo rápido da seção ativa */}
-      <p className="mt-1.5 text-center text-[11px] text-white/70">
-        {foco === 0
-          ? `${fmtMoeda(resumo.valor)} em estoque`
-          : `${fmtMoeda(resumo.previsto)} valor previsto`}
-      </p>
+      <div className="mt-2 w-full max-w-sm mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
+        <p className="text-[12px] font-bold text-white">
+          {foco === 0
+            ? `${fmtMoeda(resumo.valor)} em estoque`
+            : `${fmtMoeda(resumo.previsto)} valor previsto`}
+        </p>
+      </div>
 
       {/* Tabela de detalhes */}
       <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>

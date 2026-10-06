@@ -55,9 +55,11 @@ export default function CenaPaletes({
       />
       <ToggleSecoes secoes={secoes} foco={Math.min(foco, secoes.length - 1)} onChange={setFoco} />
 
-      <p className="mt-1.5 text-center text-[11px] text-white/70">
-        {fmtInt(itens)} itens em {fmtInt(total)} paletes
-      </p>
+      <div className="mt-2 w-full max-w-xs mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
+        <p className="text-[12px] font-bold text-white">
+          {fmtInt(itens)} itens em {fmtInt(total)} paletes
+        </p>
+      </div>
 
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
