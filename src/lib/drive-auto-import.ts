@@ -742,6 +742,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorPendentes: PendenteProducao[] | null = null;
   let melhorRecebimento: ReturnType<typeof calcularRecebimento> | null = null;
   let melhorItens: ItemEstoque[] | null = null;
+  let melhorItensMod: Date | undefined;
   let abcRecebimento: ReturnType<typeof curvaAbcRecebimento> | null = null;
   let melhorUnidadesResumo: UnidadeResumo[] | null = null;
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
@@ -796,7 +797,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 
       /* Extrai a base de itens de estoque (Top Produtos, Curva ABC, fichas) */
       const itensEstoque = lerItensEstoque(wb);
-      if (itensEstoque.length > (melhorItens?.length ?? 0)) melhorItens = itensEstoque;
+      if (itensEstoque.length > (melhorItens?.length ?? 0)) {
+        melhorItens = itensEstoque;
+        melhorItensMod = parseModificado(arq.modificado ?? "");
+      }
 
       /* Curva ABC do recebimento */
       const abcReceb = curvaAbcRecebimento(wb);
@@ -985,6 +989,19 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
          "Toneladas Mensal" enviada pelo usuário. */
       carregado: carregadoDriveMap?.get(m.mes) ?? carregadoPorMes.get(m.mes) ?? CARREGADO_SEM_DRIVE[m.mes] ?? 0,
     }));
+  }
+
+  /* Quando o arquivo de itens (modelo sem aba Resumo) é mais recente que
+     o arquivo que forneceu a aba Resumo, recalcula o resumo a partir dos
+     itens — o novo formato deve prevalecer sobre a planilha antiga. */
+  if (melhorResumo && melhorItens && melhorItens.length > 0 && melhorItensMod &&
+      (!melhorResumoMod || melhorItensMod > melhorResumoMod)) {
+    const r = resumoDeItens(melhorItens);
+    if (r) {
+      melhorResumo = r.resumo;
+      melhorUnidadesResumo = r.unidades;
+      console.info(`[auto-import] resumo recalculado a partir de ${melhorItens.length} itens (planilha mais recente)`);
+    }
   }
 
   /* Fallback: quando a planilha não tem aba "Resumo" (modelo "ESTOQUE 001
