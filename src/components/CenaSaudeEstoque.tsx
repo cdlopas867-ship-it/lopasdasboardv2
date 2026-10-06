@@ -1,4 +1,4 @@
-/* Cena Saúde do Estoque — donut interativo com toggle Carregado / Saldo.
+/* Cena Saúde do Estoque — donut interativo com toggle Carregado / Recebido.
    Mesmo padrão da CenaRecebimentoTurno: donut + toggle + tabela de legenda. */
 
 import { cn } from "@/lib/utils";
@@ -34,14 +34,14 @@ export default function CenaSaudeEstoque({
 
   const secoes: SecaoDonut[] = [
     { id: "carregado", label: "carregado", cor: COR_CARREGADO, pct: saudePct },
-    { id: "saldo", label: "saldo", cor: COR_SALDO, pct: saldoPct },
+    { id: "recebido", label: "recebido", cor: COR_SALDO, pct: saldoPct },
   ];
 
   /* Tabela: Recebido (total), Carregado (foco 0), Saldo (foco 1) */
   const linhas = [
     { rotulo: "Recebido", periodo, ton: totRecebido, pct: 100, idx: -1 },
     { rotulo: "Carregado", periodo, ton: totCarregado, pct: saudePct, idx: 0 },
-    { rotulo: "Saldo", periodo: "—", ton: saldo, pct: saldoPct, idx: 1 },
+    { rotulo: "Recebido", periodo: "—", ton: saldo, pct: saldoPct, idx: 1 },
   ];
 
   return (
@@ -65,7 +65,7 @@ export default function CenaSaudeEstoque({
         <p className="text-[12px] font-bold text-white">
           {foco === 0
             ? `${fmtTonDec(totCarregado)} carregadas`
-            : `${fmtTonDec(saldo)} em saldo`}
+            : `${fmtTonDec(saldo)} recebido`}
         </p>
       </div>
 
@@ -88,7 +88,7 @@ export default function CenaSaudeEstoque({
               const cor = l.idx >= 0 ? secoes[l.idx]?.cor : undefined;
               return (
                 <tr
-                  key={l.rotulo}
+                  key={`${l.rotulo}-${l.idx}`}
                   className={cn(
                     "border-b border-white/10 last:border-0 transition-all duration-300",
                     highlighted ? "bg-white/[0.04]" : l.idx >= 0 ? "opacity-35" : "",
