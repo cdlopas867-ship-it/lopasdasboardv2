@@ -173,7 +173,6 @@ export default function CenaEstoquePrevisto({
         </p>
       </div>
 
-      <BannerResumo texto={`${fmtInt(resumo.itens)} itens · ${fmtTonDec(resumo.ton)} · ${fmtMoeda(resumo.valor + resumo.previsto)} total`} />
     </div>
   );
 }
