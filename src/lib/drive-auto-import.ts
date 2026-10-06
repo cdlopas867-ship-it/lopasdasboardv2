@@ -19,7 +19,7 @@ import { calcularAvariasResumo } from "./avarias-resumo";
 import { buscarCarregamentoMensal, lerCarregadoMensal, lerUltimaDataCarregado, CARREGADO_SEM_DRIVE } from "./carregamento";
 import { lerSaidasCD } from "./saidas-cd";
 import { calcularRecebimento } from "./recebimento";
-import { calcularProducaoSemanal, type ProducaoSemanalDia } from "./producao-semanal";
+import { calcularProducaoSemanal, calcularRecebidoPorDia, type ProducaoSemanalDia } from "./producao-semanal";
 import { lerItensEstoque, curvaAbcEstoque, curvaAbcRecebimento } from "./base-estoque";
 import { lerPaletes, calcularResumoPaletes } from "./paletes";
 import { faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado";
@@ -791,6 +791,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorOcupacao: OcupacaoData | null = null;
   let melhorPaletes: ReturnType<typeof lerPaletes> | null = null;
   let wbProducao: XLSX.WorkBook | null = null;
+  let melhorRecebidoPorDia: Map<string, { qtd: number; peso: number }> | null = null;
 
   for (const arq of arquivos) {
     try {
@@ -836,6 +837,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       /* Guarda a workbook de produção para processar após ter os itens de estoque */
       const prod = calcularProducaoSemanal(wb, undefined);
       if (prod && prod.length > 0) wbProducao = wb;
+
+      /* Detecta a planilha PESO RECEBIDO POR PERÍODO para cruzar com produção */
+      const recebidoPorDia = calcularRecebidoPorDia(wb);
+      if (recebidoPorDia && recebidoPorDia.size > (melhorRecebidoPorDia?.size ?? 0)) {
+        melhorRecebidoPorDia = recebidoPorDia;
+      }
 
       /* Extrai a base de itens de estoque (Top Produtos, Curva ABC, fichas) */
       const itensEstoque = lerItensEstoque(wb);
@@ -948,7 +955,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   /* Processa a produção da semana agora que os itens de estoque estão disponíveis */
   let melhorProducao: ProducaoSemanalDia[] | null = null;
   if (wbProducao && melhorItens) {
-    melhorProducao = calcularProducaoSemanal(wbProducao, melhorItens);
+    melhorProducao = calcularProducaoSemanal(wbProducao, melhorItens, melhorRecebidoPorDia);
   }
 
   /* Mescla as avarias de todas as planilhas (base histórica + lançamentos novos).
