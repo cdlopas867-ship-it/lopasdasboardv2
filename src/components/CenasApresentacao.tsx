@@ -8,6 +8,7 @@ import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
 import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
 import CenaReservados from "@/components/CenaReservados";
+import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -283,8 +284,25 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 9 — encerramento */}
-      {cena === 8 && (
+      {/* Cena 9 — Estoque × Previsto (donut interativo com toggle) */}
+      {cena === 8 && resumo && (
+        <CenaEstoquePrevisto anim={anim} resumo={resumo} valorFaturado={valorFaturado} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 9 fallback — sem dados de resumo */}
+      {cena === 8 && !resumo && (
+        <div className="flex flex-col items-center py-6 text-center">
+          <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
+            Estoque × Previsto
+          </p>
+          <p className="video-sobe font-serif text-3xl text-white/70">
+            Sem dados de estoque.
+          </p>
+        </div>
+      )}
+
+      {/* Cena 10 — encerramento */}
+      {cena === 9 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
