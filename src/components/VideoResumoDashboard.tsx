@@ -52,6 +52,7 @@ export type VideoReservados = {
   pctQtd: number;
   pctValor: number;
   pctPeso: number;
+  previsao: number;
   topItens: {
     cod: string;
     desc: string;

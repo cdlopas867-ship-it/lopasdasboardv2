@@ -116,7 +116,7 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
       linhas: [
         ["Reservado · quantidade", fmtInt(r.totalQtd)], ["Reservado · peso", fmtTonDec(r.totalTon)], ["Reservado · valor", fmtMoeda(r.totalValor)],
         ...(s ? [["Sem reserva · quantidade", fmtInt(s.totalQtd)], ["Sem reserva · peso", fmtTonDec(s.totalTon)], ["Sem reserva · valor", fmtMoeda(s.totalValor)]] as Linha[] : []),
-        ...(d.valorFaturado ? [["Valor previsto da reserva", fmtMoeda(r.totalTon * d.valorFaturado)]] as Linha[] : []),
+        ...(d.valorFaturado ? [["Valor previsto da reserva", fmtMoeda(r.previsao ?? r.totalTon * d.valorFaturado)]] as Linha[] : []),
       ],
       resumo: `${fmtTonDec(r.totalTon)} (${fmtMoeda(r.totalValor)}) estão reservadas${s ? ` e ${fmtTonDec(s.totalTon)} (${fmtMoeda(s.totalValor)}) seguem disponíveis sem reserva` : ""}.`,
     });

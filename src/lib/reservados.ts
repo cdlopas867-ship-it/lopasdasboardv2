@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { idUnidade, faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado";
 
 /* Parser da planilha "COMERCIAL 024 - SALDO DE ITENS COM RESERVA".
    Aceita pequenas variações de nomes de colunas usadas nas exportações do Drive. */
@@ -6,6 +7,7 @@ export type ItemReservado = {
   cod: string;
   desc: string;
   mascara: string;
+  unidade: string;
   pesoBrt: number;
   custoMedio: number;
   saldoAtual: number;
@@ -28,6 +30,9 @@ export type Reservados = {
   pctQtd: number;
   pctValor: number;
   pctPeso: number;
+  /* Valor previsto da reserva = Σ (toneladas reservadas × faturado por
+     unidade). Itens sem unidade identificada usam a média do CD. */
+  previsao: number;
   topItens: ItemReservado[];
 };
 
@@ -97,6 +102,7 @@ export function lerReservados(wb: XLSX.WorkBook, modo: "reservado" | "semReserva
   const colReserv = find([/(QUANTIDADE|QTD|QTDE)\s+RESERV/, /SALDO\s+RESERV/, /^RESERV/]);
   if (colReserv < 0) return null;
   const colDisp = find([/(QUANTIDADE|QTD|QTDE)\s+DISPONIVEL/, /^DISPONIVEL/]);
+  const colUnid = find([/CLASSIFICACAO\s*N1/, /CLASSIFICAÇÃO\s*N1/, /^UNIDADE/, /CATEGORIA/]);
 
   const pesoEmToneladas = colPeso >= 0 && /TON|TONELADA/.test(header[colPeso]!);
   const itens: ItemReservado[] = [];
@@ -118,6 +124,7 @@ export function lerReservados(wb: XLSX.WorkBook, modo: "reservado" | "semReserva
       cod,
       desc: str(r[colDesc >= 0 ? colDesc : -1]),
       mascara: str(r[colMascara >= 0 ? colMascara : -1]) || "—",
+      unidade: str(r[colUnid >= 0 ? colUnid : -1]),
       pesoBrt,
       custoMedio,
       saldoAtual,
@@ -132,6 +139,23 @@ export function lerReservados(wb: XLSX.WorkBook, modo: "reservado" | "semReserva
   return itens.length ? itens.sort((a, b) => b.qtdReservada - a.qtdReservada) : null;
 }
 
+/* Valor previsto da reserva = Σ (toneladas reservadas × faturado por
+ * unidade). A unidade de cada item vem da coluna CLASSIFICAÇÃO N1 da
+ * planilha; quando ausente, cai no mapa código→unidade (montado a partir
+ * da Base Estoque); se mesmo assim não identificar, usa a média do CD.
+ * `totalTon` é o fallback quando nenhum item tem peso reservado. */
+export function calcularPrevisaoReservados(
+  itens: ItemReservado[],
+  totalTon: number,
+  unidadePorCod?: Map<string, string>,
+): number {
+  const soma = itens.reduce((s, i) => {
+    const id = idUnidade(i.unidade) ?? (unidadePorCod ? unidadePorCod.get(i.cod) : undefined);
+    return s + (i.pesoReservado / 1000) * faturadoPorUnidade(id);
+  }, 0);
+  return soma || totalTon * VALOR_FATURADO_MEDIO;
+}
+
 export function calcularReservados(itens: ItemReservado[]): Reservados {
   const totalQtd = itens.reduce((s, i) => s + i.qtdReservada, 0);
   const totalTon = itens.reduce((s, i) => s + i.pesoReservado, 0) / 1000;
@@ -139,6 +163,7 @@ export function calcularReservados(itens: ItemReservado[]): Reservados {
   const totalSaldo = itens.reduce((s, i) => s + i.saldoAtual, 0);
   const totalValorEstoque = itens.reduce((s, i) => s + i.valorEstoque, 0);
   const totalPesoEstoque = itens.reduce((s, i) => s + i.pesoBrt * i.saldoAtual, 0) / 1000;
+  const previsao = calcularPrevisaoReservados(itens, totalTon);
   return {
     itens, totalQtd, totalTon, totalValor,
     custoMedioPonderado: totalQtd > 0 ? totalValor / totalQtd : 0,
@@ -146,6 +171,7 @@ export function calcularReservados(itens: ItemReservado[]): Reservados {
     pctQtd: totalSaldo > 0 ? (totalQtd / totalSaldo) * 100 : 0,
     pctValor: totalValorEstoque > 0 ? (totalValor / totalValorEstoque) * 100 : 0,
     pctPeso: totalPesoEstoque > 0 ? (totalTon / totalPesoEstoque) * 100 : 0,
+    previsao,
     topItens: [...itens].sort((a, b) => b.pesoReservado - a.pesoReservado).slice(0, 8),
   };
 }
@@ -163,6 +189,7 @@ export function resumirReservados(r: Reservados) {
     pctQtd: r.pctQtd,
     pctValor: r.pctValor,
     pctPeso: r.pctPeso,
+    previsao: r.previsao,
     topItens: r.topItens.map((i) => ({
       cod: i.cod, desc: i.desc, mascara: i.mascara,
       qtdReservada: i.qtdReservada, pesoReservado: i.pesoReservado,

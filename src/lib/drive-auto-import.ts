@@ -11,7 +11,7 @@
 import * as XLSX from "xlsx";
 import { addRegistro, getHistorico } from "./historico-store";
 import { setData, getLatestData } from "./sync-store";
-import { lerReservados, calcularReservados, resumirReservados } from "./reservados";
+import { lerReservados, calcularReservados, resumirReservados, calcularPrevisaoReservados } from "./reservados";
 import { lerPendentes } from "./pendentes";
 import { calcularPendentesResumo } from "./pendentes-resumo";
 import { lerAvarias, mesclarAvarias } from "./avarias";
@@ -22,6 +22,7 @@ import { calcularRecebimento } from "./recebimento";
 import { calcularProducaoSemanal, type ProducaoSemanalDia } from "./producao-semanal";
 import { lerItensEstoque, curvaAbcEstoque, curvaAbcRecebimento } from "./base-estoque";
 import { lerPaletes, calcularResumoPaletes } from "./paletes";
+import { faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado";
 import { existsSync, readFileSync, statSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
@@ -50,12 +51,6 @@ import type { ItemEstoque } from "./base-estoque";
 const FOLDER_ID = "16WJaYavcR8B1QgpVsT51Kg0_ADJsSGtQ";
 const DRIVE_GATEWAY = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
 const PLANILHAS_HISTORICAS = ["1KJ7LbljnIPqa6caCtqyt6T418Q0-Xgpk"];
-
-/* Fator de markup médio do CD (valor previsto ÷ valor de custo), medido na
-   última planilha com a coluna "Valor Previsto" preenchida
-   (27.132.099,26 ÷ 17.019.363,35 ≈ 1,5942). Usado quando a exportação nova
-   deixa a coluna em branco. */
-const FATOR_PREVISTO = 1.5942;
 
 /* Planilhas locais em public/planilhas/ — processadas além das do Drive.
    Último recurso: se o Drive estiver indisponível, os dados locais garantem
@@ -290,27 +285,30 @@ function extrairResumo(wb: XLSX.WorkBook): ResumoData | null {
       let valor = num(r, cValor);
       let saldo = num(r, cSaldo);
       let itens = num(r, cItens);
-      let previsto = num(r, cPrevisto);
+      /* Valor previsto = toneladas × valor faturado por tonelada (R$/t),
+         fixado por unidade. A coluna "Valor Previsto" da planilha é
+         ignorada — o cálculo parte sempre do peso × faturado fixo. */
+      let previsto = 0;
 
       /* Exportações novas vêm com a linha TOTAL sem valores (só as linhas
-         de categoria preenchidas) — soma as categorias acima dela. */
+         de categoria preenchidas) — soma as categorias acima dela, usando
+         o faturado da unidade de cada linha. */
       if (ton === 0 && valor === 0 && saldo === 0 && itens === 0) {
         for (let j = hi + 1; j < i; j++) {
           const cat = rows[j];
           if (!cat || cat[0] == null) break;
-          ton += tonDaLinha(cat);
+          const t = tonDaLinha(cat);
+          ton += t;
           valor += num(cat, cValor);
           saldo += num(cat, cSaldo);
           itens += num(cat, cItens);
-          previsto += num(cat, cPrevisto);
+          previsto += t * faturadoPorUnidade(MAPA_UNIDADES[String(cat[0]).toUpperCase().trim()]);
         }
       }
 
-      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso
-         aplica o fator de markup médio do CD (previsto ÷ valor ≈ 1,594,
-         medido na última planilha com a coluna preenchida) em vez de
-         repetir o valor de custo. */
-      return { valor, previsto: previsto || valor * FATOR_PREVISTO, ton, saldo, itens, data };
+      /* Quando a linha TOTAL já vem preenchida (sem detalhe por categoria),
+         aplica a média do CD sobre o peso total. */
+      return { valor, previsto: previsto || ton * VALOR_FATURADO_MEDIO, ton, saldo, itens, data };
     }
   }
   return null;
@@ -477,10 +475,10 @@ function extrairUnidadesResumo(wb: XLSX.WorkBook): UnidadeResumo[] | null {
       saldo: num(r, cSaldo),
       pesoTon: ton,
       valor,
-      /* Exportações novas deixam "Valor Previsto" em branco — nesse caso
-         aplica o fator de markup médio do CD (≈ 1,594) em vez de repetir
-         o valor de custo. */
-      previsto: num(r, cPrevisto) || valor * FATOR_PREVISTO,
+      /* Valor previsto = toneladas da unidade × valor faturado por tonelada
+         (R$/t) fixado por unidade. A coluna "Valor Previsto" da planilha é
+         ignorada — o cálculo parte sempre do peso × faturado fixo. */
+      previsto: ton * faturadoPorUnidade(MAPA_UNIDADES[label]),
       share: num(r, cShare) * (cShare >= 0 && num(r, cShare) <= 1 ? 100 : 1),
     });
   }
@@ -949,6 +947,32 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   if (!melhorResumo) {
     console.warn("[auto-import] nenhuma aba Resumo válida encontrada");
     return false;
+  }
+
+  /* Recomputa o valor previsto total como a soma do previsto por unidade
+     (toneladas × faturado por unidade) — mais preciso que tom × média e
+     consistente com o detalhamento por unidade exibido no dashboard. */
+  if (melhorUnidadesResumo && melhorUnidadesResumo.length > 0) {
+    melhorResumo.previsto = melhorUnidadesResumo.reduce((s, u) => s + u.previsto, 0);
+  }
+
+  /* Recomputa o valor previsto da reserva por unidade. A planilha de
+     reservas nem sempre traz a coluna de unidade, então monta um mapa
+     código→unidade a partir da Base Estoque (que tem CLASSIFICAÇÃO N1)
+     para classificar os itens reservados e aplicar o faturado por
+     unidade em vez da média. */
+  if (melhorItens && (melhorReservados || melhorSemReserva)) {
+    const unidadePorCod = new Map<string, string>();
+    for (const it of melhorItens) {
+      const id = MAPA_UNIDADES[it.unidade.toUpperCase().trim()];
+      if (id) unidadePorCod.set(it.item, id);
+    }
+    if (melhorReservados) {
+      melhorReservados.previsao = calcularPrevisaoReservados(melhorReservados.itens, melhorReservados.totalTon, unidadePorCod);
+    }
+    if (melhorSemReserva) {
+      melhorSemReserva.previsao = calcularPrevisaoReservados(melhorSemReserva.itens, melhorSemReserva.totalTon, unidadePorCod);
+    }
   }
 
   /* Recomputa KPIs e unidades a partir dos dados do Drive, substituindo
