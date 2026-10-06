@@ -33,8 +33,8 @@ export default function CenaSaudeEstoque({
   const periodo = `01/01 – ${hoje.slice(0, 5)}`;
 
   const secoes: SecaoDonut[] = [
-    { id: "carregado", label: "carregado", cor: COR_CARREGADO, pct: saudePct },
-    { id: "recebido", label: "recebido", cor: COR_SALDO, pct: saldoPct },
+    { id: "carregado", label: "total", cor: COR_CARREGADO, pct: saudePct },
+    { id: "recebido", label: "diferença", cor: COR_SALDO, pct: saldoPct },
   ];
 
   /* Tabela: Recebido (total) e Carregado (foco 0). */
