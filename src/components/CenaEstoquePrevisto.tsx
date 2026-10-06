@@ -92,8 +92,8 @@ export default function CenaEstoquePrevisto({
       <div className="mt-2 w-full max-w-sm mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
         <p className="text-[12px] font-bold text-white">
           {foco === 0
-            ? `${fmtMoeda(resumo.valor)} em estoque`
-            : `${fmtMoeda(resumo.previsto)} valor previsto`}
+            ? `${fmtTonDec(resumo.ton)} em estoque`
+            : `${fmtTonDec(resumo.ton)} previsto`}
         </p>
       </div>
 

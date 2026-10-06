@@ -64,7 +64,7 @@ export default function CenaReservados({
       />
       <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
-      <BannerResumo texto={`${fmtInt(reservadosCom.totalQtd + (semReserva?.totalQtd ?? 0))} un · ${fmtBrMax(reservadosCom.totalTon + (semReserva?.totalTon ?? 0), 1)} t · ${fmtMoeda(reservadosCom.totalValor + (semReserva?.totalValor ?? 0))}`} delay="0.4s" />
+      <BannerResumo texto={`${fmtInt(reservadosCom.totalQtd + (semReserva?.totalQtd ?? 0))} un · ${fmtBrMax(reservadosCom.totalTon + (semReserva?.totalTon ?? 0), 1)} t`} delay="0.4s" />
 
       <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">

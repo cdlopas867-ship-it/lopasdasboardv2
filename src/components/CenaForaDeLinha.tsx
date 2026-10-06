@@ -97,7 +97,7 @@ export default function CenaForaDeLinha({
       />
       <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
-      <BannerResumo texto={`${fmtInt(posicaoTotal.itens)} itens · ${fmtBrMax(posicaoTotal.pesoTon, 1)} t · ${fmtMoeda(posicaoTotal.valorEstoque)}`} delay="0.4s" />
+      <BannerResumo texto={`${fmtInt(posicaoTotal.itens)} itens · ${fmtBrMax(posicaoTotal.pesoTon, 1)} t`} delay="0.4s" />
 
       <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
