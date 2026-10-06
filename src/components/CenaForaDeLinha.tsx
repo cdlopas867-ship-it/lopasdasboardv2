@@ -146,6 +146,32 @@ export default function CenaForaDeLinha({
           * % em linha = valor em linha ÷ valor total × 100. {fmtPct(pctEmLinha / 100)} em linha · {fmtPct(pctFora / 100)} fora de linha. Clique para alternar.
         </p>
       </div>
+
+      {/* Totais destacados — resumo visual com as duas seções lado a lado */}
+      <div className="video-sobe mt-3 grid w-full max-w-sm mx-auto grid-cols-2 gap-2" style={{ animationDelay: "0.6s" }}>
+        <div
+          className="rounded-xl border p-2.5 backdrop-blur-md"
+          style={{ borderColor: `${COR_EM_LINHA}55`, background: `${COR_EM_LINHA}11` }}
+        >
+          <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: COR_EM_LINHA }}>
+            Em linha
+          </p>
+          <p className="mt-0.5 font-serif text-base text-white">{fmtInt(posicaoEmLinha.itens)} itens</p>
+          <p className="text-[10px] font-mono text-white/80">{fmtMoeda(posicaoEmLinha.valorEstoque)}</p>
+          <p className="text-[9px] text-white/50">{fmtBrMax(posicaoEmLinha.pesoTon, 1)} t · {fmtPct(pctEmLinha / 100)}</p>
+        </div>
+        <div
+          className="rounded-xl border p-2.5 backdrop-blur-md"
+          style={{ borderColor: `${COR_FORA}55`, background: `${COR_FORA}11` }}
+        >
+          <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: COR_FORA }}>
+            Fora de linha
+          </p>
+          <p className="mt-0.5 font-serif text-base text-white">{fmtInt(posicaoFora.itens)} itens</p>
+          <p className="text-[10px] font-mono text-white/80">{fmtMoeda(posicaoFora.valorEstoque)}</p>
+          <p className="text-[9px] text-white/50">{fmtBrMax(posicaoFora.pesoTon, 1)} t · {fmtPct(pctFora / 100)}</p>
+        </div>
+      </div>
     </div>
   );
 }
