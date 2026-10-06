@@ -1014,6 +1014,34 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     melhorProducao = calcularProducaoSemanal(wbProducao, melhorItens, melhorRecebidoPorDia);
   }
 
+  /* Enriquece pendências com peso quando a planilha de produção não tem
+     a coluna "PESO PENDENTE" (formato simples). Usa o peso unitário de
+     cada item (peso total ÷ saldo) para calcular o peso pendente. */
+  if (melhorPendentes && melhorPendentes.length > 0 && melhorItens && melhorItens.length > 0) {
+    const semPeso = melhorPendentes.some((p) => p.pesoPendente === 0);
+    if (semPeso) {
+      const pesoPorItem = new Map<string, number>();
+      for (const it of melhorItens) {
+        if (it.saldo > 0 && it.peso > 0) {
+          pesoPorItem.set(it.item, it.peso / it.saldo);
+        }
+      }
+      let enriquecidos = 0;
+      for (const p of melhorPendentes) {
+        if (p.pesoPendente > 0) continue;
+        const unit = pesoPorItem.get(p.codItem);
+        if (unit && unit > 0) {
+          p.pesoPendente = Math.round(p.pendente * unit);
+          enriquecidos++;
+        }
+      }
+      if (enriquecidos > 0) {
+        pendentesResumo = calcularPendentesResumo(melhorPendentes);
+        console.info(`[auto-import] peso pendente calculado para ${enriquecidos} de ${melhorPendentes.length} pendências`);
+      }
+    }
+  }
+
   /* Mescla as avarias de todas as planilhas (base histórica + lançamentos novos).
      Inclui a lista já gravada, para não perder o histórico (com custos) caso uma
      planilha antiga seja removida da pasta do Drive. */
