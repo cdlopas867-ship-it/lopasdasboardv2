@@ -76,19 +76,18 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
         className="video-sobe mt-3 overflow-hidden rounded-3xl border border-white/15 bg-white/[0.06] backdrop-blur-xl"
         style={{ animationDelay: "0.1s" }}
       >
-        {/* Valor principal em destaque */}
+        {/* Peso principal em destaque */}
         <div className="px-5 pt-5 pb-4 text-center">
           <div className="flex items-baseline justify-center gap-1">
             <span className="font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              {fmtMoeda(valorTotal)}
+              {fmtTonDec(pesoTotal)}
             </span>
           </div>
           <p className="mt-1.5 text-[9px] font-medium tracking-[0.25em] text-[#98c679] uppercase">
-            Valor em Estoque
+            Peso em Estoque
           </p>
           <p className="mx-auto mt-2 max-w-[14rem] text-center text-[10px] leading-relaxed text-white/55">
-            De {fmtTonDec(pesoTotal)}, {fmtTonDec(pesoEmLinha)} estão em linha de produção.
-            {fmtTonDec(pesoReservado)} reservados e {fmtTonDec(pesoDisponivel)} disponíveis.
+            {fmtTonDec(pesoEmLinha)} em linha de produção. {fmtTonDec(pesoReservado)} reservados e {fmtTonDec(pesoDisponivel)} disponíveis. Valor total: {fmtMoeda(valorTotal)}.
           </p>
         </div>
 
@@ -116,20 +115,20 @@ export default function CenaResumoTotal({ anim, resumo, foraDeLinha, onPausar }:
         <div className="flex h-2 overflow-hidden rounded-full bg-white/5">
           <div
             className={cn("video-barra-x h-full rounded-l-full", !anim && "video-pausada")}
-            style={{ width: `${(valorReservado / valorTotal) * 100}%`, background: "linear-gradient(90deg, #ef4444, #f87171)", animationDelay: "0.75s" }}
+            style={{ width: `${pesoTotal > 0 ? (pesoReservado / pesoTotal) * 100 : 0}%`, background: "linear-gradient(90deg, #ef4444, #f87171)", animationDelay: "0.75s" }}
           />
           <div
             className={cn("video-barra-x h-full rounded-r-full", !anim && "video-pausada")}
-            style={{ width: `${(valorDisponivel / valorTotal) * 100}%`, background: "linear-gradient(90deg, #3b82f6, #60a5fa)", animationDelay: "0.8s" }}
+            style={{ width: `${pesoTotal > 0 ? (pesoDisponivel / pesoTotal) * 100 : 0}%`, background: "linear-gradient(90deg, #3b82f6, #60a5fa)", animationDelay: "0.8s" }}
           />
         </div>
         <div className="mt-1.5 flex justify-between text-[9px] font-medium text-white/40">
           <span className="flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-red-400" />
-            {fmtBrMax((valorReservado / valorTotal) * 100, 1)}% reservado
+            {pesoTotal > 0 ? fmtBrMax((pesoReservado / pesoTotal) * 100, 1) : 0}% reservado
           </span>
           <span className="flex items-center gap-1.5">
-            {fmtBrMax((valorDisponivel / valorTotal) * 100, 1)}% disponível
+            {pesoTotal > 0 ? fmtBrMax((pesoDisponivel / pesoTotal) * 100, 1) : 0}% disponível
             <span className="size-1.5 rounded-full bg-blue-400" />
           </span>
         </div>
