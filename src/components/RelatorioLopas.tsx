@@ -1,6 +1,6 @@
-/* Relatório Lopas — documento completo e sempre atualizado: cada tópico do
-   painel é explicado e resumido a partir dos mesmos dados exibidos nas cenas,
-   com resumo executivo no final. "Imprimir / salvar PDF" usa a impressão do navegador. */
+/* Relatório Lopas — documento do painel em formato enxuto: números grandes,
+   tabela compacta e uma leitura curta por tópico. "Imprimir / salvar PDF"
+   usa a impressão do navegador. */
 
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
@@ -8,75 +8,88 @@ import { fmtBrMax, fmtInt, fmtMoeda, fmtTonDec } from "@/lib/format";
 import type { VideoResumoProps } from "./VideoResumoDashboard";
 
 type Linha = [string, string];
-type Secao = { titulo: string; explicacao: string; linhas: Linha[]; resumo: string };
+type Destaque = { valor: string; rotulo: string; nota?: string };
+type Secao = {
+  titulo: string;
+  grandes: Destaque[];
+  linhas: Linha[];
+  resumo: string;
+};
 
 const pct = (v: number) => `${fmtBrMax(v, 1)}%`;
 
-function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string[] } {
+function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; hero: Destaque[]; acoes: string[] } {
   const secoes: Secao[] = [];
-  const destaques: string[] = [];
+  const hero: Destaque[] = [];
+  const acoes: string[] = [];
 
   if (d.resumo) {
     const r = d.resumo;
+    hero.push({ valor: fmtMoeda(r.valor), rotulo: "Em estoque (custo)", nota: `${fmtTonDec(r.ton)} · ${fmtInt(r.itens)} itens` });
     secoes.push({
       titulo: "Posição geral do estoque",
-      explicacao: "Retrato consolidado do CD: valor a custo, valor previsto de venda, peso em toneladas, saldo em unidades e quantidade de itens ativos.",
-      linhas: [["Valor em estoque", fmtMoeda(r.valor)], ["Valor previsto", fmtMoeda(r.previsto)], ["Peso", fmtTonDec(r.ton)], ["Saldo (un)", fmtInt(r.saldo)], ["Itens", fmtInt(r.itens)]],
-      resumo: `Hoje, ${fmtMoeda(r.valor)} estão aplicados no estoque do CD, distribuídos em ${fmtInt(r.itens)} itens. Esse é o capital que depende da saída dos produtos para voltar ao caixa. Os ${fmtMoeda(r.previsto)} de valor previsto são uma estimativa de venda, não faturamento realizado nem lucro. Para avaliar se esse estoque está bem dimensionado, é preciso acompanhar também a demanda e o tempo de permanência dos itens.`,
+      grandes: [
+        { valor: fmtMoeda(r.valor), rotulo: "Capital aplicado", nota: "a custo" },
+        { valor: fmtMoeda(r.previsto), rotulo: "Valor previsto", nota: "estimativa de venda" },
+        { valor: fmtTonDec(r.ton), rotulo: "Peso em estoque" },
+      ],
+      linhas: [["Saldo (un)", fmtInt(r.saldo)], ["Itens ativos", fmtInt(r.itens)]],
+      resumo: `${fmtMoeda(r.valor)} estão aplicados em ${fmtInt(r.itens)} itens e dependem da saída para voltar ao caixa. O valor previsto é estimativa de venda, não faturamento realizado.`,
     });
-    destaques.push(`Estoque de ${fmtMoeda(r.valor)} e ${fmtTonDec(r.ton)}.`);
   }
 
   if (d.kpis.length) {
     secoes.push({
       titulo: "Indicadores principais",
-      explicacao: "Indicadores-chave exibidos no painel, com a leitura de cada um.",
-      linhas: d.kpis.map((k) => [k.rotulo, k.valor] as Linha),
-      resumo: "Os indicadores ajudam a localizar onde aprofundar a análise. Sozinhos, não mostram a causa de uma mudança: ocupação, reservas e movimentação precisam ser lidas em conjunto. As próximas seções fazem essa leitura sem tratar estimativas como resultados realizados.",
+      grandes: d.kpis.slice(0, 3).map((k) => ({ valor: k.valor, rotulo: k.rotulo })),
+      linhas: d.kpis.slice(3).map((k) => [k.rotulo, k.valor] as Linha),
+      resumo: "Os indicadores apontam onde aprofundar; ocupação, reservas e movimentação precisam ser lidas juntas.",
     });
   }
 
   if (d.unidades.length) {
+    const maior = [...d.unidades].sort((a, b) => b.share - a.share)[0];
+    if (maior) {
+      hero.push({ valor: pct(maior.share), rotulo: `Concentração · ${maior.nome}`, nota: "do valor do estoque" });
+      secoes.push({
+        titulo: "Distribuição por unidade",
+        grandes: [{ valor: pct(maior.share), rotulo: maior.nome, nota: "maior participação no valor" }],
+        linhas: d.unidades.map((u) => [u.nome, `${u.valor} (${pct(u.share)})`] as Linha),
+        resumo: `${maior.nome} concentra ${pct(maior.share)} do valor. Uma melhora de giro ali libera mais capital, mas vale cruzar com pedidos antes de mexer na produção.`,
+      });
+    }
+  }
+
+  {
+    hero.push({ valor: pct(d.ocupacao.pct * 100), rotulo: "Ocupação do CD", nota: `${fmtInt(d.ocupacao.livres)} posições livres` });
     secoes.push({
-      titulo: "Distribuição por unidade",
-      explicacao: "Participação de cada unidade de negócio (Guarda-Roupas, Complementos, Salas…) no valor do estoque.",
-      linhas: d.unidades.map((u) => [u.nome, `${u.valor} (${pct(u.share)})`] as Linha),
-      resumo: (() => {
-        const maior = [...d.unidades].sort((a, b) => b.share - a.share)[0];
-        return maior ? `${maior.nome} concentra ${pct(maior.share)} do valor armazenado. É nessa unidade que uma melhora no giro pode liberar mais capital. Antes de reduzir ou reforçar a produção, vale cruzar essa participação com os pedidos e a saída dos produtos; concentração de estoque, por si só, não significa excesso.` : "Não há distribuição por unidade disponível.";
-      })(),
+      titulo: "Ocupação do CD",
+      grandes: [
+        { valor: pct(d.ocupacao.pct * 100), rotulo: "Ocupado", nota: `${fmtInt(d.ocupacao.ocupados)} posições` },
+        { valor: fmtInt(d.ocupacao.livres), rotulo: "Posições livres" },
+        ...(d.ocupacao.bloqueados ? [{ valor: fmtInt(d.ocupacao.bloqueados), rotulo: "Bloqueadas", nota: "fora da capacidade útil" }] : []),
+      ],
+      linhas: [],
+      resumo: `A folga de ${fmtInt(d.ocupacao.livres)} posições é física: o tamanho dos paletes e a distribuição entre endereços também limitam o próximo recebimento.`,
     });
   }
 
-  secoes.push({
-    titulo: "Ocupação do CD",
-    explicacao: "Percentual de posições de armazenagem ocupadas, considerando os dois centros de distribuição.",
-    linhas: [
-      ["Ocupação", pct(d.ocupacao.pct * 100)],
-      ["Posições ocupadas", fmtInt(d.ocupacao.ocupados)],
-      ["Posições livres", fmtInt(d.ocupacao.livres)],
-      ...(d.ocupacao.bloqueados ? [["Posições bloqueadas", fmtInt(d.ocupacao.bloqueados)] as [string, string]] : []),
-    ],
-    resumo: `Há ${fmtInt(d.ocupacao.livres)} posições livres, enquanto ${pct(d.ocupacao.pct * 100)} das posições estão ocupadas.${d.ocupacao.bloqueados ? ` Outras ${fmtInt(d.ocupacao.bloqueados)} estão bloqueadas e não devem entrar na capacidade disponível.` : ""} Isso mostra a folga física do CD, mas não garante espaço adequado para qualquer produto: o tamanho dos paletes e a distribuição entre endereços também precisam ser considerados no próximo recebimento.`,
-  });
-  destaques.push(`Ocupação do CD em ${pct(d.ocupacao.pct * 100)}.`);
-
   if (d.semana) {
+    const dias = d.semana.dias;
+    const atingidos = dias.filter((x) => x.ton >= x.meta).length;
+    const meta = dias.reduce((s, x) => s + x.meta, 0);
+    const total = dias.reduce((s, x) => s + x.ton, 0);
     secoes.push({
       titulo: `Recebimento da semana (${d.semana.rotulo})`,
-      explicacao: "Toneladas recebidas por dia comparadas à meta diária, mais a divisão por turno.",
+      grandes: [
+        { valor: fmtTonDec(total), rotulo: "Recebido na semana", nota: meta > 0 ? `${pct((total / meta) * 100)} da meta` : undefined },
+        { valor: `${atingidos}/${dias.length}`, rotulo: "Dias com meta atingida" },
+      ],
       linhas: [
-        ["Total da semana", d.semana.total],
-        ...d.semana.dias.map((x) => [`${x.dia} ${x.data}`, `${fmtBrMax(x.ton, 1)} t (meta ${fmtBrMax(x.meta, 1)} t)`] as Linha),
+        ...dias.map((x) => [`${x.dia} ${x.data}`, `${fmtBrMax(x.ton, 1)} t (meta ${fmtBrMax(x.meta, 1)} t)`] as Linha),
         ...d.turnos.map((t) => [`Turno ${t.nome}`, pct(t.pct)] as Linha),
       ],
-      resumo: (() => {
-        const dias = d.semana?.dias ?? [];
-        const atingidos = dias.filter(x => x.ton >= x.meta).length;
-        const meta = dias.reduce((s, x) => s + x.meta, 0);
-        const total = dias.reduce((s, x) => s + x.ton, 0);
-        return `Nos ${dias.length} dias apresentados, entraram ${fmtTonDec(total)}; a meta foi alcançada em ${atingidos} deles.${meta > 0 ? ` O volume equivale a ${pct(total / meta * 100)} da meta somada desses dias.` : ""} Dias abaixo da meta merecem uma conferência da programação e das entregas efetivas, sem atribuir a diferença à equipe antes de entender o que estava previsto.`;
-      })(),
+      resumo: `A meta foi alcançada em ${atingidos} de ${dias.length} dias. Os dias abaixo merecem conferência da programação, sem atribuir a diferença à equipe antes de entender o que estava previsto.`,
     });
   }
 
@@ -85,65 +98,77 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
     const rec = mes.reduce((s, m) => s + m.recebido, 0);
     const car = mes.reduce((s, m) => s + m.carregado, 0);
     const saude = rec > 0 ? (car / rec) * 100 : 0;
+    hero.push({ valor: pct(saude), rotulo: "Saúde do estoque", nota: "carregado ÷ recebido" });
     secoes.push({
       titulo: "Saúde do estoque (recebido × carregado)",
-      explicacao: "Comparação das entradas e saídas registradas por mês. Meses com zero devem ser conferidos: zero pode representar ausência de movimento ou informação ainda não disponível.",
-      linhas: [...mes.map((m) => [m.mes, `rec. ${fmtBrMax(m.recebido, 1)} t · carr. ${fmtBrMax(m.carregado, 1)} t`] as Linha), ["Saúde acumulada", pct(saude)]],
-      resumo: `No período apresentado, foram recebidas ${fmtTonDec(rec)} e carregadas ${fmtTonDec(car)}.${rec > 0 ? ` A relação entre saída e entrada foi de ${pct(saude)}.` : " Sem recebimento registrado, não é possível calcular a relação entre saída e entrada."} ${car > rec ? `As saídas superam as entradas em ${fmtTonDec(car - rec)}. Essa diferença pode incluir estoque de períodos anteriores; não deve ser interpretada automaticamente como eficiência.` : car < rec ? `As entradas superam as saídas em ${fmtTonDec(rec - car)}. Se as duas bases cobrem o mesmo período e os mesmos movimentos, isso indica pressão de aumento sobre o estoque.` : "Entradas e saídas têm o mesmo volume registrado."} ${mes.some(m => m.recebido === 0 || m.carregado === 0) ? "Há meses com uma das bases zerada. Antes de concluir sobre o giro, confirme se os registros estão completos." : "A conclusão sobre o giro depende de as duas bases terem a mesma cobertura."}`,
+      grandes: [
+        { valor: pct(saude), rotulo: "Saúde acumulada" },
+        { valor: fmtTonDec(rec), rotulo: "Recebido no período" },
+        { valor: fmtTonDec(car), rotulo: "Carregado no período" },
+      ],
+      linhas: mes.map((m) => [m.mes, `rec. ${fmtBrMax(m.recebido, 1)} t · carr. ${fmtBrMax(m.carregado, 1)} t`] as Linha),
+      resumo: `${car > rec ? `As saídas superam as entradas em ${fmtTonDec(car - rec)}, o que pode incluir estoque de períodos anteriores.` : car < rec ? `As entradas superam as saídas em ${fmtTonDec(rec - car)}, indicando pressão de aumento sobre o estoque.` : "Entradas e saídas têm o mesmo volume."} ${mes.some((m) => m.recebido === 0 || m.carregado === 0) ? "Há meses com uma das bases zerada: confirme se os registros estão completos antes de concluir sobre o giro." : ""}`,
     });
-    destaques.push(`Saúde do estoque em ${pct(saude)} (carregado ÷ recebido).`);
   }
 
   if (d.avarias) {
+    const pico = [...d.avarias.meses].sort((a, b) => b.qtd - a.qtd)[0];
+    const motivo = [...(d.avarias.tipos ?? [])].sort((a, b) => b.total - a.total)[0];
+    hero.push({ valor: fmtInt(d.avarias.total), rotulo: "Volumes avariados", nota: "soma das quantidades" });
     secoes.push({
       titulo: "Avarias",
-      explicacao: "Volumes danificados (soma da quantidade), com custo e distribuição mensal.",
-      linhas: [["Total de volumes", fmtInt(d.avarias.total)], ["Custo", d.avarias.custo],
-        ...(d.avarias.tipos ?? []).map((t) => [`Tipo: ${t.tipo}`, `${fmtInt(t.total)} vol. (${pct(t.pct)} de incidência)`] as Linha),
-        ...d.avarias.meses.map((m) => [m.mes, fmtInt(m.qtd)] as Linha)],
-      resumo: (() => {
-        const pico = [...d.avarias.meses].sort((a, b) => b.qtd - a.qtd)[0];
-        const motivo = [...(d.avarias.tipos ?? [])].sort((a, b) => b.total - a.total)[0];
-        return `Foram registrados ${fmtInt(d.avarias.total)} volumes com avaria, pela soma das quantidades, não pela contagem de ocorrências.${pico ? ` ${pico.mes} concentra o maior volume mensal: ${fmtInt(pico.qtd)}.` : ""}${motivo ? ` O motivo de maior volume é ${motivo.tipo}, com ${fmtInt(motivo.total)} volumes; esse é um bom ponto de partida para revisar manuseio, embalagem e conferência.` : ""} O custo informado é parcial e não representa toda a perda. Sem o volume movimentado de cada mês, também não é possível dizer que a taxa de avarias melhorou ou piorou.`;
-      })(),
+      grandes: [
+        { valor: fmtInt(d.avarias.total), rotulo: "Volumes", nota: "pela soma das quantidades" },
+        ...(pico ? [{ valor: fmtInt(pico.qtd), rotulo: `Pico · ${pico.mes}` }] : []),
+        ...(motivo ? [{ valor: fmtInt(motivo.total), rotulo: "Maior motivo", nota: motivo.tipo }] : []),
+      ],
+      linhas: [
+        ["Custo (parcial)", d.avarias.custo],
+        ...d.avarias.meses.map((m) => [m.mes, fmtInt(m.qtd)] as Linha),
+      ],
+      resumo: `${motivo ? `${motivo.tipo} é o motivo de maior volume e o melhor ponto de partida para revisar manuseio e embalagem.` : ""} O custo é parcial e o volume movimentado de cada mês não está disponível, então não dá para afirmar se a taxa melhorou.`,
     });
-    destaques.push(`${fmtInt(d.avarias.total)} volumes avariados.`);
+    if (motivo) acoes.push(`Revisar manuseio e embalagem a partir de ${motivo.tipo}, o motivo de maior volume.`);
   }
 
   if (d.pendentes) {
-    const prod = d.producaoSemanal ?? [];
+    const critico = d.pendentes.fatias.filter((x) => /cr[ií]tico/i.test(x.rotulo)).reduce((s, x) => s + x.ton, 0);
+    const maior = [...d.pendentes.meses].sort((a, b) => b.ton - a.ton)[0];
+    hero.push({ valor: fmtTonDec(d.pendentes.totalTon), rotulo: "Pendências", nota: `${fmtInt(d.pendentes.itens)} itens em aberto` });
     secoes.push({
       titulo: "Produção pendente",
-      explicacao: "Ordens de produção em aberto no sistema, com toneladas, datas de produção por mês e a programação diária.",
+      grandes: [
+        { valor: fmtTonDec(d.pendentes.totalTon), rotulo: "Em aberto", nota: `${fmtInt(d.pendentes.itens)} itens` },
+        ...(critico > 0 ? [{ valor: fmtTonDec(critico), rotulo: "Críticos", nota: "conferir primeiro" }] : []),
+        ...(maior ? [{ valor: fmtTonDec(maior.ton), rotulo: `Maior mês · ${maior.mes}` }] : []),
+      ],
       linhas: [
-        ["Itens pendentes", fmtInt(d.pendentes.itens)],
-        ["Total", fmtTonDec(d.pendentes.totalTon)],
         ["Média mensal", fmtTonDec(d.pendentes.mediaTon)],
         ...d.pendentes.meses.map((m) => [`${m.mes}${m.dtInicial || m.dtFinal ? ` (${m.dtInicial ?? "—"} a ${m.dtFinal ?? "—"})` : ""}`, fmtTonDec(m.ton)] as Linha),
-        ...prod.map((x) => [`${x.dia} ${x.data}`, `${fmtInt(x.ordens)} ordens · prev. ${fmtBrMax(x.tonPrevisto, 1)} t · pend. ${fmtBrMax(x.tonPendente, 1)} t`] as Linha),
       ],
-      resumo: (() => {
-        const critico = d.pendentes.fatias.filter(x => /cr[ií]tico/i.test(x.rotulo)).reduce((s, x) => s + x.ton, 0);
-        const maior = [...d.pendentes.meses].sort((a, b) => b.ton - a.ton)[0];
-        return `Ainda estão em aberto ${fmtInt(d.pendentes.itens)} itens, somando ${fmtTonDec(d.pendentes.totalTon)}.${critico > 0 ? ` Desse volume, ${fmtTonDec(critico)} estão classificados como críticos e devem ser conferidos primeiro com a produção.` : ""}${maior ? ` A maior concentração de peso está em ${maior.mes}, com ${fmtTonDec(maior.ton)}.` : ""} As datas abaixo são os períodos registrados nas ordens, não uma promessa de entrega ao cliente. A prioridade é validar quais pendências continuam abertas e quais afetam pedidos reservados.`;
-      })(),
+      resumo: `${critico > 0 ? `${fmtTonDec(critico)} estão classificados como críticos e devem ser conferidos primeiro. ` : ""}As datas são períodos registrados nas ordens, não promessa de entrega ao cliente.`,
     });
+    acoes.push(`Validar as pendências que bloqueiam pedidos reservados, começando por ${critico > 0 ? `${fmtTonDec(critico)} classificadas como críticas` : "critérios críticos"}.`);
   }
 
   if (d.reservados) {
     const r = d.reservados;
     const s = d.semReserva;
+    hero.push({ valor: fmtTonDec(r.totalTon), rotulo: "Com reserva", nota: s ? `${fmtTonDec(s.totalTon)} sem reserva` : undefined });
     secoes.push({
       titulo: "Estoque reservado × sem reserva",
-      explicacao: "Reservado = itens com reserva comercial. Sem reserva = saldo disponível (saldo − reservado). Valores calculados por item (quantidade × custo médio e × peso).",
-      linhas: [
-        ["Reservado · quantidade", fmtInt(r.totalQtd)], ["Reservado · peso", fmtTonDec(r.totalTon)], ["Reservado · valor", fmtMoeda(r.totalValor)],
-        ...(s ? [["Sem reserva · quantidade", fmtInt(s.totalQtd)], ["Sem reserva · peso", fmtTonDec(s.totalTon)], ["Sem reserva · valor", fmtMoeda(s.totalValor)]] as Linha[] : []),
-        ...(d.valorFaturado ? [["Valor previsto da reserva", fmtMoeda(r.previsao ?? r.totalTon * d.valorFaturado)]] as Linha[] : []),
+      grandes: [
+        { valor: fmtTonDec(r.totalTon), rotulo: "Reservado", nota: fmtMoeda(r.totalValor) },
+        ...(s ? [{ valor: fmtTonDec(s.totalTon), rotulo: "Sem reserva", nota: fmtMoeda(s.totalValor) }] : []),
+        ...(d.valorFaturado ? [{ valor: fmtMoeda(r.previsao ?? r.totalTon * d.valorFaturado), rotulo: "Previsto da reserva", nota: "estimativa" }] : []),
       ],
-      resumo: `${fmtTonDec(r.totalTon)} já têm reserva comercial, com ${fmtMoeda(r.totalValor)} a custo.${s ? ` Outros ${fmtTonDec(s.totalTon)} seguem sem reserva, representando ${fmtMoeda(s.totalValor)} ainda sem destinação comercial registrada.` : ""} A reserva indica demanda vinculada, mas só se transforma em saída e faturamento quando o pedido é atendido. Vale conferir primeiro o que já pode ser separado e o que depende de produção, para não manter espaço ocupado por pedidos prontos para embarque.`,
+      linhas: [
+        ["Reservado · quantidade", fmtInt(r.totalQtd)],
+        ...(s ? [["Sem reserva · quantidade", fmtInt(s.totalQtd)] as Linha] : []),
+      ],
+      resumo: `A reserva é demanda vinculada, mas só vira saída e faturamento quando o pedido é atendido. ${s ? `${fmtTonDec(s.totalTon)} seguem sem destinação comercial registrada.` : ""}`,
     });
-    destaques.push(`Reservado: ${fmtTonDec(r.totalTon)}${s ? ` · Sem reserva: ${fmtTonDec(s.totalTon)}` : ""}.`);
+    acoes.push("Conferir os pedidos reservados que já estão completos e podem seguir para carregamento.");
   }
 
   if (d.foraDeLinha) {
@@ -151,38 +176,46 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
     const f = d.foraDeLinha.posicaoForaDeLinha;
     const t = d.foraDeLinha.posicaoTotal;
     const p = t.valorEstoque > 0 ? (e.valorEstoque / t.valorEstoque) * 100 : 0;
+    hero.push({ valor: fmtInt(f.saldoFocco), rotulo: "Unidades fora de linha", nota: `${fmtTonDec(f.pesoTon)} · ${pct(100 - p)} do valor` });
     secoes.push({
       titulo: "Em linha × fora de linha",
-      explicacao: "Compara itens ativos (em linha) com descontinuados (fora de linha): quantidade de itens, saldo, peso e valor.",
-      linhas: [
-        ["Em linha · itens", fmtInt(e.itens)], ["Em linha · saldo", fmtInt(e.saldoFocco)], ["Em linha · peso", fmtTonDec(e.pesoTon)], ["Em linha · valor", fmtMoeda(e.valorEstoque)],
-        ["Fora de linha · itens", fmtInt(f.itens)], ["Fora de linha · saldo", fmtInt(f.saldoFocco)], ["Fora de linha · peso", fmtTonDec(f.pesoTon)], ["Fora de linha · valor", fmtMoeda(f.valorEstoque)],
+      grandes: [
+        { valor: pct(p), rotulo: "Valor em linha" },
+        { valor: fmtInt(f.itens), rotulo: "Itens fora de linha", nota: `${fmtTonDec(f.pesoTon)} · ${fmtMoeda(f.valorEstoque)}` },
       ],
-      resumo: `Os itens fora de linha somam ${fmtInt(f.saldoFocco)} unidades e ${fmtTonDec(f.pesoTon)}. Como não fazem mais parte da linha ativa, merecem um plano específico de saída: verificar reservas existentes, procurar demanda e avaliar alternativas comerciais antes de produzir ou repor esses itens. O valor de ${fmtMoeda(f.valorEstoque)} deve ser tratado como estimativa quando a planilha não informa o custo; ele não comprova uma perda realizada.`,
+      linhas: [
+        ["Em linha · saldo", fmtInt(e.saldoFocco)],
+        ["Fora de linha · saldo", fmtInt(f.saldoFocco)],
+        ["Em linha · valor", fmtMoeda(e.valorEstoque)],
+        ["Fora de linha · valor", fmtMoeda(f.valorEstoque)],
+      ],
+      resumo: "Fora de linha não faz mais parte da linha ativa: precisa de plano próprio de saída e não deve ser reposto. O valor é estimativa quando a planilha não traz o custo.",
     });
-    destaques.push(`${pct(p)} do valor do estoque está em linha.`);
+    acoes.push("Definir destino comercial para os itens fora de linha antes de qualquer reposição.");
   }
 
   if (d.paletas && d.paletas.totalPaletes > 0) {
+    const media = d.paletas.diasRecebidos ? d.paletas.recebimento!.totalPaletes / d.paletas.diasRecebidos : 0;
     secoes.push({
-      titulo: "Paletes",
-      explicacao: "Paletes armazenados por tamanho, com itens e unidades.",
-      linhas: [...d.paletas.porTamanho.map((x) => [x.tamanho, `${fmtInt(x.paletes)} paletes · ${fmtInt(x.und)} un`] as Linha), ["Total", `${fmtInt(d.paletas.totalPaletes)} paletes`]],
-      resumo: `O estoque mapeado ocupa ${fmtInt(d.paletas.totalPaletes)} paletes.${d.paletas.recebimento ? ` O recebimento mapeado soma ${fmtInt(d.paletas.recebimento.totalPaletes)} paletes${d.paletas.diasRecebidos ? ` em ${fmtInt(d.paletas.diasRecebidos)} dias, uma média de ${fmtBrMax(d.paletas.recebimento.totalPaletes / d.paletas.diasRecebidos, 1)} por dia` : ""}.` : ""} Essa distribuição ajuda a preparar os endereços conforme o tamanho recebido. A contagem depende dos produtos encontrados na configuração de paletes e pode ficar abaixo do real se houver itens sem cadastro; não deve ser confundida com a ocupação total de posições.`,
+      titulo: "Paletes por tamanho",
+      grandes: [
+        { valor: fmtInt(d.paletas.totalPaletes), rotulo: "Paletes em estoque" },
+        ...(d.paletas.recebimento ? [{ valor: fmtInt(d.paletas.recebimento.totalPaletes), rotulo: "Recebidos", nota: media > 0 ? `${fmtBrMax(media, 1)} por dia` : undefined }] : []),
+      ],
+      linhas: d.paletas.porTamanho.map((x) => [x.tamanho, `${fmtInt(x.paletes)} paletes · ${fmtInt(x.und)} un`] as Linha),
+      resumo: "A distribuição ajuda a preparar endereços pelo tamanho recebido. A contagem depende dos produtos mapeados e pode ficar abaixo do real.",
     });
   }
 
-  const leitura: string[] = [];
-  if (d.resumo) leitura.push(`O CD tem ${fmtTonDec(d.resumo.ton)} em estoque, com ${fmtMoeda(d.resumo.valor)} a custo. O ponto central é transformar esse saldo em atendimento de pedidos, sem confundir valor previsto com dinheiro já faturado.`);
-  if (d.reservados) leitura.push(`Há ${fmtTonDec(d.reservados.totalTon)} com reserva comercial.${d.semReserva ? ` O saldo sem reserva soma ${fmtTonDec(d.semReserva.totalTon)} e precisa ser acompanhado junto à área comercial.` : ""} A primeira conferência deve ser dos pedidos reservados que já estão completos e podem seguir para carregamento.`);
-  leitura.push(`A ocupação de ${pct(d.ocupacao.pct * 100)} deixa ${fmtInt(d.ocupacao.livres)} posições livres. Use essa folga junto à programação de entrada e aos tamanhos de palete, não apenas ao percentual geral.`);
-  if (d.pendentes) leitura.push(`As pendências somam ${fmtTonDec(d.pendentes.totalTon)}. Produção e expedição precisam alinhar quais itens faltantes estão impedindo a conclusão dos pedidos; o volume total não revela esse impacto sozinho.`);
-  if (d.avarias) leitura.push(`Os ${fmtInt(d.avarias.total)} volumes avariados merecem uma revisão dos motivos mais recorrentes. O custo parcial não permite estimar a perda total, e a quantidade isolada não mede a taxa de avaria.`);
-  return { secoes, destaques: leitura.length ? leitura : destaques };
+  if (!acoes.length && d.resumo) {
+    acoes.push(`Transformar ${fmtTonDec(d.resumo.ton)} em saldo aplicado em pedidos atendidos, sem confundir valor previsto com faturamento.`);
+  }
+
+  return { secoes, hero, acoes };
 }
 
 export default function RelatorioLopas({ dados, onFechar }: { dados: VideoResumoProps; onFechar: () => void }) {
-  const { secoes, destaques } = montarSecoes(dados);
+  const { secoes, hero, acoes } = montarSecoes(dados);
   const agora = new Date().toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short", timeZone: "America/Sao_Paulo" });
   const sync = dados.sincronizacao?.em
     ? new Date(dados.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
@@ -205,46 +238,77 @@ export default function RelatorioLopas({ dados, onFechar }: { dados: VideoResumo
         </Button>
       </div>
 
-      <article className="mx-auto my-4 max-w-3xl bg-white p-8 shadow sm:p-12">
-        <header className="flex items-center gap-4 border-b-2 border-[#73ae37] pb-4">
-          <img src="/logo-lopas-trevo.png" alt="Lopas" className="size-16" />
+      <article className="mx-auto my-4 max-w-3xl bg-white p-8 shadow sm:p-10">
+        <header className="flex items-center gap-4 border-b-2 border-[#73ae37] pb-3">
+          <img src="/logo-lopas-trevo.png" alt="Lopas" className="size-14" />
           <div>
             <h1 className="font-serif text-2xl font-bold">Relatório de Estoque — CD Lopas</h1>
-            <p className="text-xs text-neutral-600">Gerado em {agora}{sync ? ` · dados sincronizados em ${sync}` : ""}</p>
-            {periodo && <p className="text-xs font-semibold text-neutral-800">Período analisado: {periodo}</p>}
-            <p className="text-[10px] font-semibold tracking-[0.25em] text-[#73ae37] uppercase">Movidos pela fé</p>
+            <p className="text-xs text-neutral-600">
+              {periodo ? `${periodo} · ` : ""}gerado em {agora}
+              {sync ? ` · dados sincronizados em ${sync}` : ""}
+            </p>
           </div>
         </header>
 
-        <section className="mt-6 border-b pb-5">
-          <h2 className="text-lg font-bold text-brand-green">Leitura executiva</h2>
-          <div className="mt-3 space-y-3 text-sm leading-relaxed">
-            {destaques.map(t => <p key={t}>{t}</p>)}
-          </div>
+        <section className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {hero.map((h) => (
+            <div key={h.rotulo} className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-neutral-500">{h.rotulo}</p>
+              <p className="mt-1 text-2xl font-bold leading-none tabular-nums text-[#4d7a1f]">{h.valor}</p>
+              {h.nota && <p className="mt-1 text-[10px] leading-tight text-neutral-600">{h.nota}</p>}
+            </div>
+          ))}
         </section>
 
         {secoes.map((s, i) => (
           <section key={s.titulo} className="mt-6">
-            <h2 className="text-base font-bold text-[#4d7a1f]">{i + 1}. {s.titulo}</h2>
-            <p className="mt-1 text-xs text-neutral-600">{s.explicacao}</p>
-            <table className="mt-2 w-full text-sm">
-              <tbody>
-                {s.linhas.map(([k, v], j) => (
-                  <tr key={j} className="border-b border-neutral-200">
-                    <td className="py-1 pr-4">{k}</td>
-                    <td className="py-1 text-right font-mono font-semibold">{v}</td>
-                  </tr>
+            <h2 className="border-b border-neutral-200 pb-1 text-sm font-bold uppercase tracking-wide text-[#4d7a1f]">
+              {i + 1}. {s.titulo}
+            </h2>
+            {s.grandes.length > 0 && (
+              <div className={`mt-2 grid gap-2 ${s.grandes.length > 2 ? "grid-cols-3" : "grid-cols-2"}`}>
+                {s.grandes.map((g) => (
+                  <div key={g.rotulo} className="rounded-md border-l-2 border-[#73ae37] bg-neutral-50 px-3 py-2">
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-neutral-500">{g.rotulo}</p>
+                    <p className="mt-0.5 text-xl font-bold leading-none tabular-nums text-neutral-900">{g.valor}</p>
+                    {g.nota && <p className="mt-1 text-[10px] leading-tight text-neutral-600">{g.nota}</p>}
+                  </div>
                 ))}
-              </tbody>
-            </table>
-            <p className="mt-3 text-sm leading-relaxed"><strong>Leitura dos dados. </strong>{s.resumo}</p>
+              </div>
+            )}
+            {s.linhas.length > 0 && (
+              <table className="mt-2 w-full text-xs">
+                <tbody>
+                  {s.linhas.map(([k, v], j) => (
+                    <tr key={j} className="border-b border-neutral-100">
+                      <td className="py-0.5 pr-4 text-neutral-600">{k}</td>
+                      <td className="py-0.5 text-right font-mono font-semibold tabular-nums">{v}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <p className="mt-2 text-xs leading-snug text-neutral-800">
+              <strong className="text-[#4d7a1f]">Leitura. </strong>
+              {s.resumo}
+            </p>
           </section>
         ))}
 
-        <section className="mt-8 border-t-2 border-[#73ae37] pt-4">
-          <h2 className="text-lg font-bold text-brand-green">Para a próxima conferência</h2>
-          <p className="mt-2 text-sm leading-relaxed">Comece pelos pedidos reservados que já podem sair, depois valide as pendências que impedem os demais embarques. Em paralelo, alinhe com o comercial a destinação do saldo sem reserva e dos itens fora de linha. Por fim, revise os motivos de avaria com maior volume para definir ações de prevenção.</p>
-          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">Esta análise usa os dados disponíveis no painel. Sem histórico comparável, idade do estoque e cobertura completa das movimentações, não é possível afirmar tendências, causas ou prazo de escoamento. Horários em Brasília (UTC−3).{sync ? ` Última sincronização informada: ${sync}.` : " A data da última sincronização não está disponível."}</p>
+        <section className="mt-7 border-t-2 border-[#73ae37] pt-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-[#4d7a1f]">Para a próxima conferência</h2>
+          <ol className="mt-2 space-y-1 text-xs leading-snug text-neutral-800">
+            {acoes.map((t, i) => (
+              <li key={t} className="flex gap-2">
+                <span className="font-bold tabular-nums text-[#73ae37]">{i + 1}.</span>
+                <span>{t}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-3 text-[10px] leading-snug text-neutral-500">
+            Sem histórico comparável, idade do estoque e cobertura completa das movimentações, não é possível afirmar tendências, causas ou prazo de escoamento. Horários em Brasília (UTC−3).
+            {sync ? ` Última sincronização: ${sync}.` : " A data da última sincronização não está disponível."}
+          </p>
         </section>
       </article>
     </div>,
