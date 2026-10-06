@@ -86,7 +86,6 @@ export default function CenaEstoquePrevisto({
         onToggle={() => setFoco((f) => (f + 1) % secoes.length)}
         anim={anim}
       />
-      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
       {/* Resumo rápido da seção ativa */}
       <div className="mt-2 w-full max-w-sm mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
@@ -174,6 +173,7 @@ export default function CenaEstoquePrevisto({
       </div>
 
       <BannerResumo texto={`${fmtInt(resumo.itens)} itens · ${fmtTonDec(resumo.ton)} · ${fmtMoeda(resumo.valor + resumo.previsto)} total`} />
+      <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
     </div>
   );
 }
