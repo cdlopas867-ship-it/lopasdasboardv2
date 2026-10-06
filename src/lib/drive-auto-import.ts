@@ -522,6 +522,49 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
   return { pct, ocupados, livres, total };
 }
 
+/* Constrói o resumo (tons, valor, saldo, itens, previsto) a partir dos
+   itens de estoque quando a planilha não tem aba "Resumo" — modelo
+   "ESTOQUE 001 - POSIÇÃO DE ESTOQUE" com colunas ITEM, SALDO, PESO LIQ
+   TOTAL, CLASSIFICACAO N1 e CUSTO MEDIO. Calcula o valor previsto por
+   unidade usando o faturado (R$/t) de cada CLASSIFICAÇÃO N1. */
+function resumoDeItens(itens: ItemEstoque[]): { resumo: ResumoData; unidades: UnidadeResumo[] } | null {
+  if (!itens.length) return null;
+  let ton = 0, valor = 0, saldo = 0, itensCount = 0, previsto = 0;
+  const porUnidade = new Map<string, { itens: number; saldo: number; pesoTon: number; valor: number; previsto: number }>();
+  for (const it of itens) {
+    const pesoTon = it.peso / 1000;
+    const v = it.valor > 0 ? it.valor : it.saldo * it.custo;
+    ton += pesoTon;
+    valor += v;
+    saldo += it.saldo;
+    itensCount++;
+    const id = MAPA_UNIDADES[it.unidade.toUpperCase().trim()];
+    const fat = faturadoPorUnidade(id);
+    previsto += pesoTon * fat;
+    const nome = it.unidade.toUpperCase().trim() || "OUTROS";
+    const atual = porUnidade.get(nome) ?? { itens: 0, saldo: 0, pesoTon: 0, valor: 0, previsto: 0 };
+    atual.itens++;
+    atual.saldo += it.saldo;
+    atual.pesoTon += pesoTon;
+    atual.valor += v;
+    atual.previsto += pesoTon * fat;
+    porUnidade.set(nome, atual);
+  }
+  const unidades: UnidadeResumo[] = [...porUnidade.entries()].map(([nome, u]) => ({
+    nome,
+    itens: u.itens,
+    saldo: u.saldo,
+    pesoTon: u.pesoTon,
+    valor: u.valor,
+    previsto: u.previsto,
+    share: valor > 0 ? (u.valor / valor) * 100 : 0,
+  }));
+  return {
+    resumo: { valor, previsto, ton, saldo, itens: itensCount, data: "" },
+    unidades,
+  };
+}
+
 /* Mapeia nome do Drive → ID do dashboard. */
 const MAPA_UNIDADES: Record<string, string> = {
   "UNIDADE GUARDA ROUPAS": "guarda-roupas",
@@ -942,6 +985,17 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
          "Toneladas Mensal" enviada pelo usuário. */
       carregado: carregadoDriveMap?.get(m.mes) ?? carregadoPorMes.get(m.mes) ?? CARREGADO_SEM_DRIVE[m.mes] ?? 0,
     }));
+  }
+
+  /* Fallback: quando a planilha não tem aba "Resumo" (modelo "ESTOQUE 001
+     - POSIÇÃO DE ESTOQUE"), calcula o resumo a partir dos itens lidos. */
+  if (!melhorResumo && melhorItens && melhorItens.length > 0) {
+    const r = resumoDeItens(melhorItens);
+    if (r) {
+      melhorResumo = r.resumo;
+      if (!melhorUnidadesResumo) melhorUnidadesResumo = r.unidades;
+      console.info(`[auto-import] resumo calculado a partir de ${melhorItens.length} itens (sem aba Resumo)`);
+    }
   }
 
   if (!melhorResumo) {
