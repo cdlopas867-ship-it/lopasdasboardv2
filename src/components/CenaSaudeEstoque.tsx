@@ -41,6 +41,7 @@ export default function CenaSaudeEstoque({
   const linhas = [
     { rotulo: "Recebido", periodo, ton: totRecebido, pct: 100, idx: -1 },
     { rotulo: "Carregado", periodo, ton: totCarregado, pct: saudePct, idx: 0 },
+    { rotulo: "Diferença", periodo, ton: saldo, pct: saldoPct, idx: 1 },
   ];
 
   return (
