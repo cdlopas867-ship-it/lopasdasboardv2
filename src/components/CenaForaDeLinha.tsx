@@ -47,11 +47,11 @@ export default function CenaForaDeLinha({
   const posicaoFora = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const posicaoTotal = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
 
-  const pctEmLinha = posicaoTotal.valorEstoque > 0
-    ? (posicaoEmLinha.valorEstoque / posicaoTotal.valorEstoque) * 100
+  const pctEmLinha = posicaoTotal.pesoTon > 0
+    ? (posicaoEmLinha.pesoTon / posicaoTotal.pesoTon) * 100
     : 0;
-  const pctFora = posicaoTotal.valorEstoque > 0
-    ? (posicaoFora.valorEstoque / posicaoTotal.valorEstoque) * 100
+  const pctFora = posicaoTotal.pesoTon > 0
+    ? (posicaoFora.pesoTon / posicaoTotal.pesoTon) * 100
     : 0;
 
   const [foco, setFoco] = useFocoCena<Foco>(cena, 0);
@@ -146,7 +146,7 @@ export default function CenaForaDeLinha({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * % em linha = valor em linha ÷ valor total × 100. {fmtPct(pctEmLinha / 100)} em linha · {fmtPct(pctFora / 100)} fora de linha. Clique para alternar.
+          * % em linha = tonelagem em linha ÷ tonelagem total × 100. {fmtPct(pctEmLinha / 100)} em linha · {fmtPct(pctFora / 100)} fora de linha. Clique para alternar.
         </p>
       </div>
 
