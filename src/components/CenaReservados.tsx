@@ -92,6 +92,16 @@ export default function CenaReservados({
                 </tr>
               );
             })}
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1 text-white">Total</td>
+              <td className="py-1 text-right font-mono text-white">
+                {fmtInt(reservadosCom.totalQtd + (semReserva?.totalQtd ?? 0))} un
+                {" · "}
+                {fmtBrMax(reservadosCom.totalTon + (semReserva?.totalTon ?? 0), 1)} t
+                {" · "}
+                {fmtMoeda(reservadosCom.totalValor + (semReserva?.totalValor ?? 0))}
+              </td>
+            </tr>
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">

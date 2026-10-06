@@ -104,11 +104,11 @@ export default function CenaProducaoSemana({
                 </tr>
               );
             })}
-            <tr className="border-t-2 border-white/30 font-bold">
-              <td className="py-0.5 text-white">Ordens</td>
-              <td className="py-0.5 text-right font-mono text-white">{fmtInt(totalOrdens)}</td>
-              <td className="py-0.5 text-right font-mono text-white">{fmtBrMax(totalTonPrev, 1)} t</td>
-              <td className="py-0.5 text-right font-mono text-white">100%</td>
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1 text-white">Ordens</td>
+              <td className="py-1 text-right font-mono text-white">{fmtInt(totalOrdens)}</td>
+              <td className="py-1 text-right font-mono text-white">{fmtBrMax(totalTonPrev, 1)} t</td>
+              <td className="py-1 text-right font-mono text-white">100%</td>
             </tr>
           </tbody>
         </table>

@@ -149,11 +149,11 @@ export default function CenaEstoquePrevisto({
                 })}
                 {/* Linha de totais por categoria */}
                 {temCategorias && (
-                  <tr className="border-b border-white/10 last:border-0">
-                    <td className="py-0.5 text-[9px] font-bold tracking-widest text-white/45 uppercase">
+                  <tr className="border-t-2 border-white/40 bg-white/10 font-bold last:border-0">
+                    <td className="py-1 text-[9px] font-bold tracking-widest text-white uppercase">
                       Qtd total
                     </td>
-                    <td className="py-0.5 text-right font-mono text-[10px] text-white/60">
+                    <td className="py-1 text-right font-mono text-[10px] text-white">
                       {fmtInt(cats.reduce((s, u) => s + (statNum(u.stats, "Saldo") ?? 0), 0))} un
                       {" · "}
                       {fmtTonDec(cats.reduce((s, u) => s + (statNum(u.stats, "Peso") ?? 0), 0))}

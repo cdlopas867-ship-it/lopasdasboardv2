@@ -130,6 +130,16 @@ export default function CenaForaDeLinha({
                 </tr>
               );
             })}
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1 text-white">Total geral</td>
+              <td className="py-1 text-right font-mono text-white">
+                {fmtInt(posicaoTotal.itens)} itens
+                {" · "}
+                {fmtBrMax(posicaoTotal.pesoTon, 1)} t
+                {" · "}
+                {fmtMoeda(posicaoTotal.valorEstoque)}
+              </td>
+            </tr>
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">

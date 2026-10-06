@@ -99,11 +99,11 @@ export default function CenaPaletes({
                 </tr>
               );
             })}
-            <tr className="border-t-2 border-white/30 font-bold">
-              <td className="py-0.5 text-white">Total</td>
-              <td className="py-0.5 text-right font-mono text-white">{fmtInt(total)}</td>
-              <td className="py-0.5 text-right font-mono text-white">{fmtInt(itens)}</td>
-              <td className="py-0.5 text-right font-mono text-white">100%</td>
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1 text-white">Total</td>
+              <td className="py-1 text-right font-mono text-white">{fmtInt(total)}</td>
+              <td className="py-1 text-right font-mono text-white">{fmtInt(itens)}</td>
+              <td className="py-1 text-right font-mono text-white">100%</td>
             </tr>
           </tbody>
         </table>

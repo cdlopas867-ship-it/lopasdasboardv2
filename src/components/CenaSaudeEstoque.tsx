@@ -103,11 +103,11 @@ export default function CenaSaudeEstoque({
                 </tr>
               );
             })}
-            <tr className="border-t-2 border-white/30 font-bold">
-              <td className="py-0.5 text-white">Total</td>
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1 text-white">Total</td>
               <td />
-              <td className="py-0.5 text-right font-mono text-white">{fmtTonDec(totRecebido)}</td>
-              <td className="py-0.5 text-right font-mono text-white">100%</td>
+              <td className="py-1 text-right font-mono text-white">{fmtTonDec(totRecebido)}</td>
+              <td className="py-1 text-right font-mono text-white">100%</td>
             </tr>
           </tbody>
         </table>

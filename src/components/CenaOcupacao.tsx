@@ -67,7 +67,7 @@ export default function CenaOcupacao({
               <th className="pb-0.5 text-center font-bold">Und.</th>
               <th className="pb-0.5 text-right font-bold">CD1</th>
               <th className="pb-0.5 text-right font-bold">CD2</th>
-              <th className="pb-0.5 text-right font-bold">Total</th>
+              <th className="pb-0.5 rounded-t bg-white/10 text-right font-bold">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -77,7 +77,7 @@ export default function CenaOcupacao({
                 <td className="py-0.5 text-center text-white/50">{d.unidade}</td>
                 <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(d.cd1)}</td>
                 <td className="py-0.5 text-right font-mono font-semibold text-white/80">{fmtInt(d.cd2)}</td>
-                <td className="py-0.5 text-right font-mono font-bold text-white">{fmtInt(d.total)}</td>
+                <td className="py-0.5 text-right font-mono font-bold text-white bg-white/10">{fmtInt(d.total)}</td>
               </tr>
             ))}
           </tbody>
