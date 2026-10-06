@@ -62,10 +62,23 @@ export default function CenaProducaoSemana({
       />
       <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
-      <div className="mt-2 w-full max-w-xs mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
-        <p className="text-[12px] font-bold text-white">
-          {fmtInt(totalOrdens)} ordens · {fmtBrMax(totalTonPrev, 1)} t previstas
-        </p>
+      <div className="mt-2 w-full max-w-xs mx-auto space-y-1.5">
+        <div className="rounded-lg bg-white/10 px-4 py-2 text-center">
+          <p className="text-[10px] font-bold tracking-[0.2em] text-white/60 uppercase">
+            Recebido da Semana
+          </p>
+          <p className="text-[20px] font-extrabold text-white leading-tight">
+            {fmtBrMax(pctEntregue, 1)}%
+          </p>
+          <p className="text-[10px] text-white/55">
+            {fmtInt(totalEntregue)} de {fmtInt(totalPrevisto)} un · {fmtBrMax(totalTonPrev, 1)} t previstas
+          </p>
+        </div>
+        <div className="rounded-lg bg-white/5 px-4 py-1.5 text-center">
+          <p className="text-[12px] font-bold text-white">
+            {fmtInt(totalOrdens)} ordens · {fmtBrMax(totalTonPend, 1)} t a receber
+          </p>
+        </div>
       </div>
 
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
