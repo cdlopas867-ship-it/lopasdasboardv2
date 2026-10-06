@@ -61,8 +61,10 @@ const PLANILHAS_LOCAIS = [
   "public/planilhas/saidascd.xlsx",
   "public/planilhas/estoque.xlsx",
   "public/planilhas/paletes.xlsx",
-  "public/planilhas/estoque-em-linha.xlsx",
   "public/planilhas/ocupacao-cd.xlsx",
+  "public/planilhas/peso-recebido.xlsx",
+  "public/planilhas/reservado.xlsx",
+  "public/planilhas/producao.xlsx",
 ];
 
 type ArquivoDrive = { id: string; nome: string; modificado?: string | undefined };
@@ -726,8 +728,8 @@ export async function importarSeMudou(forcar = false): Promise<boolean> {
       st.assinatura = assinatura;
       return ok;
     } catch (e) {
-      console.error("[auto-import] falha:", (e as Error).message);
-      return false;
+      console.error("[auto-import] falha no Drive, processando planilhas locais:", (e as Error).message);
+      return await importarDoDriveServidor([]);
     } finally {
       st.emAndamento = null;
     }
@@ -740,8 +742,8 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   try {
     arquivos = lista ? [...lista] : await listarPlanilhasDaPasta(FOLDER_ID);
   } catch (e) {
-    console.error("[auto-import] erro ao listar pasta do Drive:", (e as Error).message);
-    return false;
+    console.error("[auto-import] erro ao listar pasta do Drive, processando planilhas locais:", (e as Error).message);
+    arquivos = [];
   }
   /* Planilha histórica de avarias (com custos) que já esteve na pasta.
      Mantida como fonte fixa para o histórico não se perder se sair da pasta. */
@@ -920,7 +922,11 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       if (avariasRaw.length > 0) listasAvarias.push(avariasRaw);
 
       const itensEstoque = lerItensEstoque(wb);
-      if (itensEstoque.length > (melhorItens?.length ?? 0)) melhorItens = itensEstoque;
+      if (itensEstoque.length > (melhorItens?.length ?? 0)) {
+        melhorItens = itensEstoque;
+        const stat = statSync(localPath);
+        melhorItensMod = stat?.mtime;
+      }
 
       /* Lê a planilha de paletes (item → tamanho + und/palete) */
       const paletesMap = lerPaletes(wb);
@@ -947,6 +953,56 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       /* Extrai ocupação do CD do relatório WF0126 local */
       const ocupacao = extrairOcupacao(wb);
       if (ocupacao) melhorOcupacao = ocupacao;
+
+      /* Extrai itens reservados detalhados (COMERCIAL 024) */
+      const itensReservados = lerReservados(wb);
+      if (itensReservados && itensReservados.length > 0) {
+        const reservados = calcularReservados(itensReservados);
+        if (reservados.itens.length > 0) melhorReservados = reservados;
+      }
+      const itensSemReserva = lerReservados(wb, "semReserva");
+      if (itensSemReserva && itensSemReserva.length > 0) melhorSemReserva = calcularReservados(itensSemReserva);
+
+      /* Extrai pendências de produção */
+      const itensPendentes = lerPendentes(wb);
+      if (itensPendentes.length > 0) {
+        const resumoPend = calcularPendentesResumo(itensPendentes);
+        if (resumoPend) pendentesResumo = resumoPend;
+        melhorPendentes = itensPendentes;
+      }
+
+      /* Extrai recebimento (turnos, dias e itens) da aba Base Recebimento */
+      const receb = calcularRecebimento(wb);
+      if (receb && receb.dias.length > 0) melhorRecebimento = receb;
+
+      /* Detecta a planilha PESO RECEBIDO POR PERÍODO */
+      const recebidoPorDia = calcularRecebidoPorDia(wb);
+      if (recebidoPorDia && recebidoPorDia.size > (melhorRecebidoPorDia?.size ?? 0)) {
+        melhorRecebidoPorDia = recebidoPorDia;
+      }
+
+      /* Guarda a workbook de produção para processar após ter os itens */
+      const prod = calcularProducaoSemanal(wb, undefined);
+      if (prod && prod.length > 0) wbProducao = wb;
+
+      /* Curva ABC do recebimento */
+      const abcReceb = curvaAbcRecebimento(wb);
+      if (abcReceb.length > 0) abcRecebimento = abcReceb;
+
+      /* Dados por unidade da aba Resumo */
+      const unidadesResumo = extrairUnidadesResumo(wb);
+      if (unidadesResumo && unidadesResumo.length > 0) melhorUnidadesResumo = unidadesResumo;
+
+      /* Fora de linha (itens descontinuados) */
+      const fdl = lerForaDeLinha(wb);
+      if (fdl) melhorForaDeLinha = fdl;
+
+      /* Viagens CD */
+      processarViagensWb(wb);
+
+      /* Reserva (tonelagem e valor) */
+      if (reservadoTon == null) reservadoTon = extrairReservaTon(wb);
+      if (reservadoValor == null) reservadoValor = extrairReservaValor(wb);
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }
@@ -1025,6 +1081,15 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     console.error("[auto-import] erro ao buscar carregamento mensal:", (e as Error).message);
   }
 
+  /* Se não há dados mensais do Supabase mas há carregado local,
+      constrói o mensal a partir do carregado (recebido fica 0). */
+  if (!mensalData && carregadoDriveMap && carregadoDriveMap.size > 0) {
+    const ordem = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+    mensalData = [...carregadoDriveMap.entries()]
+      .map(([mes, ton]) => ({ mes, recebido: 0, carregado: ton }))
+      .sort((a, b) => ordem.indexOf(a.mes) - ordem.indexOf(b.mes));
+  }
+
   /* Se encontrou carregamento na aba CARREGADO do arquivo do Drive,
       sobrescreve os valores de carregado (mais completos que a planilha externa). */
   if (mensalData && carregadoDriveMap) {
@@ -1037,8 +1102,11 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 
   /* Recebido por mês vem da Base Recebimento (Drive) — ano completo e sempre
      atualizado, em vez da planilha externa que só cobre poucos meses e lê a
-     coluna errada. O carregado continua vindo da fonte de carregamento acima. */
-  if (melhorRecebimento?.mensal?.length) {
+     coluna errada. O carregado continua vindo da fonte de carregamento acima.
+     Só reconstrói a partir do recebimento se ele cobrir mais meses que os
+     dados existentes (evita que um arquivo diário com só 1 dia substitua
+     o histórico completo de 12 meses). */
+  if (melhorRecebimento?.mensal?.length && (!mensalData || melhorRecebimento.mensal.length >= mensalData.length)) {
     const carregadoPorMes = new Map<string, number>();
     for (const m of mensalData ?? []) carregadoPorMes.set(m.mes, m.carregado);
     mensalData = melhorRecebimento.mensal.map((m) => ({
