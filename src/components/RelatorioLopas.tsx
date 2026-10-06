@@ -47,10 +47,10 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
   secoes.push({
     titulo: "Ocupação do CD",
     explicacao: "Percentual de posições de armazenagem ocupadas, considerando os dois centros de distribuição.",
-    linhas: [["Ocupação", pct(d.ocupacao.pct)], ["Posições ocupadas", fmtInt(d.ocupacao.ocupados)], ["Posições livres", fmtInt(d.ocupacao.livres)]],
-    resumo: `${pct(d.ocupacao.pct)} das posições estão ocupadas; ${fmtInt(d.ocupacao.livres)} seguem livres.`,
+    linhas: [["Ocupação", pct(d.ocupacao.pct * 100)], ["Posições ocupadas", fmtInt(d.ocupacao.ocupados)], ["Posições livres", fmtInt(d.ocupacao.livres)]],
+    resumo: `${pct(d.ocupacao.pct * 100)} das posições estão ocupadas; ${fmtInt(d.ocupacao.livres)} seguem livres.`,
   });
-  destaques.push(`Ocupação do CD em ${pct(d.ocupacao.pct)}.`);
+  destaques.push(`Ocupação do CD em ${pct(d.ocupacao.pct * 100)}.`);
 
   if (d.semana) {
     secoes.push({
