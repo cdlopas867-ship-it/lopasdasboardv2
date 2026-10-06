@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { fmtBrMax, fmtInt, fmtMoeda, fmtPct, fmtPeso, fmtTonDec } from "@/lib/format";
+import { fmtBrMax, fmtInt, fmtMoeda, fmtPct, fmtPeso } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
@@ -9,6 +9,9 @@ import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
 import CenaReservados from "@/components/CenaReservados";
 import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
+import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
+import CenaPaletes from "@/components/CenaPaletes";
+import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -115,7 +118,7 @@ export default function CenasApresentacao({
 
       {/* Cena 2 — KPIs de abertura em destaque (um card por vez, centralizado) */}
       {cena === 1 && (
-        <CenaKpisFoco kpis={kpis} unidades={unidades} foraDeLinha={foraDeLinha} paletas={paletas} producaoSemanal={producaoSemanal} onPausar={onPausar} />
+        <CenaKpisFoco kpis={kpis} foraDeLinha={foraDeLinha} paletas={paletas} producaoSemanal={producaoSemanal} onPausar={onPausar} />
       )}
 
       {/* Cena 3 — ocupação (donut interativo) */}
@@ -128,13 +131,28 @@ export default function CenasApresentacao({
         <CenaRecebimentoTurno anim={anim} turnos={turnos} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 5 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
-      {cena === 4 && (
+      {/* Cena 5 — Saúde do Estoque (donut interativo com toggle Carregado/Saldo) */}
+      {cena === 4 && listaMes.length > 0 && (
+        <CenaSaudeEstoque anim={anim} mensal={listaMes} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 6 — Paletes em Estoque (donut interativo com toggle por tamanho) */}
+      {cena === 5 && paletas && paletas.totalPaletes > 0 && (
+        <CenaPaletes anim={anim} paletas={paletas} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 7 — Produção da Semana (donut interativo com toggle Entregue/Pendente) */}
+      {cena === 6 && producaoSemanal && producaoSemanal.length > 0 && (
+        <CenaProducaoSemana anim={anim} dias={producaoSemanal} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 8 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
+      {cena === 7 && (
         <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
       )}
 
-      {/* Cena 6 — pendências de produção */}
-      {cena === 5 && (
+      {/* Cena 9 — pendências de produção */}
+      {cena === 8 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -268,13 +286,13 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 7 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
-      {cena === 6 && reservados && (
+      {/* Cena 10 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
+      {cena === 9 && reservados && (
         <CenaReservados anim={anim} reservados={reservados} semReserva={semReserva} valorFaturado={valorFaturado} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 7 fallback — sem dados de reservados */}
-      {cena === 6 && !reservados && (
+      {/* Cena 10 fallback — sem dados de reservados */}
+      {cena === 9 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -291,18 +309,18 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 8 — Fora de linha por categoria */}
-      {cena === 7 && (
+      {/* Cena 11 — Fora de linha por categoria */}
+      {cena === 10 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 9 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 8 && (
+      {/* Cena 12 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 11 && (
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 10 — encerramento */}
-      {cena === 9 && (
+      {/* Cena 13 — encerramento */}
+      {cena === 12 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -340,14 +358,12 @@ export default function CenasApresentacao({
    também por clique nos indicadores; clicar no card pausa/retoma o ciclo. */
 function CenaKpisFoco({
   kpis,
-  unidades,
   foraDeLinha,
   paletas,
   producaoSemanal,
   onPausar,
 }: {
   kpis: VideoKpi[];
-  unidades: VideoUnidade[];
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
@@ -413,11 +429,11 @@ function CenaKpisFoco({
         </button>
         <div key={foco} className="card-foco-entra relative w-full">
           {kpi ? (
-            <CardFocoKpi kpi={kpi} unidades={unidades} onTogglePausar={togglePausar} />
+            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} />
           ) : ehPaletas ? (
-            <CardFocoPaletas paletas={paletas} unidades={unidades} onTogglePausar={togglePausar} />
+            <CardFocoPaletas paletas={paletas} onTogglePausar={togglePausar} />
           ) : ehProducao ? (
-            <CardFocoProducao dias={producaoSemanal} unidades={unidades} onTogglePausar={togglePausar} />
+            <CardFocoProducao dias={producaoSemanal} onTogglePausar={togglePausar} />
           ) : (
             <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} />
           )}
@@ -459,56 +475,12 @@ function CenaKpisFoco({
 const cardFocoBase =
   "group block w-full cursor-pointer rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-5 text-center backdrop-blur-xl shadow-[0_20px_50px_-36px_rgba(0,0,0,0.7)] transition-all duration-500 hover:border-white/20 hover:bg-white/[0.06] sm:p-6";
 
-/* Breakdown por categoria (Guarda-Roupas, Salas, Complementos) — compartilhado
-   entre os cards de destaque. Mostra % de participação, valor e qtd por categoria,
-   mais uma linha de Qtd total somando saldo, peso e itens. */
-function statNum(stats: [string, string][] | undefined, chave: string): number {
-  const s = stats?.find(([k]) => k === chave);
-  if (!s) return 0;
-  return Number(s[1].replace(/[^\d,-]/g, "").replace(",", ".")) || 0;
-}
-
-function BreakdownCategorias({ unidades }: { unidades?: VideoUnidade[] }) {
-  const cats = (unidades ?? []).filter((u) => u.stats?.length);
-  if (!cats.length) return null;
-  const totalSaldo = cats.reduce((s, u) => s + statNum(u.stats, "Saldo"), 0);
-  const totalItens = cats.reduce((s, u) => s + statNum(u.stats, "Itens"), 0);
-  const totalPeso = cats.reduce((s, u) => s + statNum(u.stats, "Peso"), 0);
-  return (
-    <>
-      <div className="mt-2 border-t border-white/[0.07] pt-1.5">
-        <p className="text-[8px] font-bold tracking-[0.3em] text-white/45 uppercase">% por categoria</p>
-      </div>
-      {cats.map((u) => (
-        <div key={u.nome} className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">
-            {u.nome}
-            <span className="ml-1.5 text-[9px] font-bold text-primary/80">{fmtBrMax(u.share, 1)}%</span>
-          </dt>
-          <dd className="font-medium text-white/90">
-            {u.valor}
-            <span className="ml-1 text-[9px] text-white/40">· {fmtInt(statNum(u.stats, "Saldo"))} un</span>
-          </dd>
-        </div>
-      ))}
-      <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-        <dt className="text-[9px] font-bold tracking-widest text-white/35 uppercase">Qtd total</dt>
-        <dd className="font-mono text-[10px] text-white/55">
-          {fmtInt(totalSaldo)} un · {fmtTonDec(totalPeso)} · {fmtInt(totalItens)} itens
-        </dd>
-      </div>
-    </>
-  );
-}
-
 /* Card de KPI em destaque — centralizado, grande, com o resumo sempre aberto */
 function CardFocoKpi({
   kpi,
-  unidades,
   onTogglePausar,
 }: {
   kpi: VideoKpi;
-  unidades?: VideoUnidade[];
   onTogglePausar: () => void;
 }) {
   return (
@@ -539,7 +511,6 @@ function CardFocoKpi({
               <dd className="font-medium text-white/90">{v}</dd>
             </div>
           ))}
-          {kpi.id === "saude" && <BreakdownCategorias unidades={unidades} />}
         </dl>
       ) : null}
     </button>
@@ -619,11 +590,9 @@ const CORES_TAMANHO: Record<string, string> = {
 
 function CardFocoPaletas({
   paletas,
-  unidades,
   onTogglePausar,
 }: {
   paletas?: VideoPaletas | undefined;
-  unidades?: VideoUnidade[];
   onTogglePausar: () => void;
 }) {
   const total = paletas?.totalPaletes ?? 0;
@@ -661,7 +630,6 @@ function CardFocoPaletas({
               </div>
             );
           })}
-          <BreakdownCategorias unidades={unidades} />
         </dl>
       ) : null}
     </button>
@@ -672,11 +640,9 @@ function CardFocoPaletas({
    pendente, % entregue e breakdown por dia. */
 function CardFocoProducao({
   dias,
-  unidades,
   onTogglePausar,
 }: {
   dias?: ProducaoSemanalDia[] | undefined;
-  unidades?: VideoUnidade[];
   onTogglePausar: () => void;
 }) {
   const semana = (dias ?? []).slice(-7);
@@ -721,7 +687,6 @@ function CardFocoProducao({
           <dt className="text-white/45">Ordens</dt>
           <dd className="font-medium text-white/90">{fmtInt(totalOrdens)}</dd>
         </div>
-        <BreakdownCategorias unidades={unidades} />
       </dl>
     </button>
   );
