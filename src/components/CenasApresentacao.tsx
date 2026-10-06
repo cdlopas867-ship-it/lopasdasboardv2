@@ -667,20 +667,20 @@ function CardFocoProducao({
         Produção da Semana
       </p>
       <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
-        {fmtInt(totalOrdens)} ordens de produção previstas para os próximos{" "}
-        {semana.length} dias — {fmtBrMax(totalTonPend, 1)} t pendentes.
+        {fmtInt(totalOrdens)} ordens de produção programadas para os próximos{" "}
+        {semana.length} dias — {fmtBrMax(totalTonPend, 1)} t a descer.
       </p>
       <dl className="mt-2.5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
         <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Previsto</dt>
+          <dt className="text-white/45">Programado</dt>
           <dd className="font-medium text-white/90">{fmtInt(totalPrevisto)} un · {fmtBrMax(totalTonPrev, 1)} t</dd>
         </div>
         <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Entregue</dt>
+          <dt className="text-white/45">Recebido</dt>
           <dd className="font-medium text-green-400">{fmtInt(totalEntregue)} un ({fmtBrMax(pctEntregue, 0)}%)</dd>
         </div>
         <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Pendente</dt>
+          <dt className="text-white/45">Previsto</dt>
           <dd className="font-medium text-brand-amber">{fmtInt(totalPendente)} un · {fmtBrMax(totalTonPend, 1)} t</dd>
         </div>
         <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">

@@ -7,8 +7,8 @@ import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 
-const COR_ENTREGUE = "#33D953";
-const COR_PENDENTE = "#FFA500";
+const COR_RECEBIDO = "#33D953";
+const COR_PREVISTO = "#FFA500";
 
 export default function CenaProducaoSemana({
   anim,
@@ -34,15 +34,15 @@ export default function CenaProducaoSemana({
   const pctPendente = 100 - pctEntregue;
 
   const secoes: SecaoDonut[] = [
-    { id: "entregue", label: "entregue", cor: COR_ENTREGUE, pct: pctEntregue },
-    { id: "pendente", label: "pendente", cor: COR_PENDENTE, pct: pctPendente },
+    { id: "recebido", label: "recebido", cor: COR_RECEBIDO, pct: pctEntregue },
+    { id: "previsto", label: "previsto", cor: COR_PREVISTO, pct: pctPendente },
   ];
 
-  /* Tabela: Previsto (total), Entregue (foco 0), Pendente (foco 1), Ordens */
+  /* Tabela: Programado (total), Recebido (foco 0), Previsto (foco 1), Ordens */
   const linhas = [
-    { rotulo: "Previsto", un: totalPrevisto, ton: totalTonPrev, pct: 100, idx: -1 },
-    { rotulo: "Entregue", un: totalEntregue, ton: 0, pct: pctEntregue, idx: 0 },
-    { rotulo: "Pendente", un: totalPendente, ton: totalTonPend, pct: pctPendente, idx: 1 },
+    { rotulo: "Programado", un: totalPrevisto, ton: totalTonPrev, pct: 100, idx: -1 },
+    { rotulo: "Recebido", un: totalEntregue, ton: 0, pct: pctEntregue, idx: 0 },
+    { rotulo: "Previsto", un: totalPendente, ton: totalTonPend, pct: pctPendente, idx: 1 },
   ];
 
   return (
@@ -51,7 +51,7 @@ export default function CenaProducaoSemana({
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Produção da Semana
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Ordens de produção previstas para os próximos 7 dias. Entregue = unidades já produzidas. Pendente = unidades ainda a produzir. Fonte: sistema Focco." />
+        <InfoTooltip onOpen={onPausar} texto="Ordens de produção programadas para os próximos 7 dias. Recebido = unidades já recebidas no estoque. Previsto = unidades que ainda faltam descer. Fonte: sistema Focco." />
       </div>
 
       <DonutInterativo
@@ -115,7 +115,7 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Previsto: ordens dos próximos 7 dias. Entregue: já produzido. Pendente: a produzir. Fonte: sistema Focco.
+          * Programado: ordens dos próximos 7 dias. Recebido: já recebido no estoque. Previsto: o que falta descer. Fonte: sistema Focco.
         </p>
       </div>
     </div>
