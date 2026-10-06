@@ -216,6 +216,139 @@ function lerFormatoAnalise(wb: XLSX.WorkBook): ForaDeLinhaData | null {
   return { itens, posicaoEmLinha: pos.em, posicaoForaDeLinha: pos.fora, posicaoTotal: total };
 }
 
+/* Formato "Estoque_EmLinha_x_ForaDeLinha": abas Estoque (itens com SITUAÇÃO vazia),
+   Linha (cadastro CHAVE→SITUAÇÃO) e Reservas (QTD RESERVADA por item).
+   Cruza os três para montar os itens fora de linha com saldo, reserva e valor. */
+function lerFormatoEstoqueLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
+  const wsEst = wb.Sheets["Estoque"];
+  const wsLinha = wb.Sheets["Linha"];
+  if (!wsEst || !wsLinha) return null;
+
+  const rowsEst = XLSX.utils.sheet_to_json<unknown[]>(wsEst, { header: 1, defval: null });
+  const hiEst = rowsEst.findIndex((r) => r?.some((c) => str(c).toUpperCase().trim() === "CHAVE"));
+  if (hiEst < 0) return null;
+  const hEst = (rowsEst[hiEst] ?? []).map((c) => str(c).toUpperCase());
+  const cEst = (n: string) => hEst.findIndex((x) => x === n || x.startsWith(n));
+  const cItem = cEst("ITEM");
+  const cDesc = cEst("DESCRIÇÃO");
+  const cMascara = cEst("MÁSCARA");
+  const cCategoria = cEst("CATEGORIA");
+  const cSaldoFocco = cEst("SALDO FOCCO");
+  const cPesoUn = cEst("PESO UN");
+  const cCusto = cEst("CUSTO MÉDIO");
+  if (cItem < 0 || cSaldoFocco < 0) return null;
+
+  /* 1. Ler cadastro Linha → CHAVE → SITUAÇÃO */
+  const rowsLinha = XLSX.utils.sheet_to_json<unknown[]>(wsLinha, { header: 1, defval: null });
+  const hiLinha = rowsLinha.findIndex((r) => r?.some((c) => str(c).toUpperCase().trim() === "CHAVE"));
+  const situacaoMap = new Map<string, string>();
+  if (hiLinha >= 0) {
+    const hLinha = (rowsLinha[hiLinha] ?? []).map((c) => str(c).toUpperCase());
+    const cSit = hLinha.findIndex((x) => x.includes("SITUA"));
+    for (let i = hiLinha + 1; i < rowsLinha.length; i++) {
+      const r = rowsLinha[i];
+      if (!r || !r[0]) continue;
+      const chave = str(r[0]);
+      const sit = cSit >= 0 ? str(r[cSit]).toUpperCase() : "";
+      if (chave && sit) situacaoMap.set(chave, sit);
+    }
+  }
+  if (situacaoMap.size === 0) return null;
+
+  /* 2. Ler Reservas → (item|maskNum) → qtdReservada total */
+  const reservasMap = new Map<string, number>();
+  const wsRes = wb.Sheets["Reservas"];
+  if (wsRes) {
+    const rowsRes = XLSX.utils.sheet_to_json<unknown[]>(wsRes, { header: 1, defval: null });
+    const hiRes = rowsRes.findIndex((r) => r?.some((c) => /QTD.*RESERV/i.test(str(c))));
+    if (hiRes >= 0) {
+      const hRes = (rowsRes[hiRes] ?? []).map((c) => str(c).toUpperCase());
+      const cCodRes = hRes.findIndex((x) => x.includes("COD ITEM") || x === "ITEM");
+      const cMaskRes = hRes.findIndex((x) => x.includes("MASCARA"));
+      const cQtdRes = hRes.findIndex((x) => /QTD.*RESERV/.test(x));
+      if (cCodRes >= 0 && cQtdRes >= 0) {
+        for (let i = hiRes + 1; i < rowsRes.length; i++) {
+          const r = rowsRes[i];
+          if (!r) continue;
+          const cod = str(r[cCodRes]);
+          const maskNum = cMaskRes >= 0 ? (str(r[cMaskRes]).match(/\((\d+)\)/)?.[1] ?? "") : "";
+          const qtd = num(r[cQtdRes]);
+          if (cod && qtd > 0) {
+            const key = `${cod}|${maskNum}`;
+            reservasMap.set(key, (reservasMap.get(key) ?? 0) + qtd);
+          }
+        }
+      }
+    }
+  }
+
+  /* 3. Ler Estoque, cruzar SITUAÇÃO + reservas, filtrar fora de linha */
+  const itens: ItemForaDeLinha[] = [];
+  const posEm = vazio("EM LINHA");
+  const posFora = vazio("FORA DE LINHA");
+
+  for (let i = hiEst + 1; i < rowsEst.length; i++) {
+    const r = rowsEst[i];
+    if (!r || !r[0] || str(r[0]) === "") continue;
+    const chave = str(r[0]);
+    if (!chave.includes(".")) continue;
+
+    const situacao = situacaoMap.get(chave) ?? "";
+    const item = num(r[cItem]);
+    const mascara = cMascara >= 0 ? str(r[cMascara]) : "";
+    const maskNum = mascara.match(/\((\d+)\)/)?.[1] ?? "";
+    const saldoFocco = num(r[cSaldoFocco]);
+    const pesoUn = cPesoUn >= 0 ? num(r[cPesoUn]) : 0;
+    const custo = cCusto >= 0 ? num(r[cCusto]) : 0;
+    const reservas = reservasMap.get(`${item}|${maskNum}`) ?? 0;
+    const pesoKg = pesoUn * saldoFocco;
+    const valorEstoque = custo * saldoFocco;
+    const valorReservado = custo * reservas;
+
+    const acc = situacao === "FORA DE LINHA" ? posFora : situacao === "EM LINHA" ? posEm : null;
+    if (acc) {
+      acc.itens++;
+      acc.saldoFocco += saldoFocco;
+      acc.reservas += reservas;
+      acc.disponivel += saldoFocco - reservas;
+      acc.pesoTon += pesoKg / 1000;
+      acc.pesoReservadoTon += pesoUn * reservas / 1000;
+      acc.valorEstoque += valorEstoque;
+      acc.valorReservado += valorReservado;
+    }
+
+    if (situacao === "FORA DE LINHA") {
+      itens.push({
+        chave,
+        item,
+        desc: cDesc >= 0 ? str(r[cDesc]) : "",
+        mascara,
+        categoria: cCategoria >= 0 ? str(r[cCategoria]).toUpperCase() : "",
+        origem: "CD",
+        saldoFocco,
+        saldoFull: 0,
+        reservas,
+        disponivel: saldoFocco - reservas,
+        pesoKg,
+        pesoReservadoKg: pesoUn * reservas,
+        valorEstoque,
+        valorReservado,
+      });
+    }
+  }
+
+  if (itens.length === 0) return null;
+
+  const soma = (k: keyof PosicaoEstoque) => (posEm[k] as number) + (posFora[k] as number);
+  const total: PosicaoEstoque = {
+    grupo: "TOTAL GERAL", itens: soma("itens"), saldoFocco: soma("saldoFocco"), saldoFull: 0,
+    reservas: soma("reservas"), disponivel: soma("disponivel"), pesoTon: soma("pesoTon"),
+    pesoReservadoTon: soma("pesoReservadoTon"), valorEstoque: soma("valorEstoque"), valorReservado: soma("valorReservado"),
+  };
+
+  return { itens, posicaoEmLinha: posEm, posicaoForaDeLinha: posFora, posicaoTotal: total };
+}
+
 /* Preenche valores (custo) usando o custo médio por item da planilha de reservas. */
 export function aplicarCustos(
   fdl: ForaDeLinhaData,
@@ -237,6 +370,8 @@ export function aplicarCustos(
 }
 
 export function lerForaDeLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
+  const estoqueLinha = lerFormatoEstoqueLinha(wb);
+  if (estoqueLinha) return estoqueLinha;
   const novo = lerFormatoAnalise(wb);
   if (novo) return novo;
   const resumo = lerResumo(wb);
