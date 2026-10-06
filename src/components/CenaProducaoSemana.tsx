@@ -132,7 +132,6 @@ export default function CenaProducaoSemana({
         </p>
       </div>
 
-      <BannerResumo texto={`${fmtInt(totalOrdens)} ordens · ${fmtInt(totalPrevisto)} un · ${fmtBrMax(totalTonPrev, 1)} t previstas`} />
     </div>
   );
 }
