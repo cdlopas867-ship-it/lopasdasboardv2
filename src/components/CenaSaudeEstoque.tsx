@@ -64,7 +64,7 @@ export default function CenaSaudeEstoque({
       <div className="mt-2 w-full max-w-xs mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
         <p className="text-[12px] font-bold text-white">
           {foco === 0
-            ? `${fmtBrMax(saudePct, 1)}% carregado · ${fmtTonDec(totCarregado)} t`
+            ? `${fmtBrMax(saudePct, 1)}% total · ${fmtTonDec(totCarregado)} t`
             : `${fmtBrMax(saldoPct, 1)}% de diferença · ${fmtTonDec(saldo)} t`}
         </p>
       </div>
