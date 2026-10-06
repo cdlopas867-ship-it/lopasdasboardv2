@@ -27,7 +27,7 @@ function DashboardHome() {
   const presentation = useMemo(() => {
     const p = dados as unknown as Record<string, any>; const resumo = p["resumo"] ?? {};
     const kpis = (p["kpis"] ?? []) as VideoKpi[];
-    const unidades = ((p["unidades"] ?? []) as any[]).map(u => ({ nome: u.nome, share: Number(u.share ?? 0), valor: u.stats?.find((x: string[]) => x[0] === "Valor")?.[1] ?? "—" })) as VideoUnidade[];
+    const unidades = ((p["unidades"] ?? []) as any[]).map(u => ({ nome: u.nome, share: Number(u.share ?? 0), valor: u.stats?.find((x: string[]) => x[0] === "Valor")?.[1] ?? "—", ...(u.stats ? { stats: u.stats as [string, string][] } : {}), ...(u.previsto ? { previsto: u.previsto } : {}) })) as VideoUnidade[];
     const detalhe = (p["ocupacaoDetalhes"] ?? []) as VideoOcupacao["detalhes"];
     const ocup = p["ocupacao"] as { pct?: number; ocupados?: number; livres?: number; bloqueados?: number; total?: number } | undefined;
     const pos = detalhe?.find(x => x.atributo === "POSIÇÕES"); const ocupacaoKpi = kpis.find(k => k.rotulo.includes("Ocupação"));
