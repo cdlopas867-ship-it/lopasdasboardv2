@@ -114,7 +114,6 @@ export default function CenaPaletes({
         </p>
       </div>
 
-      <BannerResumo texto={`${fmtInt(itens)} itens em ${fmtInt(total)} paletes`} />
     </div>
   );
 }
