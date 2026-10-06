@@ -25,16 +25,14 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; hero: Destaque[];
 
   if (d.resumo) {
     const r = d.resumo;
-    hero.push({ valor: fmtMoeda(r.valor), rotulo: "Em estoque (custo)", nota: `${fmtTonDec(r.ton)} · ${fmtInt(r.itens)} itens` });
+    hero.push({ valor: fmtTonDec(r.ton), rotulo: "Em estoque (peso)", nota: `${fmtMoeda(r.valor)} · ${fmtInt(r.itens)} itens` });
     secoes.push({
       titulo: "Posição geral do estoque",
       grandes: [
-        { valor: fmtMoeda(r.valor), rotulo: "Capital aplicado", nota: "a custo" },
-        { valor: fmtMoeda(r.previsto), rotulo: "Valor previsto", nota: "estimativa de venda" },
-        { valor: fmtTonDec(r.ton), rotulo: "Peso em estoque" },
+        { valor: fmtTonDec(r.ton), rotulo: "Peso em estoque", nota: `${fmtInt(r.itens)} itens` },
       ],
-      linhas: [["Saldo (un)", fmtInt(r.saldo)], ["Itens ativos", fmtInt(r.itens)]],
-      resumo: `${fmtMoeda(r.valor)} estão aplicados em ${fmtInt(r.itens)} itens e dependem da saída para voltar ao caixa. O valor previsto é estimativa de venda, não faturamento realizado.`,
+      linhas: [["Saldo (un)", fmtInt(r.saldo)], ["Itens ativos", fmtInt(r.itens)], ["Valor em estoque", fmtMoeda(r.valor)], ["Valor previsto", fmtMoeda(r.previsto)]],
+      resumo: `${fmtTonDec(r.ton)} distribuídos em ${fmtInt(r.itens)} itens e dependem da saída para voltar ao caixa. O valor previsto é estimativa de venda, não faturamento realizado.`,
     });
   }
 
@@ -160,11 +158,11 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; hero: Destaque[];
       grandes: [
         { valor: fmtTonDec(r.totalTon), rotulo: "Reservado", nota: fmtMoeda(r.totalValor) },
         ...(s ? [{ valor: fmtTonDec(s.totalTon), rotulo: "Sem reserva", nota: fmtMoeda(s.totalValor) }] : []),
-        ...(d.valorFaturado ? [{ valor: fmtMoeda(r.previsao ?? r.totalTon * d.valorFaturado), rotulo: "Previsto da reserva", nota: "estimativa" }] : []),
       ],
       linhas: [
         ["Reservado · quantidade", fmtInt(r.totalQtd)],
         ...(s ? [["Sem reserva · quantidade", fmtInt(s.totalQtd)] as Linha] : []),
+        ...(d.valorFaturado ? [["Previsto da reserva", fmtMoeda(r.previsao ?? r.totalTon * d.valorFaturado)] as Linha] : []),
       ],
       resumo: `A reserva é demanda vinculada, mas só vira saída e faturamento quando o pedido é atendido. ${s ? `${fmtTonDec(s.totalTon)} seguem sem destinação comercial registrada.` : ""}`,
     });
@@ -176,18 +174,19 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; hero: Destaque[];
     const f = d.foraDeLinha.posicaoForaDeLinha;
     const t = d.foraDeLinha.posicaoTotal;
     const p = t.valorEstoque > 0 ? (e.valorEstoque / t.valorEstoque) * 100 : 0;
-    hero.push({ valor: fmtInt(f.saldoFocco), rotulo: "Unidades fora de linha", nota: `${fmtTonDec(f.pesoTon)} · ${pct(100 - p)} do valor` });
+    hero.push({ valor: fmtTonDec(f.pesoTon), rotulo: "Fora de linha (peso)", nota: `${fmtInt(f.saldoFocco)} unidades · ${pct(100 - p)} do valor` });
     secoes.push({
       titulo: "Em linha × fora de linha",
       grandes: [
-        { valor: pct(p), rotulo: "Valor em linha" },
-        { valor: fmtInt(f.itens), rotulo: "Itens fora de linha", nota: `${fmtTonDec(f.pesoTon)} · ${fmtMoeda(f.valorEstoque)}` },
+        { valor: fmtTonDec(f.pesoTon), rotulo: "Fora de linha (peso)", nota: `${fmtInt(f.itens)} itens` },
+        { valor: fmtTonDec(e.pesoTon), rotulo: "Em linha (peso)", nota: `${fmtInt(e.itens)} itens` },
       ],
       linhas: [
         ["Em linha · saldo", fmtInt(e.saldoFocco)],
         ["Fora de linha · saldo", fmtInt(f.saldoFocco)],
         ["Em linha · valor", fmtMoeda(e.valorEstoque)],
         ["Fora de linha · valor", fmtMoeda(f.valorEstoque)],
+        ["Valor em linha", pct(p)],
       ],
       resumo: "Fora de linha não faz mais parte da linha ativa: precisa de plano próprio de saída e não deve ser reposto. O valor é estimativa quando a planilha não traz o custo.",
     });
