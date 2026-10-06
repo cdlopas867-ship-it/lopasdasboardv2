@@ -25,16 +25,16 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; hero: Destaque[];
 
   if (d.resumo) {
     const r = d.resumo;
-    hero.push({ valor: fmtMoeda(r.valor), rotulo: "Em estoque (custo)", nota: `${fmtTonDec(r.ton)} · ${fmtInt(r.itens)} itens` });
+    hero.push({ valor: fmtTonDec(r.ton), rotulo: "Peso em estoque", nota: `${fmtMoeda(r.valor)} · ${fmtInt(r.itens)} itens` });
     secoes.push({
       titulo: "Posição geral do estoque",
       grandes: [
+        { valor: fmtTonDec(r.ton), rotulo: "Peso em estoque" },
         { valor: fmtMoeda(r.valor), rotulo: "Capital aplicado", nota: "a custo" },
         { valor: fmtMoeda(r.previsto), rotulo: "Valor previsto", nota: "estimativa de venda" },
-        { valor: fmtTonDec(r.ton), rotulo: "Peso em estoque" },
       ],
       linhas: [["Saldo (un)", fmtInt(r.saldo)], ["Itens ativos", fmtInt(r.itens)]],
-      resumo: `${fmtMoeda(r.valor)} estão aplicados em ${fmtInt(r.itens)} itens e dependem da saída para voltar ao caixa. O valor previsto é estimativa de venda, não faturamento realizado.`,
+      resumo: `${fmtTonDec(r.ton)} em estoque em ${fmtInt(r.itens)} itens. O valor aplicado é ${fmtMoeda(r.valor)} e depende da saída para voltar ao caixa. O valor previsto é estimativa de venda, não faturamento realizado.`,
     });
   }
 
