@@ -29,6 +29,7 @@ type LinhaTabela = {
   grupo: number;
   rotulo: string;
   valor: string;
+  destaque?: boolean;
 };
 
 export default function CenaForaDeLinha({
@@ -66,14 +67,14 @@ export default function CenaForaDeLinha({
     { grupo: 0, rotulo: "Em linha · reservados qtd", valor: fmtInt(posicaoEmLinha.reservas) },
     { grupo: 0, rotulo: "Em linha · reservados ton", valor: `${fmtBrMax(posicaoEmLinha.pesoReservadoTon, 1)} t` },
     { grupo: 0, rotulo: "Em linha · reservados R$", valor: fmtMoeda(posicaoEmLinha.valorReservado) },
-    { grupo: 0, rotulo: "Em linha · tonelagem", valor: `${fmtBrMax(posicaoEmLinha.pesoTon, 1)} t` },
+    { grupo: 0, rotulo: "Em linha · tonelagem", valor: `${fmtBrMax(posicaoEmLinha.pesoTon, 1)} t`, destaque: true },
     { grupo: 0, rotulo: "Em linha · valor", valor: fmtMoeda(posicaoEmLinha.valorEstoque) },
     { grupo: 1, rotulo: "Fora de linha · itens", valor: fmtInt(posicaoFora.itens) },
     { grupo: 1, rotulo: "Fora de linha · saldo", valor: fmtInt(posicaoFora.saldoFocco) },
     { grupo: 1, rotulo: "Fora de linha · reservados qtd", valor: fmtInt(posicaoFora.reservas) },
     { grupo: 1, rotulo: "Fora de linha · reservados ton", valor: `${fmtBrMax(posicaoFora.pesoReservadoTon, 1)} t` },
     { grupo: 1, rotulo: "Fora de linha · reservados R$", valor: fmtMoeda(posicaoFora.valorReservado) },
-    { grupo: 1, rotulo: "Fora de linha · tonelagem", valor: `${fmtBrMax(posicaoFora.pesoTon, 1)} t` },
+    { grupo: 1, rotulo: "Fora de linha · tonelagem", valor: `${fmtBrMax(posicaoFora.pesoTon, 1)} t`, destaque: true },
     { grupo: 1, rotulo: "Fora de linha · valor", valor: fmtMoeda(posicaoFora.valorEstoque) },
   ];
 
@@ -128,7 +129,7 @@ export default function CenaForaDeLinha({
                   <td className="py-0.5" style={ativa ? { color: cor } : undefined}>
                     {linha.rotulo}
                   </td>
-                  <td className="py-0.5 text-right font-mono font-semibold" style={ativa ? { color: cor } : undefined}>
+                  <td className={cn("py-0.5 text-right font-mono", linha.destaque ? "font-extrabold text-base" : "font-semibold")} style={ativa ? { color: cor } : undefined}>
                     {linha.valor}
                   </td>
                 </tr>
@@ -139,9 +140,7 @@ export default function CenaForaDeLinha({
               <td className="py-1 text-right font-mono text-white">
                 {fmtInt(posicaoTotal.itens)} itens
                 {" · "}
-                {fmtBrMax(posicaoTotal.pesoTon, 1)} t
-                {" · "}
-                {fmtMoeda(posicaoTotal.valorEstoque)}
+                <span className="text-base font-extrabold">{fmtBrMax(posicaoTotal.pesoTon, 1)} t</span>
               </td>
             </tr>
           </tbody>

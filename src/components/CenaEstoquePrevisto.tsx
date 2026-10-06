@@ -51,13 +51,13 @@ export default function CenaEstoquePrevisto({
     foco === 0
       ? [
           { rotulo: "Valor em estoque", valor: fmtMoeda(resumo.valor) },
-          { rotulo: "Toneladas", valor: fmtTonDec(resumo.ton) },
+          { rotulo: "Toneladas", valor: fmtTonDec(resumo.ton), destaque: true },
           { rotulo: "Itens", valor: fmtInt(resumo.itens) },
           { rotulo: "Saldo", valor: fmtInt(resumo.saldo) },
         ]
       : [
           { rotulo: "Valor previsto", valor: fmtMoeda(resumo.previsto) },
-          { rotulo: "Toneladas", valor: fmtTonDec(resumo.ton) },
+          { rotulo: "Toneladas", valor: fmtTonDec(resumo.ton), destaque: true },
           ...(valorFaturado
             ? [{ rotulo: "R$/t faturado", valor: fmtMoeda2(valorFaturado) }]
             : []),
@@ -113,7 +113,7 @@ export default function CenaEstoquePrevisto({
             {linhasBase.map((l, i) => (
               <tr key={i} className="border-b border-white/10 last:border-0">
                 <td className="py-0.5 text-white/80">{l.rotulo}</td>
-                <td className="py-0.5 text-right font-mono font-semibold text-white">{l.valor}</td>
+                <td className={cn("py-0.5 text-right font-mono", l.destaque ? "font-extrabold text-base text-white" : "font-semibold text-white")}>{l.valor}</td>
               </tr>
             ))}
 
