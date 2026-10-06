@@ -37,11 +37,10 @@ export default function CenaSaudeEstoque({
     { id: "recebido", label: "recebido", cor: COR_SALDO, pct: saldoPct },
   ];
 
-  /* Tabela: Recebido (total), Carregado (foco 0), Saldo (foco 1) */
+  /* Tabela: Recebido (total) e Carregado (foco 0). */
   const linhas = [
     { rotulo: "Recebido", periodo, ton: totRecebido, pct: 100, idx: -1 },
     { rotulo: "Carregado", periodo, ton: totCarregado, pct: saudePct, idx: 0 },
-    { rotulo: "Recebido", periodo: "—", ton: saldo, pct: saldoPct, idx: 1 },
   ];
 
   return (

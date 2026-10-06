@@ -38,7 +38,7 @@ export function idUnidade(nome?: string): string | undefined {
 
 /* Valor faturado de uma unidade (média se o id for desconhecido). */
 export function faturadoPorUnidade(id?: string): number {
-  return (id && VALOR_FATURADO_POR_UNIDADE[id]) ?? VALOR_FATURADO_MEDIO;
+  return (id ? VALOR_FATURADO_POR_UNIDADE[id] : undefined) ?? VALOR_FATURADO_MEDIO;
 }
 
 /* Valor previsto = toneladas × valor faturado da unidade (média se indefinida). */

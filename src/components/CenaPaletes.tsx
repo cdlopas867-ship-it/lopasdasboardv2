@@ -27,9 +27,9 @@ export default function CenaPaletes({
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
 
-  const total = paletas.totalPaletes ?? 0;
-  const itens = paletas.totalItens ?? 0;
-  const tamanhos = paletas.porTamanho ?? [];
+  const total = paletas?.totalPaletes ?? 0;
+  const itens = paletas?.totalItens ?? 0;
+  const tamanhos = paletas?.porTamanho ?? [];
 
   const secoes: SecaoDonut[] = tamanhos.map((t) => ({
     id: t.tamanho,

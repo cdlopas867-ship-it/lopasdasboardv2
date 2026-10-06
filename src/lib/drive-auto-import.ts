@@ -977,7 +977,13 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   /* Calcula quantos paletes existem no estoque por tamanho (P/M/G/GG),
      cruzando o saldo de cada item com a configuração de pallet. */
   let resumoPaletes: ReturnType<typeof calcularResumoPaletes> | null = null;
-  let resumoPaletesFinal: (ReturnType<typeof calcularResumoPaletes> & { recebimento?: ReturnType<typeof calcularResumoPaletes>; diasRecebidos?: number }) | null = null;
+  let resumoPaletesFinal: (ReturnType<typeof calcularResumoPaletes> & {
+    recebimento?: ReturnType<typeof calcularResumoPaletes>;
+    diasRecebidos?: number;
+    diasQtd?: NonNullable<ReturnType<typeof calcularRecebimento>>["diasQtd"];
+    mensalQtd?: NonNullable<ReturnType<typeof calcularRecebimento>>["mensalQtd"];
+    totalQtdRecebido?: number;
+  }) | null = null;
   if (melhorItens && melhorPaletes && melhorPaletes.size > 0) {
     resumoPaletes = calcularResumoPaletes(melhorItens, melhorPaletes);
     console.info(
