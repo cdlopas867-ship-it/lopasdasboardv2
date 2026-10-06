@@ -72,7 +72,7 @@ export default function CenaForaDeLinha({
     { grupo: 1, rotulo: "Fora de linha · itens", valor: fmtInt(posicaoFora.itens) },
     { grupo: 1, rotulo: "Fora de linha · saldo", valor: fmtInt(posicaoFora.saldoFocco) },
     { grupo: 1, rotulo: "Fora de linha · reservados qtd", valor: fmtInt(posicaoFora.reservas) },
-    { grupo: 1, rotulo: "Fora de linha · reservados ton", valor: `${fmtBrMax(posicaoFora.pesoReservadoTon, 1)} t` },
+    { grupo: 1, rotulo: "Fora de linha · reservados ton", valor: `${fmtBrMax(posicaoFora.pesoReservadoTon, 1)} t`, destaque: true },
     { grupo: 1, rotulo: "Fora de linha · reservados R$", valor: fmtMoeda(posicaoFora.valorReservado) },
     { grupo: 1, rotulo: "Fora de linha · tonelagem", valor: `${fmtBrMax(posicaoFora.pesoTon, 1)} t`, destaque: true },
     { grupo: 1, rotulo: "Fora de linha · valor", valor: fmtMoeda(posicaoFora.valorEstoque) },
