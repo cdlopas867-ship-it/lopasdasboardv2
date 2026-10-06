@@ -70,12 +70,6 @@ export default function CenaEstoquePrevisto({
 
   return (
     <div className="flex w-full flex-col items-center">
-      <img
-        src="https://media.base44.com/images/public/6ac5052f632a08eb21bad661/a6d87c6d7_image.png"
-        alt="41 anos Lopas — inovando para transformar o jeito de viver"
-        className="banner-arrive mb-3 w-full max-w-sm rounded-[14px] border object-cover"
-        style={{ aspectRatio: "16 / 9", borderColor: "#c9ad686b", boxShadow: "0 8px 24px #050d0970" }}
-      />
       <div className="flex items-center gap-2">
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Estoque × Previsto
