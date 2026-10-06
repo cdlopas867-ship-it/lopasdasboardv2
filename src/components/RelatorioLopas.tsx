@@ -172,14 +172,20 @@ function montarSecoes(d: VideoResumoProps): { secoes: Secao[]; destaques: string
     });
   }
 
-  return { secoes, destaques };
+  const leitura: string[] = [];
+  if (d.resumo) leitura.push(`O CD tem ${fmtTonDec(d.resumo.ton)} em estoque, com ${fmtMoeda(d.resumo.valor)} a custo. O ponto central é transformar esse saldo em atendimento de pedidos, sem confundir valor previsto com dinheiro já faturado.`);
+  if (d.reservados) leitura.push(`Há ${fmtTonDec(d.reservados.totalTon)} com reserva comercial.${d.semReserva ? ` O saldo sem reserva soma ${fmtTonDec(d.semReserva.totalTon)} e precisa ser acompanhado junto à área comercial.` : ""} A primeira conferência deve ser dos pedidos reservados que já estão completos e podem seguir para carregamento.`);
+  leitura.push(`A ocupação de ${pct(d.ocupacao.pct * 100)} deixa ${fmtInt(d.ocupacao.livres)} posições livres. Use essa folga junto à programação de entrada e aos tamanhos de palete, não apenas ao percentual geral.`);
+  if (d.pendentes) leitura.push(`As pendências somam ${fmtTonDec(d.pendentes.totalTon)}. Produção e expedição precisam alinhar quais itens faltantes estão impedindo a conclusão dos pedidos; o volume total não revela esse impacto sozinho.`);
+  if (d.avarias) leitura.push(`Os ${fmtInt(d.avarias.total)} volumes avariados merecem uma revisão dos motivos mais recorrentes. O custo parcial não permite estimar a perda total, e a quantidade isolada não mede a taxa de avaria.`);
+  return { secoes, destaques: leitura.length ? leitura : destaques };
 }
 
 export default function RelatorioLopas({ dados, onFechar }: { dados: VideoResumoProps; onFechar: () => void }) {
   const { secoes, destaques } = montarSecoes(dados);
-  const agora = new Date().toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" });
+  const agora = new Date().toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short", timeZone: "America/Sao_Paulo" });
   const sync = dados.sincronizacao?.em
-    ? new Date(dados.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+    ? new Date(dados.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
     : null;
 
   const meses = (dados.mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0).map((m) => m.mes);
@@ -191,12 +197,12 @@ export default function RelatorioLopas({ dados, onFechar }: { dados: VideoResumo
   return createPortal(
     <div onClick={(e) => e.stopPropagation()} className="relatorio-lopas-root fixed inset-0 z-[200] overflow-y-auto bg-neutral-100 text-neutral-900">
       <div className="no-print sticky top-0 z-10 flex items-center justify-end gap-2 border-b bg-white px-4 py-2 shadow-sm">
-        <button type="button" onClick={() => window.print()} className="cursor-pointer rounded-full bg-[#73ae37] px-4 py-1.5 text-xs font-bold tracking-widest text-white uppercase hover:opacity-90">
+        <Button type="button" onClick={() => window.print()} size="sm">
           Imprimir / salvar PDF
-        </button>
-        <button type="button" onClick={onFechar} className="cursor-pointer rounded-full border px-4 py-1.5 text-xs font-bold tracking-widest uppercase hover:bg-neutral-100">
+        </Button>
+        <Button type="button" onClick={onFechar} variant="outline" size="sm">
           Fechar
-        </button>
+        </Button>
       </div>
 
       <article className="mx-auto my-4 max-w-3xl bg-white p-8 shadow sm:p-12">
@@ -209,6 +215,13 @@ export default function RelatorioLopas({ dados, onFechar }: { dados: VideoResumo
             <p className="text-[10px] font-semibold tracking-[0.25em] text-[#73ae37] uppercase">Movidos pela fé</p>
           </div>
         </header>
+
+        <section className="mt-6 border-b pb-5">
+          <h2 className="text-lg font-bold text-brand-green">Leitura executiva</h2>
+          <div className="mt-3 space-y-3 text-sm leading-relaxed">
+            {destaques.map(t => <p key={t}>{t}</p>)}
+          </div>
+        </section>
 
         {secoes.map((s, i) => (
           <section key={s.titulo} className="mt-6">
@@ -224,15 +237,14 @@ export default function RelatorioLopas({ dados, onFechar }: { dados: VideoResumo
                 ))}
               </tbody>
             </table>
-            <p className="mt-2 rounded bg-[#73ae37]/10 px-3 py-2 text-xs"><strong>Resumo:</strong> {s.resumo}</p>
+            <p className="mt-3 text-sm leading-relaxed"><strong>Leitura dos dados. </strong>{s.resumo}</p>
           </section>
         ))}
 
         <section className="mt-8 border-t-2 border-[#73ae37] pt-4">
-          <h2 className="text-lg font-bold text-[#4d7a1f]">Resumo executivo</h2>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-            {destaques.map((t) => <li key={t}>{t}</li>)}
-          </ul>
+          <h2 className="text-lg font-bold text-brand-green">Para a próxima conferência</h2>
+          <p className="mt-2 text-sm leading-relaxed">Comece pelos pedidos reservados que já podem sair, depois valide as pendências que impedem os demais embarques. Em paralelo, alinhe com o comercial a destinação do saldo sem reserva e dos itens fora de linha. Por fim, revise os motivos de avaria com maior volume para definir ações de prevenção.</p>
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">Esta análise usa os dados disponíveis no painel. Sem histórico comparável, idade do estoque e cobertura completa das movimentações, não é possível afirmar tendências, causas ou prazo de escoamento. Horários em Brasília (UTC−3).{sync ? ` Última sincronização informada: ${sync}.` : " A data da última sincronização não está disponível."}</p>
         </section>
       </article>
     </div>,
