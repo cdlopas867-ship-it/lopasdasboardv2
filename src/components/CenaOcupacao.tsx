@@ -89,7 +89,6 @@ export default function CenaOcupacao({
         </p>
       </div>
 
-      <BannerResumo texto={`${fmtInt(total)} posições · ${fmtInt(ocupacao.ocupados)} ocupadas · ${fmtInt(ocupacao.livres)} livres`} />
     </div>
   );
 }
