@@ -84,8 +84,13 @@ export function lerPendentes(wb: XLSX.WorkBook): PendenteProducao[] {
     const col = (needle: string) => headers.findIndex((h) => h.includes(needle));
 
     const cPend = col("QTDEPENDENTE");
+    if (cPend < 0) {
+      /* Fallback: planilha de produção sem prefixo "QTD" — só "PENDENTE" */
+      const cPendSimples = headers.findIndex((h) => h === "PENDENTE");
+      if (cPendSimples < 0) continue;
+      return lerPendentesSimples(ws, headerIdx, headers, cPendSimples);
+    }
     const cPeso = col("PESOPENDENTE");
-    if (cPend < 0 || cPeso < 0) continue;
 
     const cDtIni = col("DTINICIAL");
     const cDtFim = col("DTFINAL");
@@ -123,4 +128,49 @@ export function lerPendentes(wb: XLSX.WorkBook): PendenteProducao[] {
   }
 
   return [];
+}
+
+/* Lê a planilha de produção simples (PRODUÇÃO 01/10 - 10/10) que tem
+   "PENDENTE" mas não "QTD PENDENTE" nem "PESO PENDENTE". Extrai o código
+   do item do campo VOLUME ("72594 VOL CX GR...") e usa pesoPendente = 0. */
+function lerPendentesSimples(
+  ws: XLSX.WorkSheet,
+  headerIdx: number,
+  headers: string[],
+  cPend: number,
+): PendenteProducao[] {
+  const col = (needle: string) => headers.findIndex((h) => h.includes(needle));
+  const cDtIni = col("DTINICIAL");
+  const cDtFim = col("DTFINAL");
+  const cLote = col("LOTE");
+  const cOrdem = col("NUMORDEM");
+  const cVolume = col("VOLUME");
+  const cPrev = col("PREVISTO");
+  const cEntg = col("ENTREGUE");
+
+  const num = (r: unknown[] | undefined, i: number) => Number(r?.[i] ?? 0);
+  const str = (r: unknown[] | undefined, i: number) => String(r?.[i] ?? "").trim();
+
+  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
+  const result: PendenteProducao[] = [];
+  for (const r of rows.slice(headerIdx + 1)) {
+    const pendente = num(r, cPend);
+    if (pendente <= 0) continue;
+    const volume = cVolume >= 0 ? str(r, cVolume) : "";
+    const codMatch = volume.match(/^(\d+)/);
+    result.push({
+      dtInicial: serialToIso(r?.[cDtIni >= 0 ? cDtIni : 0]),
+      dtFinal: serialToIso(r?.[cDtFim >= 0 ? cDtFim : 0]),
+      lote: str(r, cLote >= 0 ? cLote : 0),
+      numOrdem: str(r, cOrdem >= 0 ? cOrdem : 0),
+      codItem: codMatch ? codMatch[1]! : "",
+      descItem: volume,
+      previsto: num(r, cPrev >= 0 ? cPrev : 0),
+      entregue: num(r, cEntg >= 0 ? cEntg : 0),
+      pendente,
+      perc: 0,
+      pesoPendente: 0,
+    });
+  }
+  return result;
 }
