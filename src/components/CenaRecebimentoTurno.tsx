@@ -95,7 +95,7 @@ export default function CenaRecebimentoTurno({
         </p>
       </div>
 
-      <BannerResumo texto={`${fmtTonDec(totalTon)} recebidas · turno ${turnoPrincipal?.nome?.toLowerCase() ?? "—"} principal`} />
+      <BannerResumo texto={`${fmtTonDec(turnos[Math.min(foco, turnos.length - 1)]?.ton ?? 0)} recebidas · ${fmtBrMax(turnos[Math.min(foco, turnos.length - 1)]?.pct ?? 0, 1)}%`} />
     </div>
   );
 }
