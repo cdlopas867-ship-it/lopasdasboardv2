@@ -98,15 +98,17 @@ export function ToggleSecoes({
   onChange: (i: number) => void;
 }) {
   return (
-    <div className="mt-2 flex items-center gap-2">
+    <div className="mt-2 flex items-center justify-center gap-2">
       {secoes.map((s, i) => (
         <button
           key={s.id}
           type="button"
           onClick={() => onChange(i)}
           className={cn(
-            "rounded-full px-3 py-1 text-[9px] font-bold tracking-widest uppercase transition-all duration-300",
-            i === foco ? "text-brand-dark" : "text-white/50 border border-white/15 hover:text-white/80",
+            "rounded-full px-4 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-all duration-300",
+            i === foco
+              ? "text-brand-dark"
+              : "text-white/80 border border-white/30 hover:text-white hover:border-white/50",
           )}
           style={i === foco ? { background: s.cor } : undefined}
         >
