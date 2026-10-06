@@ -5,7 +5,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtMoeda, fmtMoeda2, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoUnidade } from "./VideoResumoDashboard";
 
 const COR_ESTOQUE = "#00FFCC";
@@ -173,12 +173,7 @@ export default function CenaEstoquePrevisto({
         </p>
       </div>
 
-      <TotaisDestacados
-        cards={[
-          { label: "Estoque", cor: COR_ESTOQUE, linhas: [fmtMoeda(resumo.valor), fmtTonDec(resumo.ton), `${fmtInt(resumo.itens)} itens · ${fmtBrMax(pctEstoque, 1)}%`] },
-          { label: "Previsto", cor: COR_PREVISTO, linhas: [fmtMoeda(resumo.previsto), fmtTonDec(resumo.ton), `${fmtInt(resumo.saldo)} un · ${fmtBrMax(pctPrevisto, 1)}%`] },
-        ]}
-      />
+      <BannerResumo texto={`${fmtInt(resumo.itens)} itens · ${fmtTonDec(resumo.ton)} · ${fmtMoeda(resumo.valor + resumo.previsto)} total`} />
     </div>
   );
 }

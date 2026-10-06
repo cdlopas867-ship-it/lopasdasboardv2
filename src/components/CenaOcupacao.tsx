@@ -1,8 +1,8 @@
 /* Cena Ocupação do CD — donut interativo com toggle Ocupado / Livre. */
 
-import { fmtBrMax, fmtInt } from "@/lib/format";
+import { fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoOcupacao } from "./VideoResumoDashboard";
 
 const COR_OCUPADO = "#00FFCC";
@@ -89,12 +89,7 @@ export default function CenaOcupacao({
         </p>
       </div>
 
-      <TotaisDestacados
-        cards={[
-          { label: "Ocupado", cor: COR_OCUPADO, linhas: [`${fmtInt(ocupacao.ocupados)} end.`, `${fmtBrMax(total > 0 ? (ocupacao.ocupados / total) * 100 : ocupacao.pct * 100, 1)}%`, `de ${fmtInt(total)} posições`] },
-          { label: "Livre", cor: COR_LIVRE, linhas: [`${fmtInt(ocupacao.livres)} pos.`, `${fmtBrMax(total > 0 ? (ocupacao.livres / total) * 100 : (1 - ocupacao.pct) * 100, 1)}%`, `de ${fmtInt(total)} posições`] },
-        ]}
-      />
+      <BannerResumo texto={`${fmtInt(total)} posições · ${fmtInt(ocupacao.ocupados)} ocupadas · ${fmtInt(ocupacao.livres)} livres`} />
     </div>
   );
 }

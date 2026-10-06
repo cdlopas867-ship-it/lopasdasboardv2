@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoMes } from "./VideoResumoDashboard";
 
 const COR_CARREGADO = "#00FFCC";
@@ -117,12 +117,7 @@ export default function CenaSaudeEstoque({
         </p>
       </div>
 
-      <TotaisDestacados
-        cards={[
-          { label: "Carregado", cor: COR_CARREGADO, linhas: [fmtTonDec(totCarregado), `${fmtBrMax(saudePct, 1)}%`, "do recebido"] },
-          { label: "Saldo", cor: COR_SALDO, linhas: [fmtTonDec(saldo), `${fmtBrMax(saldoPct, 1)}%`, "não carregado"] },
-        ]}
-      />
+      <BannerResumo texto={`${fmtTonDec(totRecebido)} recebidas · ${fmtTonDec(totCarregado)} carregadas · ${fmtBrMax(saudePct, 1)}%`} />
     </div>
   );
 }

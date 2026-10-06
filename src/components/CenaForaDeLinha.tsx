@@ -5,7 +5,7 @@
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtMoeda, fmtPct, fmtBrMax } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, TotaisDestacados, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import {
   POSICAO_EM_LINHA,
   POSICAO_FORA_DE_LINHA,
@@ -147,12 +147,7 @@ export default function CenaForaDeLinha({
         </p>
       </div>
 
-      <TotaisDestacados
-        cards={[
-          { label: "Em linha", cor: COR_EM_LINHA, linhas: [`${fmtInt(posicaoEmLinha.itens)} itens`, fmtMoeda(posicaoEmLinha.valorEstoque), `${fmtBrMax(posicaoEmLinha.pesoTon, 1)} t · ${fmtPct(pctEmLinha / 100)}`] },
-          { label: "Fora de linha", cor: COR_FORA, linhas: [`${fmtInt(posicaoFora.itens)} itens`, fmtMoeda(posicaoFora.valorEstoque), `${fmtBrMax(posicaoFora.pesoTon, 1)} t · ${fmtPct(pctFora / 100)}`] },
-        ]}
-      />
+      <BannerResumo texto={`${fmtInt(posicaoTotal.itens)} itens · ${fmtBrMax(posicaoTotal.pesoTon, 1)} t · ${fmtMoeda(posicaoTotal.valorEstoque)}`} />
     </div>
   );
 }
