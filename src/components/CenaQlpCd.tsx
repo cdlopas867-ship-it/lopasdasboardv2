@@ -54,11 +54,15 @@ export default function CenaQlpCd({
     pct: QLP_CD.ativos > 0 ? (t.pessoas / QLP_CD.ativos) * 100 : 0,
   }));
 
-  const quadros = [
-    { titulo: "Turmas", linhas: topComOutros(turno.turmas) },
+  /* Cidade, Cargos e Funções ganham destaque (cartões maiores, no topo);
+     Turmas, Setor e Tempo de casa vêm logo abaixo no formato compacto. */
+  const quadrosDestaque = [
+    { titulo: "Cidade", linhas: topComOutros(turno.cidades) },
     { titulo: "Cargos", linhas: topComOutros(turno.cargos) },
     { titulo: "Funções", linhas: topComOutros(turno.funcoes) },
-    { titulo: "Cidade", linhas: topComOutros(turno.cidades) },
+  ];
+  const quadros = [
+    { titulo: "Turmas", linhas: topComOutros(turno.turmas) },
     { titulo: "Setor", linhas: turno.setores },
     { titulo: "Tempo de casa", linhas: turno.tempoCasa },
   ];
@@ -97,8 +101,8 @@ export default function CenaQlpCd({
         </p>
       </div>
 
-      <div className="mx-auto mt-3 grid w-full max-w-3xl grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-        {quadros.map((q, i) => (
+      <div className="mx-auto mt-3 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
+        {quadrosDestaque.map((q, i) => (
           <Quadro
             key={q.titulo}
             titulo={q.titulo}
@@ -106,6 +110,20 @@ export default function CenaQlpCd({
             total={turno.pessoas}
             cor={cor}
             delay={0.4 + i * 0.08}
+            destaque
+          />
+        ))}
+      </div>
+
+      <div className="mx-auto mt-3 grid w-full max-w-3xl grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-3">
+        {quadros.map((q, i) => (
+          <Quadro
+            key={q.titulo}
+            titulo={q.titulo}
+            linhas={q.linhas}
+            total={turno.pessoas}
+            cor={cor}
+            delay={0.65 + i * 0.08}
           />
         ))}
       </div>
@@ -121,27 +139,47 @@ export default function CenaQlpCd({
 }
 
 /* Quadro do turno — tabela no estilo "Legenda" das outras cenas:
-   item, pessoas (em destaque, na cor do turno, com barra) e % do turno. */
+   item, pessoas (em destaque, na cor do turno, com barra) e % do turno.
+   Com `destaque` vira cartão maior, com borda na cor do turno e o item líder
+   realçado (Cidade, Cargos e Funções). */
 function Quadro({
   titulo,
   linhas,
   total,
   cor,
   delay,
+  destaque = false,
 }: {
   titulo: string;
   linhas: QlpLinha[];
   total: number;
   cor: string;
   delay: number;
+  destaque?: boolean;
 }) {
   const maior = Math.max(...linhas.map((l) => l.pessoas), 1);
   return (
-    <div className="video-sobe min-w-0" style={{ animationDelay: `${delay}s` }}>
-      <table className="w-full text-left text-[11px] text-white">
+    <div
+      className={cn("video-sobe min-w-0", destaque && "rounded-xl border px-3 py-2.5")}
+      style={{
+        animationDelay: `${delay}s`,
+        ...(destaque ? { borderColor: `${cor}66`, background: `${cor}14` } : null),
+      }}
+    >
+      <table className={cn("w-full text-left text-white", destaque ? "text-[12px]" : "text-[11px]")}>
         <thead>
-          <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
-            <th className="pb-0.5 font-bold" style={{ color: cor }}>
+          <tr
+            className={cn(
+              "border-b font-bold tracking-widest uppercase",
+              destaque
+                ? "border-white/25 text-[8px] text-white/60"
+                : "border-white/20 text-[8px] text-white/55",
+            )}
+          >
+            <th
+              className={cn("font-bold", destaque ? "pb-1 text-[13px] tracking-[0.18em]" : "pb-0.5")}
+              style={{ color: cor }}
+            >
               {titulo}
             </th>
             <th className="pb-0.5 text-right font-bold">Pessoas</th>
@@ -149,19 +187,33 @@ function Quadro({
           </tr>
         </thead>
         <tbody>
-          {linhas.map((l) => {
+          {linhas.map((l, idx) => {
             const pct = total > 0 ? (l.pessoas / total) * 100 : 0;
             const vazio = l.pessoas === 0;
+            const lider = destaque && idx === 0 && !vazio;
             return (
               <tr
                 key={l.nome}
                 className={cn("border-b border-white/10 last:border-0", vazio && "opacity-40")}
+                style={lider ? { background: `${cor}26` } : undefined}
               >
-                <td className="min-w-0 py-0.5 pr-2">
-                  <span className="block truncate text-white/85" title={l.nome}>
+                <td className={cn("min-w-0 pr-2", destaque ? "py-1 pl-1" : "py-0.5")}>
+                  <span
+                    className={cn(
+                      "block",
+                      destaque ? "leading-tight break-words" : "truncate",
+                      lider ? "font-bold text-white" : destaque ? "font-semibold text-white/90" : "text-white/85",
+                    )}
+                    title={l.nome}
+                  >
                     {l.nome}
                   </span>
-                  <span className="mt-0.5 block h-[2px] overflow-hidden rounded-full bg-white/10">
+                  <span
+                    className={cn(
+                      "mt-0.5 block overflow-hidden rounded-full bg-white/10",
+                      destaque ? "h-[3px]" : "h-[2px]",
+                    )}
+                  >
                     <span
                       className="block h-full rounded-full transition-all duration-500"
                       style={{ width: `${(l.pessoas / maior) * 100}%`, background: cor }}
@@ -169,12 +221,20 @@ function Quadro({
                   </span>
                 </td>
                 <td
-                  className="py-0.5 text-right font-mono text-[13px] font-bold"
+                  className={cn(
+                    "text-right font-mono font-bold",
+                    destaque ? "py-1 text-[16px]" : "py-0.5 text-[13px]",
+                  )}
                   style={{ color: vazio ? undefined : cor }}
                 >
                   {fmtInt(l.pessoas)}
                 </td>
-                <td className="py-0.5 pl-2 text-right font-mono text-[10px] font-semibold text-white/65">
+                <td
+                  className={cn(
+                    "pl-2 text-right font-mono font-semibold text-white/65",
+                    destaque ? "py-1 pr-1 text-[11px]" : "py-0.5 text-[10px]",
+                  )}
+                >
                   {fmtBrMax(pct, 0)}%
                 </td>
               </tr>
