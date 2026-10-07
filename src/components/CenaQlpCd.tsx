@@ -1,8 +1,8 @@
 /* Cena QLP · CD — quadro de lotação de pessoal sobre um mapa geográfico real:
    cada cidade aparece na sua posição geográfica (lat/lng), com o nó proporcional
-   ao nº de colaboradores ativos. Ao lado, uma mini tabela funciona como legenda
-   do mapa (cor + cidade + pessoas + % do total). Clicar na cidade (no mapa ou na
-   tabela) destaca o ponto correspondente. */
+   ao nº de colaboradores ativos. Ao lado, uma mini tabela por cidade (turmas,
+   funções, turno, setor, cargo, admissão mais recente, % de ativos do total e
+   demitidos). Clicar na cidade (no mapa ou na tabela) destaca o ponto. */
 
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
@@ -75,7 +75,7 @@ export default function CenaQlpCd({
         </span>
         <InfoTooltip
           onOpen={onPausar}
-          texto="Quadro de Lotação de Pessoal do CD Lopas. O mapa mostra a posição geográfica real das cidades de residência dos colaboradores ativos (tamanho do nó = nº de pessoas). Fonte: planilha CD-QLP.xlsx (aba Base), atualizada em 07/10/2026."
+          texto="Quadro de Lotação de Pessoal do CD Lopas. O mapa mostra a posição geográfica real das cidades de residência dos colaboradores ativos (tamanho do nó = nº de pessoas). Na tabela, turmas/funções/setores/cargos são as quantidades distintas na cidade, Turno é 1º/2º, Admissão é a mais recente e % é a fatia da cidade no total de ativos. Fonte: planilha CD - QLP.xlsx (aba Base), atualizada em 07/10/2026."
         />
       </div>
 
@@ -84,9 +84,9 @@ export default function CenaQlpCd({
         texto={`${fmtInt(QLP_CD.ativos)} colaboradores ativos em ${fmtInt(cidades.length)} cidades`}
       />
 
-      <div className="mt-3 grid w-full max-w-3xl grid-cols-1 items-center gap-4 sm:grid-cols-2">
+      <div className="mt-3 flex w-full max-w-3xl flex-col items-center gap-4 sm:flex-row sm:items-start">
         {/* Mapa geográfico real das cidades */}
-        <div className="video-pop mx-auto w-full max-w-[14rem]">
+        <div className="video-pop mx-auto w-full max-w-[10rem] shrink-0">
           <svg viewBox={`0 0 ${W} ${H}`} className="w-full overflow-visible">
             <rect
               x="1"
@@ -127,7 +127,10 @@ export default function CenaQlpCd({
               return (
                 <g
                   key={n.cidade}
-                  onClick={() => setFoco(n.i)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFoco(n.i);
+                  }}
                   className="cursor-pointer"
                   style={{ opacity: destacado ? 1 : 0.72, transition: "opacity 0.4s ease" }}
                 >
@@ -172,17 +175,23 @@ export default function CenaQlpCd({
           </p>
         </div>
 
-        {/* Mini tabela — legenda do mapa */}
-        <div className="video-sobe w-full" style={{ animationDelay: "0.5s" }}>
+        {/* Mini tabela por cidade — legenda do mapa */}
+        <div className="video-sobe w-full min-w-0 flex-1" style={{ animationDelay: "0.5s" }}>
           <p className="mb-1.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
             Onde mora o time
           </p>
           <table className="w-full border-collapse">
             <thead>
-              <tr className="text-[8px] tracking-widest text-white/40 uppercase">
+              <tr className="text-[8px] tracking-wider text-white/40 uppercase">
                 <th className="pb-1 text-left font-semibold">Cidade</th>
-                <th className="pb-1 text-right font-semibold">Pessoas</th>
+                <th className="pb-1 text-right font-semibold">Turmas</th>
+                <th className="pb-1 text-right font-semibold">Funções</th>
+                <th className="pb-1 text-right font-semibold">Turno</th>
+                <th className="pb-1 text-right font-semibold">Setor</th>
+                <th className="pb-1 text-right font-semibold">Cargo</th>
+                <th className="pb-1 text-right font-semibold">Admissão</th>
                 <th className="pb-1 text-right font-semibold">%</th>
+                <th className="pb-1 text-right font-semibold">Demit.</th>
               </tr>
             </thead>
             <tbody>
@@ -192,7 +201,10 @@ export default function CenaQlpCd({
                 return (
                   <tr
                     key={c.cidade}
-                    onClick={() => setFoco(i)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFoco(i);
+                    }}
                     className={cn(
                       "cursor-pointer border-t border-white/[0.06] transition-opacity duration-300",
                       destacado ? "opacity-100" : "opacity-60 hover:opacity-90",
@@ -209,11 +221,19 @@ export default function CenaQlpCd({
                         </span>
                       </span>
                     </td>
-                    <td className="py-1 text-right font-mono text-[10px] font-bold text-white">
-                      {fmtInt(c.pessoas)}
+                    <td className="py-1 text-right font-mono text-[9px] text-white/70">{fmtInt(c.turmas)}</td>
+                    <td className="py-1 text-right font-mono text-[9px] text-white/70">{fmtInt(c.funcoes)}</td>
+                    <td className="py-1 text-right font-mono text-[9px] text-white/70">
+                      {c.turno1}/{c.turno2}
+                    </td>
+                    <td className="py-1 text-right font-mono text-[9px] text-white/70">{fmtInt(c.setores)}</td>
+                    <td className="py-1 text-right font-mono text-[9px] text-white/70">{fmtInt(c.cargos)}</td>
+                    <td className="py-1 text-right font-mono text-[9px] text-white/70">{c.admissao}</td>
+                    <td className="py-1 text-right font-mono text-[9px] font-bold text-white">
+                      {fmtBrMax(pct, 0)}%
                     </td>
                     <td className="py-1 text-right font-mono text-[9px] text-white/50">
-                      {fmtBrMax(pct, 0)}%
+                      {fmtInt(c.demitidos)}
                     </td>
                   </tr>
                 );
