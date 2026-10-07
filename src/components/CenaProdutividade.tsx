@@ -19,6 +19,7 @@ import {
   type ProdColaborador,
   type ProdTurma,
 } from "@/data/produtividade";
+import DestaquesProdutividade from "@/components/DestaquesProdutividade";
 
 const CORES = ["#00FFCC", "#FFA500", "#7C9CFF", "#FF5FA2"];
 
@@ -81,10 +82,14 @@ export default function CenaProdutividade({
         <QuadroTurmas turmas={turmas} total={tipo.ton} cor={cor} />
       </div>
 
+      <DestaquesProdutividade tipo={tipo} />
+
       <p className="mx-auto mt-3 max-w-4xl text-center text-[8px] leading-tight text-white/40">
         * Produtividade = PESO (kg) somado e convertido em toneladas. O ranking mostra os{" "}
         {TOPO} maiores; o quadro por turma, as {TOPO} maiores (o resto em "Outras"). "Sem turma"
-        reúne quem não teve o nome casado com o cadastro do CD e as turmas de status. Fonte:
+        reúne quem não teve o nome casado com o cadastro do CD e as turmas de status. Os destaques
+        separam as equipes pelo cargo — Separação (expedição/etiquetagem) e Estoque
+        (estoque/empilhadeira) — e quem não teve o cargo casado fica fora. Fonte:
         PRODUTIVIDADE POR COLABORADOR + CD - QLP.xlsx, {PRODUTIVIDADE.atualizadoEm}.
       </p>
     </div>
