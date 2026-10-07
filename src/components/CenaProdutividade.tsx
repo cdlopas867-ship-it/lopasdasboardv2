@@ -5,6 +5,7 @@
    turma) e a produtividade somada por turma. Dados estáticos em
    src/data/produtividade.ts. */
 
+import { Fragment, useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
@@ -19,6 +20,7 @@ import {
   type ProdColaborador,
   type ProdTurma,
 } from "@/data/produtividade";
+import { FICHAS_QLP, type FichaQlp } from "@/data/qlp-fichas";
 import DestaquesProdutividade from "@/components/DestaquesProdutividade";
 
 const CORES = ["#00FFCC", "#FFA500", "#7C9CFF", "#FF5FA2"];
@@ -36,6 +38,8 @@ export default function CenaProdutividade({
   onPausar?: () => void;
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
+  /* Nome do colaborador com a ficha QLP aberta no ranking (linha expandida). */
+  const [fichaAberta, setFichaAberta] = useState<string | null>(null);
 
   const tipos = PRODUTIVIDADE.tipos;
   const idx = Math.min(foco, tipos.length - 1);
@@ -60,7 +64,7 @@ export default function CenaProdutividade({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto={`Produtividade por colaborador e por turma, do período ${tipo.periodo}. Os botões alternam o tipo de atividade; o total em toneladas é a soma da coluna PESO (kg) das planilhas "PRODUTIVIDADE POR COLABORADOR" (aba Resultado). Cargo, tempo de casa e turma vêm da planilha CD - QLP.xlsx (aba Base), casados pelo nome — quando o relatório usa apelido e não há casamento, o cargo fica vazio e a turma cai em "Sem turma". Turmas de status (DEMITIDO/INSS/TRANSFERIDO) também entram em "Sem turma". Fonte atualizada em ${PRODUTIVIDADE.atualizadoEm}.`}
+          texto={`Produtividade por colaborador e por turma, do período ${tipo.periodo}. Os botões alternam o tipo de atividade; o total em toneladas é a soma da coluna PESO (kg) das planilhas "PRODUTIVIDADE POR COLABORADOR" (aba Resultado). Cargo, tempo de casa e turma vêm da planilha CD - QLP.xlsx (aba Base), casados pelo nome — quando o relatório usa apelido e não há casamento, o cargo fica vazio e a turma cai em "Sem turma". Turmas de status (DEMITIDO/INSS/TRANSFERIDO) também entram em "Sem turma". Clique num colaborador do ranking para abrir a ficha QLP (turno, turma, cargo, função, cidade, tempo de casa e admissão). Fonte atualizada em ${PRODUTIVIDADE.atualizadoEm}.`}
         />
       </div>
 
@@ -78,7 +82,17 @@ export default function CenaProdutividade({
       </div>
 
       <div className="mx-auto mt-3 grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
-        <QuadroColaboradores colabs={colabs} total={tipo.ton} cor={cor} />
+        <QuadroColaboradores
+          colabs={colabs}
+          total={tipo.ton}
+          cor={cor}
+          aberto={fichaAberta}
+          onAlternar={(nome) => {
+            const abrir = fichaAberta !== nome;
+            setFichaAberta(abrir ? nome : null);
+            if (abrir) onPausar?.();
+          }}
+        />
         <QuadroTurmas turmas={turmas} total={tipo.ton} cor={cor} />
       </div>
 
@@ -112,15 +126,22 @@ function recortarTurmas(turmas: ProdTurma[]): ProdTurma[] {
 }
 
 /* Ranking por colaborador — nome em destaque, cargo · turma e tempo de casa
-   na linha de apoio, toneladas e % do tipo ativo. */
+   na linha de apoio, toneladas e % do tipo ativo. Clicar na linha expande a
+   ficha QLP do colaborador (turno, turma, cargo, função, cidade, tempo de casa
+   e admissão). */
 function QuadroColaboradores({
   colabs,
   total,
   cor,
+  aberto,
+  onAlternar,
 }: {
   colabs: ProdColaborador[];
   total: number;
   cor: string;
+  /** nome do colaborador com a ficha aberta */
+  aberto: string | null;
+  onAlternar: (nome: string) => void;
 }) {
   const maior = Math.max(...colabs.map((c) => c.ton), 1);
   return (
@@ -138,43 +159,125 @@ function QuadroColaboradores({
         <tbody>
           {colabs.map((c, i) => {
             const pct = total > 0 ? (c.ton / total) * 100 : 0;
+            const abertoAqui = aberto === c.nome;
             return (
-              <tr key={c.nome} className="border-b border-white/10 last:border-0">
-                <td className="min-w-0 py-1 pr-2">
-                  <span className="flex items-baseline gap-1.5">
-                    <span className="font-mono text-[9px] font-bold" style={{ color: cor }}>
-                      {i + 1}
-                    </span>
-                    <span className="min-w-0 truncate font-bold text-white" title={c.nome}>
-                      {c.nome}
-                    </span>
-                    {c.cargo && (
-                      <span className="ml-auto shrink-0 rounded-full bg-white/10 px-1.5 py-px font-mono text-[8px] font-semibold text-white/70">
-                        {fmtBrMax(c.tempo, 1)} anos
+              <Fragment key={c.nome}>
+                <tr
+                  className={cn(
+                    "cursor-pointer border-b border-white/10 transition-colors last:border-0 hover:bg-white/5",
+                    abertoAqui && "bg-white/5",
+                  )}
+                  onClick={(e) => {
+                    /* impede o clique de virar navegação de cena no painel */
+                    e.stopPropagation();
+                    onAlternar(c.nome);
+                  }}
+                  aria-expanded={abertoAqui}
+                  title="Clique para abrir a ficha QLP"
+                >
+                  <td className="min-w-0 py-1 pr-2">
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="font-mono text-[9px] font-bold" style={{ color: cor }}>
+                        {i + 1}
                       </span>
-                    )}
-                  </span>
-                  <span className="mt-0.5 block truncate text-[9px] text-white/55" title={`${c.cargo || "—"} · ${c.turma}`}>
-                    {c.cargo || "—"} · {c.turma}
-                  </span>
-                  <span className="mt-0.5 block h-[3px] overflow-hidden rounded-full bg-white/10">
-                    <span
-                      className="block h-full rounded-full transition-all duration-500"
-                      style={{ width: `${(c.ton / maior) * 100}%`, background: cor }}
-                    />
-                  </span>
-                </td>
-                <td className="py-1 text-right font-mono text-[13px] font-bold" style={{ color: cor }}>
-                  {fmtBrMax(c.ton, 0)}
-                </td>
-                <td className="py-1 pl-2 text-right font-mono text-[10px] font-semibold text-white/65">
-                  {fmtBrMax(pct, 1)}%
-                </td>
-              </tr>
+                      <span className="min-w-0 truncate font-bold text-white" title={c.nome}>
+                        {c.nome}
+                      </span>
+                      {c.cargo && (
+                        <span className="ml-auto shrink-0 rounded-full bg-white/10 px-1.5 py-px font-mono text-[8px] font-semibold text-white/70">
+                          {fmtBrMax(c.tempo, 1)} anos
+                        </span>
+                      )}
+                      <span
+                        className={cn("shrink-0 text-[8px] text-white/45", !c.cargo && "ml-auto")}
+                        aria-hidden
+                      >
+                        {abertoAqui ? "▾" : "▸"}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block truncate text-[9px] text-white/55" title={`${c.cargo || "—"} · ${c.turma}`}>
+                      {c.cargo || "—"} · {c.turma}
+                    </span>
+                    <span className="mt-0.5 block h-[3px] overflow-hidden rounded-full bg-white/10">
+                      <span
+                        className="block h-full rounded-full transition-all duration-500"
+                        style={{ width: `${(c.ton / maior) * 100}%`, background: cor }}
+                      />
+                    </span>
+                  </td>
+                  <td className="py-1 text-right font-mono text-[13px] font-bold" style={{ color: cor }}>
+                    {fmtBrMax(c.ton, 0)}
+                  </td>
+                  <td className="py-1 pl-2 text-right font-mono text-[10px] font-semibold text-white/65">
+                    {fmtBrMax(pct, 1)}%
+                  </td>
+                </tr>
+                {abertoAqui && (
+                  <tr
+                    className="border-b border-white/10 last:border-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <td colSpan={3} className="pb-2">
+                      <FichaQlpCard nome={c.nome} ficha={FICHAS_QLP[c.nome]} cor={cor} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             );
           })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/* Ficha QLP do colaborador — aberta ao clicar na linha do ranking. Mostra o
+   turno, a turma, o cargo, a função, a cidade, o tempo de casa e a admissão do
+   cadastro CD - QLP.xlsx; nomes não casados avisam a ausência de cadastro. */
+function FichaQlpCard({
+  nome,
+  ficha,
+  cor,
+}: {
+  nome: string;
+  ficha?: FichaQlp;
+  cor: string;
+}) {
+  if (!ficha) {
+    return (
+      <p className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-[9px] leading-tight text-white/55">
+        Sem cadastro QLP para <span className="font-semibold text-white/80">{nome}</span> — o nome do
+        relatório de produtividade não casou com a planilha CD - QLP.xlsx.
+      </p>
+    );
+  }
+  const campos: [string, string][] = [
+    ["Turno", ficha.turno],
+    ["Turma", ficha.turma],
+    ["Cargo", ficha.cargo || "—"],
+    ["Função", ficha.funcao || "—"],
+    ["Cidade", ficha.cidade || "—"],
+    ["Tempo de casa", `${fmtBrMax(ficha.tempo, 1)} anos`],
+    ["Admissão", ficha.admissao || "—"],
+  ];
+  return (
+    <div
+      className="rounded-lg border px-2.5 py-2"
+      style={{ borderColor: `${cor}33`, background: `${cor}0F` }}
+    >
+      <p className="mb-1 text-[8px] font-bold tracking-widest uppercase" style={{ color: cor }}>
+        Ficha QLP
+      </p>
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-4">
+        {campos.map(([rotulo, valor]) => (
+          <div key={rotulo} className="min-w-0">
+            <dt className="text-[7px] font-bold tracking-wider text-white/45 uppercase">{rotulo}</dt>
+            <dd className="truncate text-[10px] font-semibold text-white/90" title={valor}>
+              {valor}
+            </dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
