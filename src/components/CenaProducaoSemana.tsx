@@ -1,6 +1,6 @@
-/* Cena Produção da Semana — donut interativo com Peso Previsto × Recebido.
+/* Cena Produção da Semana — donut interativo com Recebido × Diferença (o que falta receber).
    Mesmo padrão da CenaRecebimentoTurno: donut + toggle + tabela.
-   O % compara o Recebido no estoque com o Peso Previsto da semana. */
+   Os % são sobre o peso previsto da semana. */
 
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
@@ -10,9 +10,9 @@ import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 const COR_PRODUZIDO = "#33D953"; // verde
 const COR_RECEBIDO = "#38BDF8"; // azul
-const COR_PREVISTO = "#FFA500"; // laranja
+const COR_DIFERENCA = "#FFA500"; // laranja
 
-const ROTULOS = ["Peso Previsto", "Recebido"];
+const TITULOS = ["Recebido da Semana", "Falta Receber"];
 
 /* Variação percentual da tonelagem de um dia para o outro (▲ sobe / ▼ desce). */
 function VariacaoDia({ atual, anterior }: { atual: number; anterior: number | undefined }) {
@@ -46,18 +46,21 @@ export default function CenaProducaoSemana({
   const totalTonRec = semana.reduce((s, d) => s + d.tonEntregue, 0);
   const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
 
-  /* % = quanto o recebido no estoque representa do peso previsto da semana. */
+  /* Recebido = já chegou ao estoque; Diferença = o que falta receber (previsto − recebido).
+     Os % são sobre o peso previsto da semana (base = 100%). */
   const pctRecebido = totalTonPrev > 0 ? (totalTonRec / totalTonPrev) * 100 : 0;
+  const pctDiferenca = totalTonPrev > 0 ? 100 - pctRecebido : 0;
+  const unFalta = totalPrevisto - totalRecebido;
+  const tonFalta = totalTonPrev - totalTonRec;
 
   const secoes: SecaoDonut[] = [
-    { id: "previsto", label: "peso previsto", cor: COR_PREVISTO, pct: 100 },
     { id: "recebido", label: "recebido", cor: COR_RECEBIDO, pct: pctRecebido },
+    { id: "diferenca", label: "falta receber", cor: COR_DIFERENCA, pct: pctDiferenca },
   ];
 
-  /* Tabela: Peso Previsto (base) + Recebido (semana). */
   const linhas = [
-    { rotulo: "Peso Previsto", cor: COR_PREVISTO, un: totalPrevisto, ton: totalTonPrev, pct: 100, idx: 0 },
-    { rotulo: "Recebido", cor: COR_RECEBIDO, un: totalRecebido, ton: totalTonRec, pct: pctRecebido, idx: 1 },
+    { rotulo: "Recebido", cor: COR_RECEBIDO, un: totalRecebido, ton: totalTonRec, pct: pctRecebido, idx: 0 },
+    { rotulo: "Diferença", cor: COR_DIFERENCA, un: unFalta, ton: tonFalta, pct: pctDiferenca, idx: 1 },
   ];
 
   const focoSecao = secoes[foco] ?? secoes[0]!;
@@ -69,7 +72,7 @@ export default function CenaProducaoSemana({
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Produção da Semana
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Peso Previsto = total programado para esta semana (PESO PREVISTO). Recebido = o que efetivamente chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). O % compara o recebido com o peso previsto da semana. Peso em toneladas. Fonte: sistema Focco." />
+        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Recebido = o que já chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). Diferença = o que falta receber (peso previsto da semana − recebido). Os % são sobre o peso previsto da semana (PESO PREVISTO). Peso em toneladas. Fonte: sistema Focco." />
       </div>
 
       <DonutInterativo
@@ -83,7 +86,7 @@ export default function CenaProducaoSemana({
       <div className="mt-2 w-full max-w-xs mx-auto space-y-1.5">
         <div className="rounded-lg bg-white/10 px-4 py-2 text-center">
           <p className="text-[10px] font-bold tracking-[0.2em] text-white/60 uppercase">
-            {ROTULOS[foco]} da Semana
+            {TITULOS[foco]}
           </p>
           <p className="text-[20px] font-extrabold leading-tight" style={{ color: focoSecao.cor }}>
             {fmtBrMax(focoSecao.pct, 1)}%
@@ -152,7 +155,7 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Peso Previsto: total programado para a semana. Recebido: já chegou ao estoque. % do recebido sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.
+          * Recebido: já chegou ao estoque. Diferença: o que falta receber (peso previsto da semana − recebido). % sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.
         </p>
       </div>
 
