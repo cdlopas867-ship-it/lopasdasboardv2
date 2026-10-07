@@ -59,7 +59,7 @@ export default function CenaProdutividade({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto={`Produtividade por colaborador e por turma, do período ${PRODUTIVIDADE.periodo}. Os botões alternam o tipo de atividade; o total em toneladas é a soma da coluna PESO (kg) das planilhas "PRODUTIVIDADE POR COLABORADOR" (aba Resultado). Cargo, tempo de casa e turma vêm da planilha CD - QLP.xlsx (aba Base), casados pelo nome — quando o relatório usa apelido e não há casamento, o cargo fica vazio e a turma cai em "Sem turma". Turmas de status (DEMITIDO/INSS/TRANSFERIDO) também entram em "Sem turma". Fonte atualizada em ${PRODUTIVIDADE.atualizadoEm}.`}
+          texto={`Produtividade por colaborador e por turma, do período ${tipo.periodo}. Os botões alternam o tipo de atividade; o total em toneladas é a soma da coluna PESO (kg) das planilhas "PRODUTIVIDADE POR COLABORADOR" (aba Resultado). Cargo, tempo de casa e turma vêm da planilha CD - QLP.xlsx (aba Base), casados pelo nome — quando o relatório usa apelido e não há casamento, o cargo fica vazio e a turma cai em "Sem turma". Turmas de status (DEMITIDO/INSS/TRANSFERIDO) também entram em "Sem turma". Fonte atualizada em ${PRODUTIVIDADE.atualizadoEm}.`}
         />
       </div>
 
@@ -72,7 +72,7 @@ export default function CenaProdutividade({
         <p className="text-center text-[10px] text-white/55">
           <span className="font-bold text-white/90">{fmtInt(tipo.pessoas)}</span> colaboradores ·{" "}
           <span className="font-bold text-white/90">{fmtInt(tipo.cx)}</span> caixas · período{" "}
-          {PRODUTIVIDADE.periodo}
+          {tipo.periodo}
         </p>
       </div>
 
