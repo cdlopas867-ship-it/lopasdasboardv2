@@ -124,8 +124,9 @@ type Props = {
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 14;
-const DURACOES = [8000, 5000, 6500, 5000, 5000, 5000, 9000, 5500, 8000, 7000, 7000, 10000, 11000, 12000];
+const TOTAL_CENAS = 13;
+/* A cena 12 reúne Produtividade + QLP · CD, por isso é a mais longa. */
+const DURACOES = [8000, 5000, 6500, 5000, 5000, 5000, 9000, 5500, 8000, 7000, 7000, 18000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,

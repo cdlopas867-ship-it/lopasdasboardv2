@@ -1,4 +1,5 @@
-/* Cena QLP · CD — quadro de lotação de pessoal no mesmo padrão das demais cenas:
+/* QLP · CD — quadro de lotação de pessoal, hoje renderizado como seção da cena
+   de Produtividade (antes era uma cena própria), no mesmo padrão das demais:
    donut interativo + botões por CLASSE (Estoque, Carregamento, Liderança,
    Treinamento, Afastamento, Transferência, Desligamento), destaque em gradiente
    com o nº de colaboradores da classe e quadros da classe selecionada — turmas,

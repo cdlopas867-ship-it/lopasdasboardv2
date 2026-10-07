@@ -23,6 +23,7 @@ import {
 import { FICHAS_QLP, type FichaQlp } from "@/data/qlp-fichas";
 import DestaquesProdutividade from "@/components/DestaquesProdutividade";
 import ComparativoProdutividade from "@/components/ComparativoProdutividade";
+import CenaQlpCd from "@/components/CenaQlpCd";
 
 const CORES = ["#00FFCC", "#FFA500", "#7C9CFF", "#FF5FA2"];
 
@@ -109,6 +110,12 @@ export default function CenaProdutividade({
         (estoque/empilhadeira) — e quem não teve o cargo casado fica fora. Fonte:
         PRODUTIVIDADE POR COLABORADOR + CD - QLP.xlsx, {PRODUTIVIDADE.atualizadoEm}.
       </p>
+
+      {/* Lotação de pessoal (QLP · CD) — antes era uma cena própria, agora
+          vem logo abaixo da produtividade na mesma cena. */}
+      <div className="mt-6 w-full max-w-4xl border-t border-white/15 pt-4">
+        <CenaQlpCd anim={anim} cena={cena} onPausar={onPausar} />
+      </div>
     </div>
   );
 }
