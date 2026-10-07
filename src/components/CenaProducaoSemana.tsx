@@ -14,6 +14,18 @@ const COR_A_PRODUZIR = "#FFA500"; // laranja
 
 const ROTULOS = ["Produzido", "Recebido", "A produzir"];
 
+/* Variação percentual da tonelagem de um dia para o outro (▲ sobe / ▼ desce). */
+function VariacaoDia({ atual, anterior }: { atual: number; anterior: number | undefined }) {
+  if (anterior == null || anterior <= 0) return null;
+  const pct = ((atual - anterior) / anterior) * 100;
+  const up = pct >= 0;
+  return (
+    <div className={cn("text-[9px] font-bold leading-tight", up ? "text-emerald-400" : "text-red-400")}>
+      {up ? "▲" : "▼"} {fmtBrMax(Math.abs(pct), 1)}%
+    </div>
+  );
+}
+
 export default function CenaProducaoSemana({
   anim,
   dias,
@@ -173,30 +185,35 @@ export default function CenaProducaoSemana({
             </tr>
           </thead>
           <tbody>
-            {semana.map((d) => (
-              <tr key={d.iso} className="border-b border-white/10 last:border-0">
-                <td className="py-0.5 whitespace-nowrap">
-                  <span className="font-semibold text-white/90">{d.dia}</span>{" "}
-                  <span className="text-[9px] text-white/45">{d.data}</span>
-                </td>
-                <td className="py-0.5 text-right">
-                  <span className="font-mono font-bold" style={{ color: COR_PRODUZIDO }}>
-                    {d.tonPrevisto > 0 ? `${fmtBrMax(d.tonPrevisto, 1)} t` : "—"}
-                  </span>{" "}
-                  <span className="text-[9px] text-white/45">{fmtInt(d.produzido)}</span>
-                </td>
-                <td className="py-0.5 text-right">
-                  <span className="font-mono font-bold" style={{ color: COR_RECEBIDO }}>
-                    {d.tonEntregue > 0 ? `${fmtBrMax(d.tonEntregue, 1)} t` : "—"}
-                  </span>{" "}
-                  <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
-                </td>
-              </tr>
-            ))}
+            {semana.map((d, i) => {
+              const ant = semana[i - 1];
+              return (
+                <tr key={d.iso} className="border-b border-white/10 last:border-0">
+                  <td className="py-0.5 whitespace-nowrap">
+                    <span className="font-semibold text-white/90">{d.dia}</span>{" "}
+                    <span className="text-[9px] text-white/45">{d.data}</span>
+                  </td>
+                  <td className="py-0.5 text-right">
+                    <span className="font-mono font-bold" style={{ color: COR_PRODUZIDO }}>
+                      {d.tonPrevisto > 0 ? `${fmtBrMax(d.tonPrevisto, 1)} t` : "—"}
+                    </span>{" "}
+                    <span className="text-[9px] text-white/45">{fmtInt(d.produzido)}</span>
+                    <VariacaoDia atual={d.tonPrevisto} anterior={ant?.tonPrevisto} />
+                  </td>
+                  <td className="py-0.5 text-right">
+                    <span className="font-mono font-bold" style={{ color: COR_RECEBIDO }}>
+                      {d.tonEntregue > 0 ? `${fmtBrMax(d.tonEntregue, 1)} t` : "—"}
+                    </span>{" "}
+                    <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
+                    <VariacaoDia atual={d.tonEntregue} anterior={ant?.tonEntregue} />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque.
+          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. ▲/▼ = variação em % da tonelagem vs dia anterior.
         </p>
       </div>
 
