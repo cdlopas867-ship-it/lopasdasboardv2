@@ -1,12 +1,11 @@
-/* Destaques do período — top melhores e top piores por equipe (Separação e
-   Estoque), com as equipes definidas pelo cargo/função do colaborador. Usa o
-   tipo de atividade ativo na cena Produtividade (mesmo período e mesmos dados). */
+/* Destaques do período — top melhores por equipe (Separação e Estoque), com as
+   equipes definidas pelo cargo/função do colaborador. Usa o tipo de atividade
+   ativo na cena Produtividade (mesmo período e mesmos dados). */
 
 import { fmtBrMax } from "@/lib/format";
 import type { ProdColaborador, ProdTipo } from "@/data/produtividade";
 
 const MELHOR = "#4ADE80";
-const PIOR = "#F87171";
 const TOPO = 3;
 
 /* Cargos que formam a equipe de Estoque; os ligados à expedição (expedidor,
@@ -23,18 +22,13 @@ export function equipeDoCargo(cargo: string): "separacao" | "estoque" | null {
   return null;
 }
 
-type Equipe = { nome: string; melhores: ProdColaborador[]; piores: ProdColaborador[] };
+type Equipe = { nome: string; melhores: ProdColaborador[] };
 
 function montarEquipe(nome: string, tipo: ProdTipo, chave: "separacao" | "estoque"): Equipe {
   const colabs = tipo.colaboradores
     .filter((c) => c.ton > 0 && equipeDoCargo(c.cargo) === chave)
     .sort((a, b) => b.ton - a.ton);
-  return {
-    nome,
-    melhores: colabs.slice(0, TOPO),
-    /* Piores = últimos colocados, sem repetir quem já aparece nos melhores. */
-    piores: colabs.slice(Math.max(TOPO, colabs.length - TOPO)).reverse(),
-  };
+  return { nome, melhores: colabs.slice(0, TOPO) };
 }
 
 export default function DestaquesProdutividade({ tipo }: { tipo: ProdTipo }) {
@@ -46,7 +40,7 @@ export default function DestaquesProdutividade({ tipo }: { tipo: ProdTipo }) {
   return (
     <div className="mx-auto mt-3 w-full max-w-4xl">
       <p className="mb-1.5 text-center text-[9px] font-bold tracking-[0.25em] text-white/60 uppercase">
-        Destaques do mês · top melhores e top piores
+        Destaques do mês · top melhores
       </p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {equipes.map((e) => (
@@ -57,14 +51,13 @@ export default function DestaquesProdutividade({ tipo }: { tipo: ProdTipo }) {
   );
 }
 
-function CardEquipe({ nome, melhores, piores }: Equipe) {
+function CardEquipe({ nome, melhores }: Equipe) {
   return (
     <div className="video-sobe min-w-0 rounded-xl border border-white/15 bg-white/5 px-3 py-2.5">
       <p className="border-b border-white/20 pb-1 text-[10px] font-bold tracking-[0.18em] text-white uppercase">
         {nome}
       </p>
       <Lista titulo="▲ Melhores" cor={MELHOR} itens={melhores} />
-      <Lista titulo="▼ Piores" cor={PIOR} itens={piores} />
     </div>
   );
 }
