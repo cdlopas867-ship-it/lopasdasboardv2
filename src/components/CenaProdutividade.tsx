@@ -22,6 +22,7 @@ import {
 } from "@/data/produtividade";
 import { FICHAS_QLP, type FichaQlp } from "@/data/qlp-fichas";
 import DestaquesProdutividade from "@/components/DestaquesProdutividade";
+import ComparativoProdutividade from "@/components/ComparativoProdutividade";
 
 const CORES = ["#00FFCC", "#FFA500", "#7C9CFF", "#FF5FA2"];
 
@@ -95,6 +96,8 @@ export default function CenaProdutividade({
         />
         <QuadroTurmas turmas={turmas} total={tipo.ton} cor={cor} />
       </div>
+
+      <ComparativoProdutividade tipo={tipo} cor={cor} />
 
       <DestaquesProdutividade tipo={tipo} />
 
