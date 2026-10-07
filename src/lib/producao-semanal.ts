@@ -23,6 +23,16 @@ export type ProducaoSemanalDia = {
   tonPendente: number; // toneladas a produzir
   ordens: number; // número de ordens de produção
   lotes: number; // número de lotes únicos
+  linhas?: ProducaoLinha[]; // ordens cruas do dia (DT FINAL, LOTE, VOLUME e pesos)
+};
+
+/* Uma linha crua da planilha de produção (PCP 003), como sai do sistema Focco. */
+export type ProducaoLinha = {
+  data: string; // DT FINAL (dd/mm/aa)
+  lote: string;
+  volume: string;
+  pesoPrevisto: number; // PESO PREVISTO (kg)
+  pesoRealizado: number; // PESO REALIZADO (kg)
 };
 
 function normalizeHeader(value: unknown): string {
@@ -199,6 +209,7 @@ export function calcularProducaoSemanal(
         tonPendente: number;
         ordens: Set<string>;
         lotes: Set<string>;
+        linhas: ProducaoLinha[];
       }
     >();
 
@@ -231,12 +242,21 @@ export function calcularProducaoSemanal(
         tonPendente: 0,
         ordens: new Set<string>(),
         lotes: new Set<string>(),
+        linhas: [],
       };
       dia.previsto += previsto;
       dia.produzido += produzido;
       dia.pendente += pendente;
       dia.tonPrevisto += (pesoPrevSheet > 0 ? pesoPrevSheet : previsto * pesoUnd) / 1000;
       dia.tonProduzido += (pesoRealSheet > 0 ? pesoRealSheet : produzido * pesoUnd) / 1000;
+      /* Linha crua da planilha — alimenta a tabela detalhada da cena. */
+      dia.linhas.push({
+        data: `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(2, 4)}`,
+        lote: str(r, cLote),
+        volume: str(r, cVolume),
+        pesoPrevisto: +pesoPrevSheet.toFixed(1),
+        pesoRealizado: +pesoRealSheet.toFixed(1),
+      });
       if (cOrdem >= 0) dia.ordens.add(str(r, cOrdem));
       if (cLote >= 0) dia.lotes.add(str(r, cLote));
       porDia.set(iso, dia);
@@ -274,6 +294,7 @@ export function calcularProducaoSemanal(
           tonPendente: +d.tonPendente.toFixed(1),
           ordens: d.ordens.size,
           lotes: d.lotes.size,
+          linhas: d.linhas,
         };
       });
 
