@@ -3,21 +3,24 @@ import type { ItemEstoque } from "./base-estoque";
 
 /* Produção da semana — "o que vai descer" da fábrica.
  * Lê a planilha de produção (NUM ORDEM, DT INICIAL, DT FINAL, LOTE,
- * VOLUME, PREVISTO, ENTREGUE, PENDENTE) e agrupa por DT FINAL (dia
- * em que a produção fica pronta). O peso por dia é calculado cruzando
- * o código do item (extraído do campo VOLUME) com o peso unitário
- * da Base Estoque (PESO LIQ TOTAL ÷ SALDO). */
+ * VOLUME, PREVISTO, QTDE ENTREGUE, QTDE PENDENTE, PESO PREVISTO,
+ * PESO REALIZADO) e agrupa por DT FINAL (dia em que a produção fica
+ * pronta). O peso por dia vem das colunas PESO PREVISTO / PESO REALIZADO
+ * (kg) quando presentes; senão é calculado cruzando o código do item
+ * (extraído do campo VOLUME) com o peso unitário da Base Estoque. */
 
 export type ProducaoSemanalDia = {
   iso: string;
   dia: string;
   data: string;
-  previsto: number; // unidades previstas
-  entregue: number; // unidades entregues
-  pendente: number; // unidades pendentes
-  tonPrevisto: number; // toneladas previstas
-  tonEntregue: number; // toneladas entregues
-  tonPendente: number; // toneladas pendentes
+  previsto: number; // unidades programadas
+  produzido: number; // unidades produzidas (QTDE ENTREGUE da produção)
+  entregue: number; // unidades recebidas no estoque (planilha PESO RECEBIDO)
+  pendente: number; // unidades a produzir (previsto − produzido)
+  tonPrevisto: number; // toneladas programadas
+  tonProduzido: number; // toneladas produzidas (PESO REALIZADO)
+  tonEntregue: number; // toneladas recebidas no estoque
+  tonPendente: number; // toneladas a produzir
   ordens: number; // número de ordens de produção
   lotes: number; // número de lotes únicos
 };
@@ -26,7 +29,9 @@ function normalizeHeader(value: unknown): string {
   return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "")
+    /* Remove espaços e underlines: a planilha PESO RECEBIDO usa
+       "DT_INICIO"/"PESO_RECEBIDO" enquanto a de produção usa espaços. */
+    .replace(/[_\s]+/g, "")
     .toUpperCase();
 }
 
@@ -127,9 +132,9 @@ export function calcularRecebidoPorDia(
 
 /* Lê a planilha de produção e retorna os dias com métricas.
  * Detecta a aba pelos cabeçalhos NUM ORDEM + DT INICIAL + PENDENTE.
- * Se recebidoPorDia for fornecido (planilha PESO RECEBIDO POR PERÍODO),
- * substitui o ENTREGUE da produção pelo que foi efetivamente recebido
- * no estoque em cada data, e recalcula o PENDENTE = PREVISTO − RECEBIDO. */
+ * `produzido` = QTDE ENTREGUE da produção; `entregue` (recebido) vem da
+ * planilha PESO RECEBIDO POR PERÍODO quando fornecida (senão assume o
+ * produzido). O PENDENTE (a produzir) = PREVISTO − PRODUZIDO. */
 export function calcularProducaoSemanal(
   wb: XLSX.WorkBook,
   itensEstoque: ItemEstoque[] | undefined,
@@ -157,6 +162,11 @@ export function calcularProducaoSemanal(
     const headers = rows[headerIdx]!.map((c) => normalizeHeader(c));
     const col = (needle: string) => headers.findIndex((h) => h.includes(needle));
 
+    /* Ignora a planilha de pendências (PCP 004 - Realização Pendente): ela
+       também traz DT INICIAL/PENDENTE e seria confundida com a produção.
+       Identifica-se pela coluna "PESO PENDENTE" (a produção usa PESO PREVISTO). */
+    if (col("PESOPENDENTE") >= 0 && col("PESOPREVISTO") < 0) continue;
+
     const cDtFim = col("DTFINAL");
     const cOrdem = col("NUMORDEM");
     const cVolume = col("VOLUME");
@@ -164,6 +174,9 @@ export function calcularProducaoSemanal(
     const cEntg = col("ENTREGUE");
     const cPend = col("PENDENTE");
     const cLote = col("LOTE");
+    /* Peso da própria planilha (kg) — PESO PREVISTO / PESO REALIZADO. */
+    const cPesoPrev = headers.findIndex((h) => h.includes("PESOPREVISTO"));
+    const cPesoReal = headers.findIndex((h) => h.includes("PESOREALIZADO"));
 
     if (cDtFim < 0 || cPend < 0) continue;
 
@@ -177,9 +190,11 @@ export function calcularProducaoSemanal(
       string,
       {
         previsto: number;
+        produzido: number;
         entregue: number;
         pendente: number;
         tonPrevisto: number;
+        tonProduzido: number;
         tonEntregue: number;
         tonPendente: number;
         ordens: Set<string>;
@@ -193,53 +208,56 @@ export function calcularProducaoSemanal(
       if (!iso) continue;
 
       const previsto = num(r, cPrev);
-      const entregue = num(r, cEntg);
+      const produzido = num(r, cEntg); // QTDE ENTREGUE = produzido
       const pendente = num(r, cPend);
-      if (previsto <= 0 && entregue <= 0 && pendente <= 0) continue;
+      if (previsto <= 0 && produzido <= 0 && pendente <= 0) continue;
 
       const codItem = cVolume >= 0 ? extrairCodItem(str(r, cVolume)) : "";
       const pesoUnd = codItem ? (pesoUnit.get(codItem) ?? 0) : 0;
 
+      /* Peso da própria planilha (kg) — mais preciso que o cruzamento com a
+         Base Estoque. Usado quando presente; senão cai no peso unitário. */
+      const pesoPrevSheet = num(r, cPesoPrev);
+      const pesoRealSheet = num(r, cPesoReal);
+
       const dia = porDia.get(iso) ?? {
         previsto: 0,
+        produzido: 0,
         entregue: 0,
         pendente: 0,
         tonPrevisto: 0,
+        tonProduzido: 0,
         tonEntregue: 0,
         tonPendente: 0,
         ordens: new Set<string>(),
         lotes: new Set<string>(),
       };
       dia.previsto += previsto;
-      dia.entregue += entregue;
+      dia.produzido += produzido;
       dia.pendente += pendente;
-      dia.tonPrevisto += (previsto * pesoUnd) / 1000;
-      dia.tonEntregue += (entregue * pesoUnd) / 1000;
-      dia.tonPendente += (pendente * pesoUnd) / 1000;
+      dia.tonPrevisto += (pesoPrevSheet > 0 ? pesoPrevSheet : previsto * pesoUnd) / 1000;
+      dia.tonProduzido += (pesoRealSheet > 0 ? pesoRealSheet : produzido * pesoUnd) / 1000;
       if (cOrdem >= 0) dia.ordens.add(str(r, cOrdem));
       if (cLote >= 0) dia.lotes.add(str(r, cLote));
       porDia.set(iso, dia);
     }
 
-    /* Cruzamento: se houver dados de recebido por dia (PESO RECEBIDO POR
-       PERÍODO), substitui o ENTREGUE da planilha de produção pelo que foi
-       efetivamente recebido no estoque naquela data. O PENDENTE passa a ser
-       PREVISTO − RECEBIDO (o que ainda falta descer). */
-    if (recebidoPorDia) {
-      for (const [iso, dia] of porDia) {
-        const rec = recebidoPorDia.get(iso);
-        dia.entregue = rec?.qtd ?? 0;
-        dia.tonEntregue = rec ? rec.peso / 1000 : 0;
-        dia.pendente = Math.max(0, dia.previsto - dia.entregue);
-        dia.tonPendente = Math.max(0, dia.tonPrevisto - dia.tonEntregue);
-      }
+    /* Cruzamento: o "recebido" vem da planilha PESO RECEBIDO POR PERÍODO
+       (o que efetivamente chegou ao estoque). Sem ela, o recebido assume o
+       produzido da própria planilha de produção. "A produzir" = previsto −
+       produzido (o que ainda falta sair da fábrica). */
+    for (const [iso, dia] of porDia) {
+      const rec = recebidoPorDia?.get(iso);
+      dia.entregue = recebidoPorDia ? (rec?.qtd ?? 0) : dia.produzido;
+      dia.tonEntregue = recebidoPorDia ? (rec ? rec.peso / 1000 : 0) : dia.tonProduzido;
+      dia.pendente = Math.max(0, dia.previsto - dia.produzido);
+      dia.tonPendente = Math.max(0, dia.tonPrevisto - dia.tonProduzido);
     }
 
     if (porDia.size === 0) continue;
 
     const dias: ProducaoSemanalDia[] = [...porDia.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-10)
       .map(([iso, d]) => {
         const dt = new Date(`${iso}T12:00:00Z`);
         return {
@@ -247,9 +265,11 @@ export function calcularProducaoSemanal(
           dia: NOMES_DIA[dt.getUTCDay()]!,
           data: `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(2, 4)}`,
           previsto: d.previsto,
+          produzido: d.produzido,
           entregue: d.entregue,
           pendente: d.pendente,
           tonPrevisto: +d.tonPrevisto.toFixed(1),
+          tonProduzido: +d.tonProduzido.toFixed(1),
           tonEntregue: +d.tonEntregue.toFixed(1),
           tonPendente: +d.tonPendente.toFixed(1),
           ordens: d.ordens.size,
@@ -261,4 +281,23 @@ export function calcularProducaoSemanal(
   }
 
   return null;
+}
+
+/* Seleciona os dias da semana atual (seg–dom) — mistura o que já foi
+   produzido/recebido (dias passados) com o que ainda falta produzir (dias
+   futuros). Cai para os 7 últimos dias disponíveis quando a planilha não
+   cobre a semana atual (planilha antiga ou só com dias futuros). */
+export function semanaAtual(dias: ProducaoSemanalDia[] | undefined): ProducaoSemanalDia[] {
+  const lista = dias ?? [];
+  if (lista.length === 0) return [];
+  const hoje = new Date();
+  const dow = (hoje.getDay() + 6) % 7; // 0 = segunda-feira
+  const seg = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - dow);
+  const dom = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + 6);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const ini = iso(seg);
+  const fim = iso(dom);
+  const daSemana = lista.filter((d) => d.iso >= ini && d.iso <= fim);
+  return daSemana.length > 0 ? daSemana : lista.slice(-7);
 }

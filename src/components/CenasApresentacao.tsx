@@ -36,7 +36,7 @@ import type {
   VideoUnidade,
   RecebimentoSemanalDia,
 } from "./VideoResumoDashboard";
-import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
+import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 /* Cenas da apresentação — conteúdo de cada slide, isolado em um componente
    para permitir renderizar também a cópia da cena que sai na transição suave. */
@@ -639,7 +639,7 @@ function CardFocoProducao({
   dias?: ProducaoSemanalDia[] | undefined;
   onTogglePausar: () => void;
 }) {
-  const semana = (dias ?? []).slice(-7);
+  const semana = semanaAtual(dias);
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
   const totalEntregue = semana.reduce((s, d) => s + d.entregue, 0);
   const totalPendente = semana.reduce((s, d) => s + d.pendente, 0);

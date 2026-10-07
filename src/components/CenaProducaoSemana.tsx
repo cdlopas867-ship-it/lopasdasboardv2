@@ -1,14 +1,18 @@
-/* Cena Produção da Semana — donut interativo com toggle Entregue / Pendente.
-   Mesmo padrão da CenaRecebimentoTurno: donut + toggle + tabela de legenda. */
+/* Cena Produção da Semana — donut interativo com Produzido × Recebido ×
+   A produzir. Mesmo padrão da CenaRecebimentoTurno: donut + toggle + tabela.
+   A tonelagem (peso em toneladas) fica em destaque no card e na tabela. */
 
 import { cn } from "@/lib/utils";
-import { fmtBrMax, fmtInt, fmtTonDec } from "@/lib/format";
+import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
-import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
+import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
 
-const COR_RECEBIDO = "#33D953";
-const COR_PREVISTO = "#FFA500";
+const COR_PRODUZIDO = "#33D953"; // verde
+const COR_RECEBIDO = "#38BDF8"; // azul
+const COR_A_PRODUZIR = "#FFA500"; // laranja
+
+const ROTULOS = ["Produzido", "Recebido", "A produzir"];
 
 export default function CenaProducaoSemana({
   anim,
@@ -23,27 +27,40 @@ export default function CenaProducaoSemana({
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
 
-  const semana = (dias ?? []).slice(-7);
+  const semana = semanaAtual(dias);
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
-  const totalEntregue = semana.reduce((s, d) => s + d.entregue, 0);
+  const totalProduzido = semana.reduce((s, d) => s + (d.produzido ?? 0), 0);
+  const totalRecebido = semana.reduce((s, d) => s + d.entregue, 0);
   const totalPendente = semana.reduce((s, d) => s + d.pendente, 0);
   const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
+  const totalTonProd = semana.reduce((s, d) => s + (d.tonProduzido ?? 0), 0);
+  const totalTonRec = semana.reduce((s, d) => s + d.tonEntregue, 0);
   const totalTonPend = semana.reduce((s, d) => s + d.tonPendente, 0);
   const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
-  const pctEntregue = totalPrevisto > 0 ? (totalEntregue / totalPrevisto) * 100 : 0;
-  const pctPendente = 100 - pctEntregue;
+
+  const pct = (v: number) => (totalPrevisto > 0 ? (v / totalPrevisto) * 100 : 0);
+  const pctProduzido = pct(totalProduzido);
+  const pctRecebido = pct(totalRecebido);
+  const pctPendente = pct(totalPendente);
+  /* % média = média entre o produzido e o recebido em relação ao programado. */
+  const pctMedia = (pctProduzido + pctRecebido) / 2;
 
   const secoes: SecaoDonut[] = [
-    { id: "recebido", label: "recebido", cor: COR_RECEBIDO, pct: pctEntregue },
-    { id: "previsto", label: "previsto", cor: COR_PREVISTO, pct: pctPendente },
+    { id: "produzido", label: "produzido", cor: COR_PRODUZIDO, pct: pctProduzido },
+    { id: "recebido", label: "recebido", cor: COR_RECEBIDO, pct: pctRecebido },
+    { id: "produzir", label: "a produzir", cor: COR_A_PRODUZIR, pct: pctPendente },
   ];
 
-  /* Tabela: Programado (total), Recebido (foco 0), Previsto (foco 1), Ordens */
+  /* Tabela: Programado (total) + Produzido / Recebido / A produzir. */
   const linhas = [
-    { rotulo: "Programado", un: totalPrevisto, ton: totalTonPrev, pct: 100, idx: -1 },
-    { rotulo: "Recebido", un: totalEntregue, ton: 0, pct: pctEntregue, idx: 0 },
-    { rotulo: "Previsto", un: totalPendente, ton: totalTonPend, pct: pctPendente, idx: 1 },
+    { rotulo: "Programado", cor: undefined as string | undefined, un: totalPrevisto, ton: totalTonPrev, pct: 100, idx: -1 },
+    { rotulo: "Produzido", cor: COR_PRODUZIDO, un: totalProduzido, ton: totalTonProd, pct: pctProduzido, idx: 0 },
+    { rotulo: "Recebido", cor: COR_RECEBIDO, un: totalRecebido, ton: totalTonRec, pct: pctRecebido, idx: 1 },
+    { rotulo: "A produzir", cor: COR_A_PRODUZIR, un: totalPendente, ton: totalTonPend, pct: pctPendente, idx: 2 },
   ];
+
+  const focoSecao = secoes[foco] ?? secoes[0]!;
+  const focoLinha = linhas[foco + 1]!;
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -51,7 +68,7 @@ export default function CenaProducaoSemana({
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Produção da Semana
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Ordens de produção programadas para os próximos 7 dias. Recebido = unidades já recebidas no estoque. Previsto = unidades que ainda faltam descer. Fonte: sistema Focco." />
+        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Programado = total planejado. Produzido = já saiu da fábrica (QTDE ENTREGUE / PESO REALIZADO). Recebido = o que efetivamente chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). A produzir = o que ainda falta produzir. Peso em toneladas destacado. Fonte: sistema Focco." />
       </div>
 
       <DonutInterativo
@@ -65,20 +82,19 @@ export default function CenaProducaoSemana({
       <div className="mt-2 w-full max-w-xs mx-auto space-y-1.5">
         <div className="rounded-lg bg-white/10 px-4 py-2 text-center">
           <p className="text-[10px] font-bold tracking-[0.2em] text-white/60 uppercase">
-            {foco === 0 ? "Recebido da Semana" : "Previsto da Semana"}
+            {ROTULOS[foco]} da Semana
           </p>
-          <p className="text-[20px] font-extrabold text-white leading-tight">
-            {foco === 0 ? `${fmtBrMax(pctEntregue, 1)}%` : `${fmtBrMax(pctPendente, 1)}%`}
+          <p className="text-[20px] font-extrabold leading-tight" style={{ color: focoSecao.cor }}>
+            {fmtBrMax(focoSecao.pct, 1)}%
           </p>
           <p className="text-[10px] text-white/55">
-            {foco === 0
-              ? `${fmtInt(totalEntregue)} de ${fmtInt(totalPrevisto)} un · ${fmtBrMax(totalTonPrev, 1)} t previstas`
-              : `${fmtInt(totalPendente)} de ${fmtInt(totalPrevisto)} un · ${fmtBrMax(totalTonPend, 1)} t a receber`}
+            {fmtInt(focoLinha.un)} de {fmtInt(totalPrevisto)} un ·{" "}
+            <span className="font-bold text-white/90">{fmtBrMax(focoLinha.ton, 1)} t</span>
           </p>
         </div>
         <div className="rounded-lg bg-white/5 px-4 py-1.5 text-center">
           <p className="text-[12px] font-bold text-white">
-            {fmtInt(totalOrdens)} ordens · {foco === 0 ? `${fmtBrMax(totalTonPrev, 1)} t previstas` : `${fmtBrMax(totalTonPend, 1)} t a receber`}
+            {fmtInt(totalOrdens)} ordens · {fmtBrMax(totalTonPrev, 1)} t programadas · média {fmtBrMax(pctMedia, 1)}%
           </p>
         </div>
       </div>
@@ -90,6 +106,7 @@ export default function CenaProducaoSemana({
         <table className="w-full text-left text-[11px] text-white">
           <thead>
             <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
+              <th className="pb-0.5 font-bold">Legenda</th>
               <th className="pb-0.5 font-bold">Indicador</th>
               <th className="pb-0.5 text-right font-bold">Un.</th>
               <th className="pb-0.5 text-right font-bold">Ton.</th>
@@ -99,7 +116,6 @@ export default function CenaProducaoSemana({
           <tbody>
             {linhas.map((l) => {
               const highlighted = l.idx === foco;
-              const cor = l.idx >= 0 ? secoes[l.idx]?.cor : undefined;
               return (
                 <tr
                   key={l.rotulo}
@@ -108,29 +124,34 @@ export default function CenaProducaoSemana({
                     highlighted ? "bg-white/[0.04]" : l.idx >= 0 ? "opacity-35" : "",
                   )}
                 >
-                  <td className="py-0.5" style={highlighted ? { color: cor } : undefined}>{l.rotulo}</td>
-                  <td className="py-0.5 text-right font-mono font-semibold" style={highlighted ? { color: cor } : undefined}>
+                  <td className="py-0.5">
+                    <span
+                      className="inline-block size-2 rounded-full align-middle"
+                      style={{ background: l.cor ?? "rgba(255,255,255,0.35)" }}
+                    />
+                  </td>
+                  <td className="py-0.5" style={highlighted ? { color: l.cor } : undefined}>{l.rotulo}</td>
+                  <td className="py-0.5 text-right font-mono font-semibold" style={highlighted ? { color: l.cor } : undefined}>
                     {fmtInt(l.un)}
                   </td>
-                  <td className="py-0.5 text-right font-mono text-white/50">
-                    {l.ton > 0 ? fmtTonDec(l.ton) : "—"}
+                  <td className="py-0.5 text-right">
+                    <span
+                      className={cn("font-mono font-bold", l.ton > 0 ? "text-white" : "text-white/40")}
+                      style={l.ton > 0 ? { color: l.cor ?? "#fff" } : undefined}
+                    >
+                      {l.ton > 0 ? fmtBrMax(l.ton, 1) : "—"}
+                    </span>
                   </td>
-                  <td className="py-0.5 text-right font-mono font-bold" style={highlighted ? { color: cor } : undefined}>
+                  <td className="py-0.5 text-right font-mono font-bold" style={highlighted ? { color: l.cor } : undefined}>
                     {fmtBrMax(l.pct, 1)}%
                   </td>
                 </tr>
               );
             })}
-            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
-              <td className="py-1 text-white">Ordens</td>
-              <td className="py-1 text-right font-mono text-white">{fmtInt(totalOrdens)}</td>
-              <td className="py-1 text-right font-mono text-white">{fmtBrMax(totalTonPrev, 1)} t</td>
-              <td className="py-1 text-right font-mono text-white">100%</td>
-            </tr>
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Programado: ordens dos próximos 7 dias. Recebido: já recebido no estoque. Previsto: o que falta descer. Fonte: sistema Focco.
+          * Programado: ordens dos próximos 7 dias. Produzido: já saiu da fábrica. Recebido: já chegou ao estoque. A produzir: o que falta descer. Tonelagem em toneladas (t). Fonte: sistema Focco.
         </p>
       </div>
 
