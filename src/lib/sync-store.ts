@@ -30,4 +30,13 @@ export async function setData(data: unknown) {
   } catch { /* sem Supabase — dados ficam só em memória */ }
   for (const [id, controller] of clients) { send(controller, data); if (controller.desiredSize === null) clients.delete(id); }
 }
+/* Atualiza apenas o carimbo de sincronização (sem gravar snapshot no banco).
+   Usado quando a pasta do Drive é lida mas nenhum arquivo mudou — mantém o
+   horário "Sincronizado" do painel sempre atual. */
+export function setSincronizacao(sincronizacao: unknown) {
+  const atual = (latestData as Record<string, unknown> | null) ?? {};
+  latestData = { ...atual, sincronizacao };
+  globalThis.__syncLatestData = latestData;
+  for (const [id, controller] of clients) { send(controller, latestData); if (controller.desiredSize === null) clients.delete(id); }
+}
 export function broadcastReload() { for (const [id, controller] of clients) { send(controller, { __reload: true }); if (controller.desiredSize === null) clients.delete(id); } }

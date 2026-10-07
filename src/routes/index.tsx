@@ -73,7 +73,11 @@ function DashboardHome() {
       extra: [[`Recebido${recebidoAte ? ` · 01/01 – ${recebidoAte.slice(0, 5)}` : ""}`, fmtTonDec(totRec)], [`Carregado${carregadoAte ? ` · 01/01 – ${carregadoAte.slice(0, 5)}` : ""}`, fmtTonDec(totCar)], ["Saldo", fmtTonDec(Math.abs(totRec - totCar))]],
     };
     const kpisComSaude = [...kpis, saudeKpi];
-    return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, abc: p["abc"] as VideoAbc | undefined, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, semReserva: p["semReservaResumo"] as VideoReservados | undefined, saidasCD: p["saidasCD"] as VideoSaidasCD | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, paletas: PALETAS_FIXO as VideoPaletas, recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
+    /* Paletes: usa o resumo lido do Drive quando disponível; PALETAS_FIXO
+       permanece apenas como fallback. */
+    const paletasSync = p["paletas"] as VideoPaletas | undefined;
+    const paletas = paletasSync && paletasSync.totalPaletes > 0 ? paletasSync : PALETAS_FIXO;
+    return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, abc: p["abc"] as VideoAbc | undefined, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, semReserva: p["semReservaResumo"] as VideoReservados | undefined, saidasCD: p["saidasCD"] as VideoSaidasCD | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, paletas: paletas as VideoPaletas, recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
   }, [dados]);
   if (!pronto || !autenticado) return null;
   if (!loaded) return <LoadingApresentacao />;

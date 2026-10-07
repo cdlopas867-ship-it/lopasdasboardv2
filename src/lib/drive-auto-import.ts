@@ -10,7 +10,7 @@
 
 import * as XLSX from "xlsx";
 import { addRegistro, getHistorico } from "./historico-store";
-import { setData, getLatestData } from "./sync-store";
+import { setData, getLatestData, setSincronizacao } from "./sync-store";
 import { lerReservados, calcularReservados, resumirReservados, calcularPrevisaoReservados } from "./reservados";
 import { lerPendentes } from "./pendentes";
 import { calcularPendentesResumo } from "./pendentes-resumo";
@@ -700,6 +700,20 @@ function dataMaisRecente(a: string, b: string): string {
   return ta >= tb ? a : b;
 }
 
+/* Registro da sincronização exibido no painel: quando a pasta foi lida e
+   quais planilhas foram consideradas (com a data de modificação de cada uma). */
+function construirSincronizacao(arquivos: ArquivoDrive[]) {
+  return {
+    em: new Date().toISOString(),
+    planilhas: arquivos
+      .filter((a) => a.nome)
+      .map((a) => ({
+        nome: a.nome,
+        ...(a.modificado && parseModificado(a.modificado) ? { modificado: parseModificado(a.modificado)!.toISOString() } : {}),
+      })),
+  };
+}
+
 /* Executa uma importação completa do Drive e salva no histórico.
    Retorna true se um novo registro foi salvo. */
 declare global {
@@ -721,7 +735,11 @@ export async function importarSeMudou(forcar = false): Promise<boolean> {
       const arquivos = await listarPlanilhasDaPasta(FOLDER_ID);
       const assinatura = arquivos.map((a) => `${a.id}:${a.modificado?.toString() ?? ""}`).sort().join("|");
       const semData = arquivos.some((a) => !a.modificado);
-      if (!forcar && assinatura === st.assinatura && !semData) return false;
+      if (!forcar && assinatura === st.assinatura && !semData) {
+        /* Nada mudou no Drive: mantém o carimbo "Sincronizado" do painel atual. */
+        setSincronizacao(construirSincronizacao(arquivos));
+        return false;
+      }
       const ok = await importarDoDriveServidor(arquivos);
       st.assinatura = assinatura;
       return ok;
@@ -759,15 +777,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   /* Registro da sincronização: quando o painel leu a pasta e quais
      planilhas foram consideradas (com a data de modificação de cada uma).
      Exibido no painel para o usuário saber de quando são os dados. */
-  const sincronizacao = {
-    em: new Date().toISOString(),
-    planilhas: arquivos
-      .filter((a) => a.nome)
-      .map((a) => ({
-        nome: a.nome,
-        ...(a.modificado && parseModificado(a.modificado) ? { modificado: parseModificado(a.modificado)!.toISOString() } : {}),
-      })),
-  };
+  const sincronizacao = construirSincronizacao(arquivos);
 
   let melhorResumoMod: Date | undefined;
   let reservadoTon: number | undefined;

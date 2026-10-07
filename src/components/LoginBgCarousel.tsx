@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
-import jardimAsset from "@/assets/login/lopas-aerea-jardim.webp.asset.json";
-import valeAsset from "@/assets/login/lopas-aerea-vale.webp.asset.json";
-import montanhasAsset from "@/assets/login/lopas-aerea-montanhas.webp.asset.json";
-import patioAsset from "@/assets/login/lopas-patio.webp.asset.json";
-import verdeAsset from "@/assets/login/lopas-aerea-verde.webp.asset.json";
 
+/* Fotos do carrossel de login — arquivos em `public/` (as antigas vinham do
+   CDN do Lovable e não existem neste repositório, o que causava 404). */
 const IMAGENS = [
-  jardimAsset.url,
-  valeAsset.url,
-  montanhasAsset.url,
-  patioAsset.url,
-  verdeAsset.url,
+  "/login-bg-1.jpg",
+  "/login-bg-2.jpg",
+  "/login-bg-3.jpg",
+  "/login-bg-warehouse.jpeg",
+  "/fundo-satelite-real.jpg",
 ];
 const INTERVALO = 6000;
 
