@@ -1,7 +1,8 @@
-/* Cena QLP · CD — quadro de lotação de pessoal com rede animada das cidades
-   (CD no centro, cidades ao redor) e ranking ao lado. O nó pulsante e as
-   linhas em fluxo dão o efeito de "tempo real"; clicar numa cidade destaca
-   o nó correspondente na rede. */
+/* Cena QLP · CD — quadro de lotação de pessoal sobre um mapa geográfico real:
+   cada cidade aparece na sua posição geográfica (lat/lng), com o nó proporcional
+   ao nº de colaboradores ativos. Ao lado, uma mini tabela funciona como legenda
+   do mapa (cor + cidade + pessoas + % do total). Clicar na cidade (no mapa ou na
+   tabela) destaca o ponto correspondente. */
 
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
@@ -21,9 +22,10 @@ const CORES = [
   "#9AA0A6",
 ];
 
-const CX = 110;
-const CY = 110;
-const RAIO_ORBITA = 76;
+/* Área do mapa (viewBox) — proporção próxima da real da região (~0.82). */
+const W = 240;
+const H = 280;
+const PAD = 30;
 
 export default function CenaQlpCd({
   anim,
@@ -40,17 +42,24 @@ export default function CenaQlpCd({
   const totalCidades = cidades.reduce((s, c) => s + c.pessoas, 0);
   const maior = Math.max(...cidades.map((c) => c.pessoas), 1);
 
-  const nos = cidades.map((c, i) => {
-    const ang = (i / cidades.length) * Math.PI * 2 - Math.PI / 2;
-    return {
-      ...c,
-      i,
-      x: CX + Math.cos(ang) * RAIO_ORBITA,
-      y: CY + Math.sin(ang) * RAIO_ORBITA,
-      raio: 7 + (c.pessoas / maior) * 15,
-      cor: CORES[i % CORES.length]!,
-    };
-  });
+  /* Projeção geográfica: lat/lng reais → coordenadas do SVG. */
+  const lats = cidades.map((c) => c.lat);
+  const lngs = cidades.map((c) => c.lng);
+  const latMin = Math.min(...lats);
+  const latMax = Math.max(...lats);
+  const lngMin = Math.min(...lngs);
+  const lngMax = Math.max(...lngs);
+  const px = (lng: number) => PAD + ((lng - lngMin) / (lngMax - lngMin || 1)) * (W - PAD * 2);
+  const py = (lat: number) => PAD + ((latMax - lat) / (latMax - latMin || 1)) * (H - PAD * 2);
+
+  const nos = cidades.map((c, i) => ({
+    ...c,
+    i,
+    x: px(c.lng),
+    y: py(c.lat),
+    raio: 6 + (c.pessoas / maior) * 13,
+    cor: CORES[i % CORES.length]!,
+  }));
 
   const ativa = cidades[foco];
 
@@ -66,7 +75,7 @@ export default function CenaQlpCd({
         </span>
         <InfoTooltip
           onOpen={onPausar}
-          texto="Quadro de Lotação de Pessoal do CD Lopas. A rede mostra os colaboradores ativos por cidade de residência (tamanho do nó = nº de pessoas); o CD fica no centro. Fonte: planilha CD-QLP.xlsx (aba Base), atualizada em 07/10/2026."
+          texto="Quadro de Lotação de Pessoal do CD Lopas. O mapa mostra a posição geográfica real das cidades de residência dos colaboradores ativos (tamanho do nó = nº de pessoas). Fonte: planilha CD-QLP.xlsx (aba Base), atualizada em 07/10/2026."
         />
       </div>
 
@@ -75,30 +84,44 @@ export default function CenaQlpCd({
         texto={`${fmtInt(QLP_CD.ativos)} colaboradores ativos em ${fmtInt(cidades.length)} cidades`}
       />
 
-      <div className="mt-3 grid w-full max-w-3xl grid-cols-1 items-center gap-3 sm:grid-cols-2">
-        {/* Rede das cidades — CD no centro, nós proporcionais ao nº de pessoas */}
-        <div className="video-pop mx-auto w-full max-w-[16rem]">
-          <svg viewBox="0 0 220 220" className="w-full overflow-visible">
-            {/* Linhas do CD até cada cidade */}
-            {nos.map((n) => (
+      <div className="mt-3 grid w-full max-w-3xl grid-cols-1 items-center gap-4 sm:grid-cols-2">
+        {/* Mapa geográfico real das cidades */}
+        <div className="video-pop mx-auto w-full max-w-[14rem]">
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full overflow-visible">
+            <rect
+              x="1"
+              y="1"
+              width={W - 2}
+              height={H - 2}
+              rx="14"
+              fill="rgba(255,255,255,0.03)"
+              stroke="rgba(255,255,255,0.10)"
+            />
+            {/* grade geográfica */}
+            {[0.25, 0.5, 0.75].map((f) => (
               <line
-                key={`l-${n.cidade}`}
-                x1={CX}
-                y1={CY}
-                x2={n.x}
-                y2={n.y}
-                stroke={n.cor}
-                strokeWidth={n.i === foco ? 1.8 : 1}
-                strokeLinecap="round"
-                className={cn(anim ? "qlp-fluxo" : "opacity-30")}
-                style={{
-                  opacity: n.i === foco ? 0.95 : 0.4,
-                  transition: "opacity 0.4s ease, stroke-width 0.4s ease",
-                }}
+                key={`gv-${f}`}
+                x1={W * f}
+                y1="10"
+                x2={W * f}
+                y2={H - 10}
+                stroke="rgba(255,255,255,0.05)"
+                strokeWidth="0.6"
+              />
+            ))}
+            {[0.25, 0.5, 0.75].map((f) => (
+              <line
+                key={`gh-${f}`}
+                x1="10"
+                y1={H * f}
+                x2={W - 10}
+                y2={H * f}
+                stroke="rgba(255,255,255,0.05)"
+                strokeWidth="0.6"
               />
             ))}
 
-            {/* Nós das cidades — pulso contínuo (efeito tempo real) */}
+            {/* Nós das cidades — posição geográfica real, pulso contínuo */}
             {nos.map((n) => {
               const destacado = n.i === foco;
               return (
@@ -106,7 +129,7 @@ export default function CenaQlpCd({
                   key={n.cidade}
                   onClick={() => setFoco(n.i)}
                   className="cursor-pointer"
-                  style={{ opacity: destacado ? 1 : 0.6, transition: "opacity 0.4s ease" }}
+                  style={{ opacity: destacado ? 1 : 0.72, transition: "opacity 0.4s ease" }}
                 >
                   {anim && (
                     <circle
@@ -115,18 +138,26 @@ export default function CenaQlpCd({
                       r={n.raio}
                       fill="none"
                       stroke={n.cor}
-                      strokeWidth="1.2"
+                      strokeWidth="1.1"
                       className="qlp-pulso"
                       style={{ animationDelay: `${n.i * 0.25}s` }}
                     />
                   )}
-                  <circle cx={n.x} cy={n.y} r={n.raio} fill={n.cor} fillOpacity={destacado ? 0.95 : 0.7} />
+                  <circle
+                    cx={n.x}
+                    cy={n.y}
+                    r={n.raio}
+                    fill={n.cor}
+                    fillOpacity={destacado ? 0.95 : 0.75}
+                    stroke={destacado ? "#ffffff" : "transparent"}
+                    strokeWidth="1"
+                  />
                   <text
                     x={n.x}
-                    y={n.y + 3}
+                    y={n.y + 2.4}
                     textAnchor="middle"
                     className="font-mono"
-                    fontSize={n.raio > 14 ? 10 : 8}
+                    fontSize={n.raio > 13 ? 8 : 6.5}
                     fontWeight="700"
                     fill="#0f1a06"
                   >
@@ -135,60 +166,60 @@ export default function CenaQlpCd({
                 </g>
               );
             })}
-
-            {/* CD no centro */}
-            <circle cx={CX} cy={CY} r="26" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" />
-            <text x={CX} y={CY - 3} textAnchor="middle" fontSize="12" fontWeight="700" fill="#ffffff">
-              CD
-            </text>
-            <text x={CX} y={CY + 10} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.7)">
-              {fmtInt(QLP_CD.ativos)} ativos
-            </text>
           </svg>
+          <p className="mt-1.5 text-center text-[9px] text-white/45">
+            {ativa ? `${ativa.cidade} · ${fmtInt(ativa.pessoas)} colaboradores` : null}
+          </p>
         </div>
 
-        {/* Ranking das cidades */}
+        {/* Mini tabela — legenda do mapa */}
         <div className="video-sobe w-full" style={{ animationDelay: "0.5s" }}>
           <p className="mb-1.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
             Onde mora o time
           </p>
-          <div className="space-y-1">
-            {cidades.map((c, i) => {
-              const pct = totalCidades > 0 ? (c.pessoas / totalCidades) * 100 : 0;
-              const destacado = i === foco;
-              return (
-                <button
-                  key={c.cidade}
-                  type="button"
-                  onClick={() => setFoco(i)}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-all duration-300",
-                    destacado ? "bg-white/[0.06]" : "opacity-60 hover:opacity-90",
-                  )}
-                >
-                  <span className="w-24 shrink-0 truncate text-[10px] font-semibold text-white">
-                    {c.cidade}
-                  </span>
-                  <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/12">
-                    <span
-                      className={cn("block h-full rounded-full", anim ? "video-barra-x" : "video-pausada")}
-                      style={{
-                        width: `${(c.pessoas / maior) * 100}%`,
-                        background: CORES[i % CORES.length],
-                        animationDelay: `${0.06 * i + 0.4}s`,
-                      }}
-                    />
-                  </span>
-                  <span className="w-8 shrink-0 text-right font-mono text-[10px] font-bold text-white">
-                    {fmtInt(c.pessoas)}
-                  </span>
-                  <span className="w-10 shrink-0 text-right font-mono text-[9px] text-white/50">
-                    {fmtBrMax(pct, 0)}%
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="text-[8px] tracking-widest text-white/40 uppercase">
+                <th className="pb-1 text-left font-semibold">Cidade</th>
+                <th className="pb-1 text-right font-semibold">Pessoas</th>
+                <th className="pb-1 text-right font-semibold">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cidades.map((c, i) => {
+                const pct = totalCidades > 0 ? (c.pessoas / totalCidades) * 100 : 0;
+                const destacado = i === foco;
+                return (
+                  <tr
+                    key={c.cidade}
+                    onClick={() => setFoco(i)}
+                    className={cn(
+                      "cursor-pointer border-t border-white/[0.06] transition-opacity duration-300",
+                      destacado ? "opacity-100" : "opacity-60 hover:opacity-90",
+                    )}
+                  >
+                    <td className="py-1 pr-2">
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="size-2 shrink-0 rounded-full"
+                          style={{ background: CORES[i % CORES.length] }}
+                        />
+                        <span className="truncate text-[10px] font-semibold text-white">
+                          {c.cidade}
+                        </span>
+                      </span>
+                    </td>
+                    <td className="py-1 text-right font-mono text-[10px] font-bold text-white">
+                      {fmtInt(c.pessoas)}
+                    </td>
+                    <td className="py-1 text-right font-mono text-[9px] text-white/50">
+                      {fmtBrMax(pct, 0)}%
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -214,8 +245,7 @@ export default function CenaQlpCd({
         </span>
       </div>
       <p className="mt-1 text-[9px] text-white/40">
-        {ativa ? `Em foco: ${ativa.cidade} · ${fmtInt(ativa.pessoas)} colaboradores` : null}
-        {" · "}1º turno {fmtInt(QLP_CD.turnos[0]!.pessoas)} · 2º turno {fmtInt(QLP_CD.turnos[1]!.pessoas)}
+        1º turno {fmtInt(QLP_CD.turnos[0]!.pessoas)} · 2º turno {fmtInt(QLP_CD.turnos[1]!.pessoas)}
       </p>
     </div>
   );
