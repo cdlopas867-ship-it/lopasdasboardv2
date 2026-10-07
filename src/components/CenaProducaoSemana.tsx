@@ -1,5 +1,5 @@
-/* Cena Produção da Semana — donut interativo com Produzido × Recebido ×
-   A produzir. Mesmo padrão da CenaRecebimentoTurno: donut + toggle + tabela.
+/* Cena Produção da Semana — donut interativo com Peso Previsto × Recebido.
+   Mesmo padrão da CenaRecebimentoTurno: donut + toggle + tabela.
    A tonelagem (peso em toneladas) fica em destaque no card e na tabela. */
 
 import { cn } from "@/lib/utils";
@@ -10,9 +10,9 @@ import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 const COR_PRODUZIDO = "#33D953"; // verde
 const COR_RECEBIDO = "#38BDF8"; // azul
-const COR_A_PRODUZIR = "#FFA500"; // laranja
+const COR_PREVISTO = "#FFA500"; // laranja
 
-const ROTULOS = ["Produzido", "Recebido", "A produzir"];
+const ROTULOS = ["Peso Previsto", "Recebido"];
 
 /* Variação percentual da tonelagem de um dia para o outro (▲ sobe / ▼ desce). */
 function VariacaoDia({ atual, anterior }: { atual: number; anterior: number | undefined }) {
@@ -41,34 +41,29 @@ export default function CenaProducaoSemana({
 
   const semana = semanaAtual(dias);
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
-  const totalProduzido = semana.reduce((s, d) => s + (d.produzido ?? 0), 0);
   const totalRecebido = semana.reduce((s, d) => s + d.entregue, 0);
-  const totalPendente = semana.reduce((s, d) => s + d.pendente, 0);
   const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
-  const totalTonProd = semana.reduce((s, d) => s + (d.tonProduzido ?? 0), 0);
   const totalTonRec = semana.reduce((s, d) => s + d.tonEntregue, 0);
-  const totalTonPend = semana.reduce((s, d) => s + d.tonPendente, 0);
   const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
+  /* Total previsto de todo o período da planilha (base do %) — equivale ao
+     "Total Geral" da tabela dinâmica de Soma de PESO PREVISTO por DT FINAL. */
+  const totalUnPeriodo = dias.reduce((s, d) => s + d.previsto, 0);
+  const totalTonPeriodo = dias.reduce((s, d) => s + d.tonPrevisto, 0);
 
-  const pct = (v: number) => (totalPrevisto > 0 ? (v / totalPrevisto) * 100 : 0);
-  const pctProduzido = pct(totalProduzido);
-  const pctRecebido = pct(totalRecebido);
-  const pctPendente = pct(totalPendente);
-  /* % média = média entre o produzido e o recebido em relação ao programado. */
-  const pctMedia = (pctProduzido + pctRecebido) / 2;
+  /* % = quanto a semana representa do total previsto do período. */
+  const pctPesoPrevisto = totalTonPeriodo > 0 ? (totalTonPrev / totalTonPeriodo) * 100 : 0;
+  const pctRecebido = totalTonPeriodo > 0 ? (totalTonRec / totalTonPeriodo) * 100 : 0;
 
   const secoes: SecaoDonut[] = [
-    { id: "produzido", label: "produzido", cor: COR_PRODUZIDO, pct: pctProduzido },
+    { id: "previsto", label: "peso previsto", cor: COR_PREVISTO, pct: pctPesoPrevisto },
     { id: "recebido", label: "recebido", cor: COR_RECEBIDO, pct: pctRecebido },
-    { id: "produzir", label: "a produzir", cor: COR_A_PRODUZIR, pct: pctPendente },
   ];
 
-  /* Tabela: Programado (total) + Produzido / Recebido / A produzir. */
+  /* Tabela: Total previsto (período) + Peso Previsto / Recebido (semana). */
   const linhas = [
-    { rotulo: "Programado", cor: undefined as string | undefined, un: totalPrevisto, ton: totalTonPrev, pct: 100, idx: -1 },
-    { rotulo: "Produzido", cor: COR_PRODUZIDO, un: totalProduzido, ton: totalTonProd, pct: pctProduzido, idx: 0 },
+    { rotulo: "Total previsto", cor: undefined as string | undefined, un: totalUnPeriodo, ton: totalTonPeriodo, pct: 100, idx: -1 },
+    { rotulo: "Peso Previsto", cor: COR_PREVISTO, un: totalPrevisto, ton: totalTonPrev, pct: pctPesoPrevisto, idx: 0 },
     { rotulo: "Recebido", cor: COR_RECEBIDO, un: totalRecebido, ton: totalTonRec, pct: pctRecebido, idx: 1 },
-    { rotulo: "A produzir", cor: COR_A_PRODUZIR, un: totalPendente, ton: totalTonPend, pct: pctPendente, idx: 2 },
   ];
 
   const focoSecao = secoes[foco] ?? secoes[0]!;
@@ -80,7 +75,7 @@ export default function CenaProducaoSemana({
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Produção da Semana
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Programado = total planejado. Produzido = já saiu da fábrica (QTDE ENTREGUE / PESO REALIZADO). Recebido = o que efetivamente chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). A produzir = o que ainda falta produzir. Peso em toneladas destacado. Fonte: sistema Focco." />
+        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Peso Previsto = tonelagem programada para esta semana (PESO PREVISTO). Recebido = o que efetivamente chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). O % compara cada um com o total previsto do período (Total Geral da Soma de PESO PREVISTO por DT FINAL). Peso em toneladas. Fonte: sistema Focco." />
       </div>
 
       <DonutInterativo
@@ -100,13 +95,13 @@ export default function CenaProducaoSemana({
             {fmtBrMax(focoSecao.pct, 1)}%
           </p>
           <p className="text-[10px] text-white/55">
-            {fmtInt(focoLinha.un)} de {fmtInt(totalPrevisto)} un ·{" "}
+            {fmtInt(focoLinha.un)} de {fmtInt(totalUnPeriodo)} un ·{" "}
             <span className="font-bold text-white/90">{fmtBrMax(focoLinha.ton, 1)} t</span>
           </p>
         </div>
         <div className="rounded-lg bg-white/5 px-4 py-1.5 text-center">
           <p className="text-[12px] font-bold text-white">
-            {fmtInt(totalOrdens)} ordens · {fmtBrMax(totalTonPrev, 1)} t programadas · média {fmtBrMax(pctMedia, 1)}%
+            {fmtInt(totalOrdens)} ordens · {fmtBrMax(totalTonPrev, 1)} t previstas nesta semana
           </p>
         </div>
       </div>
@@ -163,7 +158,7 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Programado: ordens dos próximos 7 dias. Produzido: já saiu da fábrica. Recebido: já chegou ao estoque. A produzir: o que falta descer. Tonelagem em toneladas (t). Fonte: sistema Focco.
+          * Peso Previsto: tonelagem programada para esta semana. Recebido: já chegou ao estoque. % sobre o total previsto do período. Tonelagem em toneladas (t). Fonte: sistema Focco.
         </p>
       </div>
 
