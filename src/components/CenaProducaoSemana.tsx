@@ -1,6 +1,6 @@
 /* Cena Produção da Semana — donut interativo com Peso Previsto × Recebido.
    Mesmo padrão da CenaRecebimentoTurno: donut + toggle + tabela.
-   A tonelagem (peso em toneladas) fica em destaque no card e na tabela. */
+   O % compara o Recebido no estoque com o Peso Previsto da semana. */
 
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
@@ -45,29 +45,23 @@ export default function CenaProducaoSemana({
   const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
   const totalTonRec = semana.reduce((s, d) => s + d.tonEntregue, 0);
   const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
-  /* Total previsto de todo o período da planilha (base do %) — equivale ao
-     "Total Geral" da tabela dinâmica de Soma de PESO PREVISTO por DT FINAL. */
-  const totalUnPeriodo = dias.reduce((s, d) => s + d.previsto, 0);
-  const totalTonPeriodo = dias.reduce((s, d) => s + d.tonPrevisto, 0);
 
-  /* % = quanto a semana representa do total previsto do período. */
-  const pctPesoPrevisto = totalTonPeriodo > 0 ? (totalTonPrev / totalTonPeriodo) * 100 : 0;
-  const pctRecebido = totalTonPeriodo > 0 ? (totalTonRec / totalTonPeriodo) * 100 : 0;
+  /* % = quanto o recebido no estoque representa do peso previsto da semana. */
+  const pctRecebido = totalTonPrev > 0 ? (totalTonRec / totalTonPrev) * 100 : 0;
 
   const secoes: SecaoDonut[] = [
-    { id: "previsto", label: "peso previsto", cor: COR_PREVISTO, pct: pctPesoPrevisto },
+    { id: "previsto", label: "peso previsto", cor: COR_PREVISTO, pct: 100 },
     { id: "recebido", label: "recebido", cor: COR_RECEBIDO, pct: pctRecebido },
   ];
 
-  /* Tabela: Total previsto (período) + Peso Previsto / Recebido (semana). */
+  /* Tabela: Peso Previsto (base) + Recebido (semana). */
   const linhas = [
-    { rotulo: "Total previsto", cor: undefined as string | undefined, un: totalUnPeriodo, ton: totalTonPeriodo, pct: 100, idx: -1 },
-    { rotulo: "Peso Previsto", cor: COR_PREVISTO, un: totalPrevisto, ton: totalTonPrev, pct: pctPesoPrevisto, idx: 0 },
+    { rotulo: "Peso Previsto", cor: COR_PREVISTO, un: totalPrevisto, ton: totalTonPrev, pct: 100, idx: 0 },
     { rotulo: "Recebido", cor: COR_RECEBIDO, un: totalRecebido, ton: totalTonRec, pct: pctRecebido, idx: 1 },
   ];
 
   const focoSecao = secoes[foco] ?? secoes[0]!;
-  const focoLinha = linhas[foco + 1]!;
+  const focoLinha = linhas[foco]!;
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -75,7 +69,7 @@ export default function CenaProducaoSemana({
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Produção da Semana
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Peso Previsto = tonelagem programada para esta semana (PESO PREVISTO). Recebido = o que efetivamente chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). O % compara cada um com o total previsto do período (Total Geral da Soma de PESO PREVISTO por DT FINAL). Peso em toneladas. Fonte: sistema Focco." />
+        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Peso Previsto = total programado para esta semana (PESO PREVISTO). Recebido = o que efetivamente chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). O % compara o recebido com o peso previsto da semana. Peso em toneladas. Fonte: sistema Focco." />
       </div>
 
       <DonutInterativo
@@ -95,7 +89,7 @@ export default function CenaProducaoSemana({
             {fmtBrMax(focoSecao.pct, 1)}%
           </p>
           <p className="text-[10px] text-white/55">
-            {fmtInt(focoLinha.un)} de {fmtInt(totalUnPeriodo)} un ·{" "}
+            {fmtInt(focoLinha.un)} de {fmtInt(totalPrevisto)} un ·{" "}
             <span className="font-bold text-white/90">{fmtBrMax(focoLinha.ton, 1)} t</span>
           </p>
         </div>
@@ -128,13 +122,13 @@ export default function CenaProducaoSemana({
                   key={l.rotulo}
                   className={cn(
                     "border-b border-white/10 last:border-0 transition-all duration-300",
-                    highlighted ? "bg-white/[0.04]" : l.idx >= 0 ? "opacity-35" : "",
+                    highlighted ? "bg-white/[0.04]" : "opacity-35",
                   )}
                 >
                   <td className="py-0.5">
                     <span
                       className="inline-block size-2 rounded-full align-middle"
-                      style={{ background: l.cor ?? "rgba(255,255,255,0.35)" }}
+                      style={{ background: l.cor }}
                     />
                   </td>
                   <td className="py-0.5" style={highlighted ? { color: l.cor } : undefined}>{l.rotulo}</td>
@@ -144,7 +138,7 @@ export default function CenaProducaoSemana({
                   <td className="py-0.5 text-right">
                     <span
                       className={cn("font-mono font-bold", l.ton > 0 ? "text-white" : "text-white/40")}
-                      style={l.ton > 0 ? { color: l.cor ?? "#fff" } : undefined}
+                      style={l.ton > 0 ? { color: l.cor } : undefined}
                     >
                       {l.ton > 0 ? fmtBrMax(l.ton, 1) : "—"}
                     </span>
@@ -158,7 +152,7 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Peso Previsto: tonelagem programada para esta semana. Recebido: já chegou ao estoque. % sobre o total previsto do período. Tonelagem em toneladas (t). Fonte: sistema Focco.
+          * Peso Previsto: total programado para a semana. Recebido: já chegou ao estoque. % do recebido sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.
         </p>
       </div>
 
