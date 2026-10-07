@@ -703,15 +703,19 @@ function dataMaisRecente(a: string, b: string): string {
 /* Registro da sincronização exibido no painel: quando a pasta foi lida e
    quais planilhas foram consideradas (com a data de modificação de cada uma). */
 function construirSincronizacao(arquivos: ArquivoDrive[]) {
-  return {
-    em: new Date().toISOString(),
-    planilhas: arquivos
-      .filter((a) => a.nome)
-      .map((a) => ({
-        nome: a.nome,
-        ...(a.modificado && parseModificado(a.modificado) ? { modificado: parseModificado(a.modificado)!.toISOString() } : {}),
-      })),
-  };
+  const planilhas = arquivos
+    .filter((a) => a.nome)
+    .map((a) => ({
+      nome: a.nome,
+      ...(a.modificado && parseModificado(a.modificado) ? { modificado: parseModificado(a.modificado)!.toISOString() } : {}),
+    }));
+  /* Hora real da atualização no Drive: a modificação mais recente entre as
+     planilhas da pasta. Sem data conhecida, usa o instante da leitura. */
+  const modificados = planilhas
+    .map((p) => (p.modificado ? new Date(p.modificado).getTime() : 0))
+    .filter((t) => t > 0);
+  const em = modificados.length ? new Date(Math.max(...modificados)).toISOString() : new Date().toISOString();
+  return { em, planilhas };
 }
 
 /* Executa uma importação completa do Drive e salva no histórico.
