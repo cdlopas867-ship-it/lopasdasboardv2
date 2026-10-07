@@ -12,6 +12,7 @@ import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaPaletes from "@/components/CenaPaletes";
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
+import CenaQlpCd from "@/components/CenaQlpCd";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -314,8 +315,13 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 12 — encerramento */}
+      {/* Cena 12 — QLP · CD: quadro de lotação com rede animada das cidades */}
       {cena === 11 && (
+        <CenaQlpCd anim={anim} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 13 — encerramento */}
+      {cena === 12 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
