@@ -155,6 +155,51 @@ export default function CenaProducaoSemana({
         </p>
       </div>
 
+      {/* Dia a dia — produzido × recebido por dia da semana atual */}
+      <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.65s" }}>
+        <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+          Dia a dia
+        </p>
+        <table className="w-full text-left text-[11px] text-white">
+          <thead>
+            <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest uppercase">
+              <th className="pb-0.5 font-bold text-white/55">Dia</th>
+              <th className="pb-0.5 text-right font-bold" style={{ color: COR_PRODUZIDO }}>
+                Produzido
+              </th>
+              <th className="pb-0.5 text-right font-bold" style={{ color: COR_RECEBIDO }}>
+                Recebido
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {semana.map((d) => (
+              <tr key={d.iso} className="border-b border-white/10 last:border-0">
+                <td className="py-0.5 whitespace-nowrap">
+                  <span className="font-semibold text-white/90">{d.dia}</span>{" "}
+                  <span className="text-[9px] text-white/45">{d.data}</span>
+                </td>
+                <td className="py-0.5 text-right">
+                  <span className="font-mono font-bold" style={{ color: COR_PRODUZIDO }}>
+                    {d.tonProduzido > 0 ? `${fmtBrMax(d.tonProduzido, 1)} t` : "—"}
+                  </span>{" "}
+                  <span className="text-[9px] text-white/45">{fmtInt(d.produzido)}</span>
+                </td>
+                <td className="py-0.5 text-right">
+                  <span className="font-mono font-bold" style={{ color: COR_RECEBIDO }}>
+                    {d.tonEntregue > 0 ? `${fmtBrMax(d.tonEntregue, 1)} t` : "—"}
+                  </span>{" "}
+                  <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="mt-1.5 text-[8px] leading-tight text-white/40">
+          * Tonelagem (t) e unidades por dia da semana atual. Produzido = já saiu da fábrica; Recebido = já chegou ao estoque.
+        </p>
+      </div>
+
     </div>
   );
 }
