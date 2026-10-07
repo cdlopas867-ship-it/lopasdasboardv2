@@ -66,8 +66,8 @@ export default function CenaSaudeEstoque({
         delay="0.4s"
         texto={
           foco === 0
-            ? `${fmtBrMax(saudePct, 1)}% total · ${fmtTonDec(totCarregado)} t`
-            : `${fmtBrMax(saldoPct, 1)}% de diferença · ${fmtTonDec(saldo)} t`
+            ? `${fmtBrMax(saudePct, 1)}% total · ${fmtTonDec(totCarregado)}`
+            : `${fmtBrMax(saldoPct, 1)}% de diferença · ${fmtTonDec(saldo)}`
         }
       />
 
