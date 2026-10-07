@@ -5,7 +5,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, DestaqueGradiente, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 const COR_PRODUZIDO = "#33D953"; // verde
@@ -84,18 +84,16 @@ export default function CenaProducaoSemana({
       <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
       <div className="mt-2 w-full max-w-xs mx-auto space-y-1.5">
-        <div className="rounded-lg bg-white/10 px-4 py-2 text-center">
-          <p className="text-[10px] font-bold tracking-[0.2em] text-white/60 uppercase">
-            {TITULOS[foco]}
-          </p>
-          <p className="text-[20px] font-extrabold leading-tight" style={{ color: focoSecao.cor }}>
-            {fmtBrMax(focoSecao.pct, 1)}%
-          </p>
-          <p className="text-[10px] text-white/55">
-            {fmtInt(focoLinha.un)} de {fmtInt(totalPrevisto)} un ·{" "}
-            <span className="font-bold text-white/90">{fmtBrMax(focoLinha.ton, 1)} t</span>
-          </p>
+        <div className="flex w-full justify-center">
+          <DestaqueGradiente
+            numero={`${fmtBrMax(focoSecao.pct, 1)}%`}
+            rotulo={TITULOS[foco]}
+          />
         </div>
+        <p className="text-center text-[10px] text-white/55">
+          {fmtInt(focoLinha.un)} de {fmtInt(totalPrevisto)} un ·{" "}
+          <span className="font-bold text-white/90">{fmtBrMax(focoLinha.ton, 1)} t</span>
+        </p>
         <div className="rounded-lg bg-white/5 px-4 py-1.5 text-center">
           <p className="text-[12px] font-bold text-white">
             {fmtInt(totalOrdens)} ordens · {fmtBrMax(totalTonPrev, 1)} t previstas nesta semana

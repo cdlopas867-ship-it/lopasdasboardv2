@@ -55,11 +55,11 @@ export default function CenaPaletes({
       />
       <ToggleSecoes secoes={secoes} foco={Math.min(foco, secoes.length - 1)} onChange={setFoco} />
 
-      <div className="mt-2 w-full max-w-xs mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
-        <p className="text-[12px] font-bold text-white">
-          {(() => { const t = tamanhos[Math.min(foco, tamanhos.length - 1)]; return t ? `${fmtInt(t.itens)} itens em ${fmtInt(t.paletes)} paletes` : `${fmtInt(itens)} itens em ${fmtInt(total)} paletes`; })()}
-        </p>
-      </div>
+      {/* Resumo rápido da seção ativa — destaque em gradiente */}
+      <BannerResumo
+        delay="0.4s"
+        texto={(() => { const t = tamanhos[Math.min(foco, tamanhos.length - 1)]; return t ? `${fmtInt(t.itens)} itens em ${fmtInt(t.paletes)} paletes` : `${fmtInt(itens)} itens em ${fmtInt(total)} paletes`; })()}
+      />
 
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">

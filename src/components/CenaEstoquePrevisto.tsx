@@ -5,7 +5,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtMoeda, fmtMoeda2, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
-import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
+import { DonutInterativo, ToggleSecoes, DestaqueGradiente, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoUnidade } from "./VideoResumoDashboard";
 
 const COR_ESTOQUE = "#00FFCC";
@@ -90,12 +90,10 @@ export default function CenaEstoquePrevisto({
 
       {/* Resumo rápido da seção ativa — destaque em gradiente */}
       <div className="mt-2 flex w-full justify-center">
-        <div className="destaque-gradiente">
-          <span className="destaque-gradiente-numero">{fmtBrMax(resumo.ton, 1)}</span>
-          <span className="destaque-gradiente-rotulo">
-            {foco === 0 ? " t em estoque" : " previsto"}
-          </span>
-        </div>
+        <DestaqueGradiente
+          numero={fmtBrMax(resumo.ton, 1)}
+          rotulo={foco === 0 ? " t em estoque" : " previsto"}
+        />
       </div>
 
       {/* Tabela de detalhes */}

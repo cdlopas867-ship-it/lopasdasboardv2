@@ -126,7 +126,18 @@ export function useFocoCena<T extends number>(cena: number, inicial: T = 0 as T)
   return [foco, setFoco] as const;
 }
 
-/* Banner resumo — pílula centralizada com texto de resumo da cena. */
+/* Destaque em gradiente — pílula com o valor em branco e o rótulo em creme. */
+export function DestaqueGradiente({ numero, rotulo }: { numero?: string; rotulo?: string }) {
+  return (
+    <div className="destaque-gradiente">
+      {numero && <span className="destaque-gradiente-numero">{numero}</span>}
+      {rotulo && <span className="destaque-gradiente-rotulo">{rotulo}</span>}
+    </div>
+  );
+}
+
+/* Banner resumo — destaque em gradiente com o valor da cena em evidência.
+   O primeiro token do texto vira o número; o resto vira o rótulo. */
 export function BannerResumo({
   texto,
   delay = "0.6s",
@@ -134,17 +145,17 @@ export function BannerResumo({
   texto: string;
   delay?: string;
 }) {
+  const [primeiro, ...resto] = texto.trim().split(/\s+/);
+  const temNumero = /\d/.test(primeiro ?? "");
   return (
     <div
       className="video-sobe mt-3 flex justify-center"
       style={{ animationDelay: delay }}
     >
-      <p
-        className="rounded-full px-5 py-2 text-center text-xs font-semibold text-white"
-        style={{ background: "rgba(138, 146, 121, 0.45)" }}
-      >
-        {texto}
-      </p>
+      <DestaqueGradiente
+        numero={temNumero ? primeiro : undefined}
+        rotulo={temNumero ? resto.join(" ") : texto}
+      />
     </div>
   );
 }
