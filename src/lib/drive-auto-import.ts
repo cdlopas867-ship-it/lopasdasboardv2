@@ -23,7 +23,7 @@ import { calcularProducaoSemanal, calcularRecebidoPorDia, type ProducaoSemanalDi
 import { lerItensEstoque, curvaAbcEstoque, curvaAbcRecebimento } from "./base-estoque";
 import { lerPaletes, calcularResumoPaletes } from "./paletes";
 import { faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado";
-import { existsSync, readFileSync, statSync } from "./fs-compat";
+import { existsSync, readFileSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
 import { lerForaDeLinha, aplicarCustos } from "./fora-de-linha-import";
@@ -927,12 +927,14 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       if (paletesMap.size > (melhorPaletes?.size ?? 0)) melhorPaletes = paletesMap;
 
       /* Resumo local só é usado se o Drive não encontrou nenhum resumo
-         (fallback — o Drive é a fonte de dados principal e atualizada) */
+         (fallback — o Drive é a fonte de dados principal e atualizada).
+         Não define melhorResumoMod: o mtime do arquivo local é o momento do
+         checkout (sempre "agora"), o que impediria o recálculo a partir dos
+         itens atualizados do Drive. Sem ele, o fallback local fica sempre
+         atrás dos itens do Drive, como esperado. */
       const resumo = extrairResumo(wb);
       if (resumo && !melhorResumo) {
         melhorResumo = resumo;
-        const stat = statSync(localPath);
-        melhorResumoMod = stat?.mtime;
       }
 
       /* Cópias locais só servem de reserva — a pasta do Drive sempre vence. */
@@ -1057,7 +1059,11 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       (!melhorResumoMod || melhorItensMod > melhorResumoMod)) {
     const r = resumoDeItens(melhorItens);
     if (r) {
-      melhorResumo = r.resumo;
+      /* O modelo sem aba Resumo não traz a data no cabeçalho — usa a data de
+         modificação do arquivo de itens como data-base do resumo. */
+      const d = melhorItensMod;
+      const dataItens = `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+      melhorResumo = { ...r.resumo, data: dataItens };
       melhorUnidadesResumo = r.unidades;
       console.info(`[auto-import] resumo recalculado a partir de ${melhorItens.length} itens (planilha mais recente)`);
     }
