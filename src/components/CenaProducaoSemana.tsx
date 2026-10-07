@@ -181,7 +181,7 @@ export default function CenaProducaoSemana({
                 </td>
                 <td className="py-0.5 text-right">
                   <span className="font-mono font-bold" style={{ color: COR_PRODUZIDO }}>
-                    {d.tonProduzido > 0 ? `${fmtBrMax(d.tonProduzido, 1)} t` : "—"}
+                    {d.tonPrevisto > 0 ? `${fmtBrMax(d.tonPrevisto, 1)} t` : "—"}
                   </span>{" "}
                   <span className="text-[9px] text-white/45">{fmtInt(d.produzido)}</span>
                 </td>
@@ -196,7 +196,7 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Tonelagem (t) e unidades por dia (data final). Produzido = já saiu da fábrica; Recebido = já chegou ao estoque.
+          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque.
         </p>
       </div>
 
