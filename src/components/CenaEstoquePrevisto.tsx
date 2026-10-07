@@ -88,13 +88,14 @@ export default function CenaEstoquePrevisto({
       />
       <ToggleSecoes secoes={secoes} foco={foco} onChange={setFoco} />
 
-      {/* Resumo rápido da seção ativa */}
-      <div className="mt-2 w-full max-w-sm mx-auto rounded-lg bg-white/10 px-4 py-2 text-center">
-        <p className="text-[12px] font-bold text-white">
-          {foco === 0
-            ? `${fmtTonDec(resumo.ton)} em estoque`
-            : `${fmtTonDec(resumo.ton)} previsto`}
-        </p>
+      {/* Resumo rápido da seção ativa — destaque em gradiente */}
+      <div className="mt-2 flex w-full justify-center">
+        <div className="destaque-gradiente">
+          <span className="destaque-gradiente-numero">{fmtBrMax(resumo.ton, 1)}</span>
+          <span className="destaque-gradiente-rotulo">
+            {foco === 0 ? " t em estoque" : " previsto"}
+          </span>
+        </div>
       </div>
 
       {/* Tabela de detalhes */}

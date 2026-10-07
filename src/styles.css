@@ -1204,3 +1204,57 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
   .relatorio-lopas-root section { break-inside: avoid; }
   @page { margin: 14mm; }
 }
+
+/* Destaque em gradiente — faixa de resumo da cena Estoque × Previsto.
+   Pílula âmbar→laranja, fio de brilho no topo e reflexo que passa uma vez. */
+.destaque-gradiente {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 18px;
+  border: 1px solid rgba(234, 88, 12, 0.22);
+  border-radius: 15px;
+  background: linear-gradient(112deg, #f59e0b 0%, #f97316 54%, #ea580c 100%);
+  box-shadow: 0 5px 14px rgba(154, 52, 18, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.26);
+  white-space: nowrap;
+}
+.destaque-gradiente::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 237, 0.38), rgba(255, 255, 255, 0.82));
+}
+.destaque-gradiente::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -35% auto -35% -45%;
+  width: 28%;
+  transform: skewX(-22deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  animation: destaque-gleam 1.3s cubic-bezier(0.22, 0.61, 0.36, 1) 0.35s 1 both;
+}
+.destaque-gradiente-numero {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+.destaque-gradiente-rotulo {
+  color: #fff7ed;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.075em;
+  line-height: 1.2;
+}
+@keyframes destaque-gleam {
+  0% { transform: translateX(0) skewX(-22deg); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateX(600%) skewX(-22deg); opacity: 0; }
+}
