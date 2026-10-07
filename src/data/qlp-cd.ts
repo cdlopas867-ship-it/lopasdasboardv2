@@ -1,23 +1,25 @@
 /* QLP · CD Lopas — Quadro de Lotação de Pessoal.
    Extraído da planilha "CD - QLP.xlsx" (aba Base), atualizada em 07/10/2026.
-   `pessoas` e os campos por cidade contam apenas colaboradores ativos
-   (CONTADOR = 1). `demitidos` conta todas as linhas com DEMITIDOS preenchido.
-   `lat`/`lng` são as posições geográficas reais de cada cidade, usadas para
-   desenhar o mapa na cena QLP · CD. */
+   Todas as listas por turno contam apenas colaboradores ATIVOS (CONTADOR = 1),
+   ordenadas da maior para a menor. Grafias da planilha foram unificadas
+   (ex.: EXPEDICAO/EXPEDIÇAO). TEMPO da planilha está em anos (tempo de casa).
+   "Sem turma" = ativos com a coluna TURMA vazia ou marcada como DEMITIDO.
+   Os totais gerais (total/demitidos/afastados/transferidos) consideram todas
+   as linhas com nome. */
 
-export type QlpCidade = {
-  cidade: string;
+export type QlpLinha = { nome: string; pessoas: number };
+
+export type QlpTurno = {
+  nome: string;
   pessoas: number;
-  lat: number;
-  lng: number;
-  turmas: number;
-  funcoes: number;
-  setores: number;
-  cargos: number;
-  turno1: number;
-  turno2: number;
-  admissao: string;
-  demitidos: number;
+  /** tempo de casa médio, em anos */
+  tempoMedio: number;
+  turmas: QlpLinha[];
+  cargos: QlpLinha[];
+  funcoes: QlpLinha[];
+  cidades: QlpLinha[];
+  setores: QlpLinha[];
+  tempoCasa: QlpLinha[];
 };
 
 export const QLP_CD = {
@@ -28,18 +30,148 @@ export const QLP_CD = {
   afastados: 7,
   transferidos: 10,
   turnos: [
-    { nome: "1º turno", pessoas: 90 },
-    { nome: "2º turno", pessoas: 54 },
-  ],
-  cidades: [
-    { cidade: "Cataguases", pessoas: 94, lat: -21.3892, lng: -42.6967, turmas: 20, funcoes: 16, setores: 3, cargos: 16, turno1: 47, turno2: 47, admissao: "08/06/26", demitidos: 63 },
-    { cidade: "Guarani", pessoas: 15, lat: -21.3597, lng: -43.0469, turmas: 10, funcoes: 8, setores: 2, cargos: 8, turno1: 14, turno2: 1, admissao: "08/04/26", demitidos: 5 },
-    { cidade: "Rodeiro", pessoas: 10, lat: -21.2003, lng: -42.865, turmas: 8, funcoes: 8, setores: 2, cargos: 7, turno1: 6, turno2: 4, admissao: "08/10/25", demitidos: 6 },
-    { cidade: "Divinésia", pessoas: 7, lat: -20.99, lng: -43.0049, turmas: 5, funcoes: 4, setores: 2, cargos: 4, turno1: 7, turno2: 0, admissao: "23/04/25", demitidos: 1 },
-    { cidade: "Piraúba", pessoas: 5, lat: -21.2756, lng: -43.0144, turmas: 3, funcoes: 4, setores: 2, cargos: 5, turno1: 5, turno2: 0, admissao: "03/04/23", demitidos: 2 },
-    { cidade: "Astolfo Dutra", pessoas: 5, lat: -21.3153, lng: -42.8622, turmas: 4, funcoes: 3, setores: 2, cargos: 4, turno1: 3, turno2: 2, admissao: "21/07/25", demitidos: 5 },
-    { cidade: "Ubá", pessoas: 5, lat: -21.1204, lng: -42.9426, turmas: 5, funcoes: 4, setores: 2, cargos: 5, turno1: 5, turno2: 0, admissao: "22/04/26", demitidos: 2 },
-    { cidade: "Dona Euzébia", pessoas: 2, lat: -21.3167, lng: -42.8083, turmas: 2, funcoes: 1, setores: 1, cargos: 2, turno1: 2, turno2: 0, admissao: "24/10/22", demitidos: 1 },
-    { cidade: "Santana do Campestre", pessoas: 1, lat: -21.2683, lng: -42.9364, turmas: 1, funcoes: 1, setores: 1, cargos: 1, turno1: 1, turno2: 0, admissao: "10/02/25", demitidos: 0 },
-  ] as QlpCidade[],
+    {
+      nome: "1º turno",
+      pessoas: 90,
+      tempoMedio: 4.5,
+      turmas: [
+        { nome: "Controle de Estoque", pessoas: 19 },
+        { nome: "Carregamento-Mateus", pessoas: 9 },
+        { nome: "Separação-Anderson", pessoas: 8 },
+        { nome: "Separação-Washin", pessoas: 7 },
+        { nome: "Carregamento-Julio Cazal", pessoas: 6 },
+        { nome: "Carregamento-Samuel", pessoas: 6 },
+        { nome: "Etiquetagem", pessoas: 6 },
+        { nome: "Recebimento Produtos", pessoas: 6 },
+        { nome: "Sem turma", pessoas: 6 },
+        { nome: "Carregamento-Easy House", pessoas: 5 },
+        { nome: "Carregamento-Luciano", pessoas: 5 },
+        { nome: "Separação-Ecommerce", pessoas: 4 },
+        { nome: "Líder de Operação", pessoas: 3 },
+      ],
+      cargos: [
+        { nome: "Auxiliar de Expedição", pessoas: 25 },
+        { nome: "Expedidor", pessoas: 16 },
+        { nome: "Conferente de Carga e Descarga", pessoas: 11 },
+        { nome: "Conferente de Estoques", pessoas: 10 },
+        { nome: "Etiquetador de Mercadoria", pessoas: 5 },
+        { nome: "Arrumador de Caminhões", pessoas: 4 },
+        { nome: "Auxiliar de Estoque", pessoas: 3 },
+        { nome: "Operador de Empilhadeira III", pessoas: 3 },
+        { nome: "Assistente de Estoques", pessoas: 2 },
+        { nome: "Operador de Empilhadeira I", pessoas: 2 },
+        { nome: "Operador de Empilhadeira II", pessoas: 2 },
+        { nome: "Supervisor de Expedição", pessoas: 2 },
+        { nome: "Coordenador de Estoques", pessoas: 1 },
+        { nome: "Gerente de Expedição", pessoas: 1 },
+        { nome: "Líder de Estoque", pessoas: 1 },
+        { nome: "Líder de Expedição", pessoas: 1 },
+        { nome: "Operador de Empilhadeira", pessoas: 1 },
+      ],
+      funcoes: [
+        { nome: "Expedidor", pessoas: 27 },
+        { nome: "Auxiliar de Expedição", pessoas: 16 },
+        { nome: "Conferente de Estoques", pessoas: 10 },
+        { nome: "Operador de Empilhadeira", pessoas: 8 },
+        { nome: "Conferente de Carga e Descarga", pessoas: 7 },
+        { nome: "Arrumador de Caminhões", pessoas: 4 },
+        { nome: "Etiquetador de Mercadoria", pessoas: 4 },
+        { nome: "Auxiliar de Estoque", pessoas: 3 },
+        { nome: "Assistente de Estoque", pessoas: 2 },
+        { nome: "Conferente de Separação", pessoas: 2 },
+        { nome: "Líder de Expedição", pessoas: 2 },
+        { nome: "Supervisor de Expedição", pessoas: 2 },
+        { nome: "Coordenador de Estoques", pessoas: 1 },
+        { nome: "Gerente de Expedição", pessoas: 1 },
+        { nome: "Líder de Estoque", pessoas: 1 },
+      ],
+      cidades: [
+        { nome: "Cataguases", pessoas: 47 },
+        { nome: "Guarani", pessoas: 14 },
+        { nome: "Divinésia", pessoas: 7 },
+        { nome: "Rodeiro", pessoas: 6 },
+        { nome: "Piraúba", pessoas: 5 },
+        { nome: "Ubá", pessoas: 5 },
+        { nome: "Astolfo Dutra", pessoas: 3 },
+        { nome: "Dona Eusébia", pessoas: 2 },
+        { nome: "Santana do Campestre", pessoas: 1 },
+      ],
+      setores: [
+        { nome: "CD-Centro Distribuição", pessoas: 63 },
+        { nome: "Controle de Estoques", pessoas: 22 },
+        { nome: "CD/Easy House", pessoas: 5 },
+      ],
+      tempoCasa: [
+        { nome: "Até 1 ano", pessoas: 29 },
+        { nome: "1 a 3 anos", pessoas: 26 },
+        { nome: "3 a 5 anos", pessoas: 12 },
+        { nome: "5 a 10 anos", pessoas: 9 },
+        { nome: "10+ anos", pessoas: 14 },
+      ],
+    },
+    {
+      nome: "2º turno",
+      pessoas: 54,
+      tempoMedio: 1.7,
+      turmas: [
+        { nome: "Separação-CD1", pessoas: 13 },
+        { nome: "Estoque Noite", pessoas: 11 },
+        { nome: "Etiquetagem Noite", pessoas: 6 },
+        { nome: "Sem turma", pessoas: 6 },
+        { nome: "Separação-Ecommerce Noite", pessoas: 6 },
+        { nome: "Líder de Operação Turno 2", pessoas: 5 },
+        { nome: "Carregamento-Zé Robin", pessoas: 4 },
+        { nome: "Recebimento Produtos Noite", pessoas: 3 },
+      ],
+      cargos: [
+        { nome: "Auxiliar de Expedição", pessoas: 28 },
+        { nome: "Expedidor", pessoas: 7 },
+        { nome: "Conferente de Estoques", pessoas: 4 },
+        { nome: "Etiquetador de Mercadoria", pessoas: 3 },
+        { nome: "Operador de Empilhadeira I", pessoas: 3 },
+        { nome: "Conferente de Carga e Descarga", pessoas: 2 },
+        { nome: "Arrumador de Caminhões", pessoas: 1 },
+        { nome: "Assistente de Estoques", pessoas: 1 },
+        { nome: "Auxiliar de Estoque", pessoas: 1 },
+        { nome: "Coordenador de Expedição", pessoas: 1 },
+        { nome: "Líder de Expedição", pessoas: 1 },
+        { nome: "Operador de Empilhadeira", pessoas: 1 },
+        { nome: "Operador de Empilhadeira II", pessoas: 1 },
+      ],
+      funcoes: [
+        { nome: "Expedidor", pessoas: 13 },
+        { nome: "Auxiliar de Expedição", pessoas: 9 },
+        { nome: "Operador de Empilhadeira", pessoas: 7 },
+        { nome: "Conferente de Estoques", pessoas: 5 },
+        { nome: "Etiquetador de Mercadoria", pessoas: 5 },
+        { nome: "Expedidor-Carrega", pessoas: 5 },
+        { nome: "Conferente de Carga e Descarga", pessoas: 2 },
+        { nome: "Conferente de Separação", pessoas: 2 },
+        { nome: "Arrumador de Caminhões", pessoas: 1 },
+        { nome: "Assistente de Estoques", pessoas: 1 },
+        { nome: "Auxiliar de Estoque", pessoas: 1 },
+        { nome: "Coordenador de Expedição", pessoas: 1 },
+        { nome: "Líder de Estoque", pessoas: 1 },
+        { nome: "Supervisor de Expedição", pessoas: 1 },
+      ],
+      cidades: [
+        { nome: "Cataguases", pessoas: 47 },
+        { nome: "Rodeiro", pessoas: 4 },
+        { nome: "Astolfo Dutra", pessoas: 2 },
+        { nome: "Guarani", pessoas: 1 },
+      ],
+      setores: [
+        { nome: "CD-Centro Distribuição", pessoas: 38 },
+        { nome: "Controle de Estoques", pessoas: 13 },
+        { nome: "CD/Easy House", pessoas: 3 },
+      ],
+      tempoCasa: [
+        { nome: "Até 1 ano", pessoas: 24 },
+        { nome: "1 a 3 anos", pessoas: 23 },
+        { nome: "3 a 5 anos", pessoas: 4 },
+        { nome: "5 a 10 anos", pessoas: 3 },
+        { nome: "10+ anos", pessoas: 0 },
+      ],
+    },
+  ] as QlpTurno[],
 };

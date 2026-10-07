@@ -315,7 +315,7 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 12 — QLP · CD: quadro de lotação com rede animada das cidades */}
+      {/* Cena 12 — QLP · CD: quadro de lotação por turno (donut + botões 1º/2º turno) */}
       {cena === 11 && (
         <CenaQlpCd anim={anim} cena={cena} onPausar={onPausar} />
       )}
