@@ -1,8 +1,9 @@
 /* Cena QLP · CD — quadro de lotação de pessoal no mesmo padrão das demais cenas:
-   donut interativo + botões 1º turno / 2º turno, destaque em gradiente com o
-   nº de colaboradores do turno e quadros do turno selecionado — turmas, cargos,
-   funções, cidades, setores e tempo de casa. Clicar no donut ou nos botões
-   alterna o turno. */
+   donut interativo + botões por CLASSE (Estoque, Carregamento, Liderança,
+   Treinamento, Afastamento, Transferência, Desligamento), destaque em gradiente
+   com o nº de colaboradores da classe e quadros da classe selecionada — turmas,
+   cargos, funções, cidades, setores e tempo de casa. Clicar no donut ou nos
+   botões alterna a classe. */
 
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
@@ -16,7 +17,16 @@ import {
 } from "@/components/cena-interativa";
 import { QLP_CD, type QlpLinha } from "@/data/qlp-cd";
 
-const CORES_TURNO = ["#00FFCC", "#FFA500"];
+/* Uma cor por classe (hoje 7). */
+const CORES_CLASSE = [
+  "#00FFCC",
+  "#FFA500",
+  "#7C9CFF",
+  "#FF5FA2",
+  "#4ADE80",
+  "#F87171",
+  "#C084FC",
+];
 
 /* Linhas mostradas por quadro; o resto vira "Outros (n)". */
 const TOPO = 5;
@@ -41,30 +51,30 @@ export default function CenaQlpCd({
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
 
-  const turnos = QLP_CD.turnos;
-  const idx = Math.min(foco, turnos.length - 1);
-  const turno = turnos[idx]!;
-  const cor = CORES_TURNO[idx % CORES_TURNO.length]!;
-  const pctTurno = QLP_CD.ativos > 0 ? (turno.pessoas / QLP_CD.ativos) * 100 : 0;
+  const classes = QLP_CD.classes;
+  const idx = Math.min(foco, classes.length - 1);
+  const classe = classes[idx]!;
+  const cor = CORES_CLASSE[idx % CORES_CLASSE.length]!;
+  const pctClasse = QLP_CD.total > 0 ? (classe.pessoas / QLP_CD.total) * 100 : 0;
 
-  const secoes: SecaoDonut[] = turnos.map((t, i) => ({
-    id: `turno-${i + 1}`,
-    label: t.nome,
-    cor: CORES_TURNO[i % CORES_TURNO.length]!,
-    pct: QLP_CD.ativos > 0 ? (t.pessoas / QLP_CD.ativos) * 100 : 0,
+  const secoes: SecaoDonut[] = classes.map((c, i) => ({
+    id: `classe-${i + 1}`,
+    label: c.nome,
+    cor: CORES_CLASSE[i % CORES_CLASSE.length]!,
+    pct: QLP_CD.total > 0 ? (c.pessoas / QLP_CD.total) * 100 : 0,
   }));
 
   /* Cidade, Cargos e Funções ganham destaque (cartões maiores, no topo);
      Turmas, Setor e Tempo de casa vêm logo abaixo no formato compacto. */
   const quadrosDestaque = [
-    { titulo: "Cidade", linhas: topComOutros(turno.cidades) },
-    { titulo: "Cargos", linhas: topComOutros(turno.cargos) },
-    { titulo: "Funções", linhas: topComOutros(turno.funcoes) },
+    { titulo: "Cidade", linhas: topComOutros(classe.cidades) },
+    { titulo: "Cargos", linhas: topComOutros(classe.cargos) },
+    { titulo: "Funções", linhas: topComOutros(classe.funcoes) },
   ];
   const quadros = [
-    { titulo: "Turmas", linhas: topComOutros(turno.turmas) },
-    { titulo: "Setor", linhas: turno.setores },
-    { titulo: "Tempo de casa", linhas: turno.tempoCasa },
+    { titulo: "Turmas", linhas: topComOutros(classe.turmas) },
+    { titulo: "Setor", linhas: classe.setores },
+    { titulo: "Tempo de casa", linhas: classe.tempoCasa },
   ];
 
   return (
@@ -75,7 +85,7 @@ export default function CenaQlpCd({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto="Quadro de Lotação de Pessoal do CD Lopas, só colaboradores ativos. O donut mostra a fatia de cada turno no total de ativos; clique no donut ou nos botões para alternar 1º / 2º turno. Em cada quadro, Pessoas = colaboradores do turno naquele item e % = fatia sobre o turno. Tempo de casa vem da coluna TEMPO (anos) da planilha. 'Sem turma' = ativos sem turma informada na planilha. Fonte: planilha CD - QLP.xlsx (aba Base), atualizada em 07/10/2026."
+          texto="Quadro de Lotação de Pessoal do CD Lopas, agora organizado por CLASSE. O donut mostra a fatia de cada classe no total de registros; clique no donut ou nos botões para alternar as classes (Estoque, Carregamento, Liderança, Treinamento, Afastamento, Transferência e Desligamento). Em cada quadro, Pessoas = registros da classe naquele item e % = fatia sobre a classe. As classes de status (Desligamento, Transferência, Afastamento) também entram, então o total considera todos os registros classificados. Tempo de casa vem da coluna TEMPO (anos) da planilha. 'Sem turma' = turma não informada ou de status. Fonte: planilha CD - QLP.xlsx (aba Base), atualizada em 07/10/2026."
         />
       </div>
 
@@ -90,14 +100,14 @@ export default function CenaQlpCd({
       <div className="mx-auto mt-2 w-full max-w-xs space-y-1.5">
         <div className="flex w-full justify-center">
           <DestaqueGradiente
-            numero={fmtInt(turno.pessoas)}
-            rotulo={`colaboradores · ${turno.nome}`}
+            numero={fmtInt(classe.pessoas)}
+            rotulo={`registros · ${classe.nome}`}
           />
         </div>
         <p className="text-center text-[10px] text-white/55">
-          <span className="font-bold text-white/90">{fmtBrMax(pctTurno, 1)}%</span> dos{" "}
-          {fmtInt(QLP_CD.ativos)} ativos · tempo de casa médio{" "}
-          <span className="font-bold text-white/90">{fmtBrMax(turno.tempoMedio, 1)} anos</span>
+          <span className="font-bold text-white/90">{fmtBrMax(pctClasse, 1)}%</span> dos{" "}
+          {fmtInt(QLP_CD.total)} registros · tempo de casa médio{" "}
+          <span className="font-bold text-white/90">{fmtBrMax(classe.tempoMedio, 1)} anos</span>
         </p>
       </div>
 
@@ -107,7 +117,7 @@ export default function CenaQlpCd({
             key={q.titulo}
             titulo={q.titulo}
             linhas={q.linhas}
-            total={turno.pessoas}
+            total={classe.pessoas}
             cor={cor}
             delay={0.4 + i * 0.08}
             destaque
@@ -121,7 +131,7 @@ export default function CenaQlpCd({
             key={q.titulo}
             titulo={q.titulo}
             linhas={q.linhas}
-            total={turno.pessoas}
+            total={classe.pessoas}
             cor={cor}
             delay={0.65 + i * 0.08}
           />
@@ -129,18 +139,17 @@ export default function CenaQlpCd({
       </div>
 
       <p className="mx-auto mt-3 max-w-3xl text-center text-[8px] leading-tight text-white/40">
-        * Colaboradores ativos do CD. Quadro geral: {fmtInt(QLP_CD.total)} registros ·{" "}
-        {fmtInt(QLP_CD.demitidos)} demitidos · {fmtInt(QLP_CD.afastados)} afastados (INSS) ·{" "}
-        {fmtInt(QLP_CD.transferidos)} transferidos. Fonte: CD - QLP.xlsx, atualizada em{" "}
-        {QLP_CD.atualizadoEm}.
+        * Quadro geral: {fmtInt(QLP_CD.total)} registros · {fmtInt(QLP_CD.demitidos)} demitidos ·{" "}
+        {fmtInt(QLP_CD.afastados)} afastados (INSS) · {fmtInt(QLP_CD.transferidos)} transferidos.
+        Fonte: CD - QLP.xlsx, atualizada em {QLP_CD.atualizadoEm}.
       </p>
     </div>
   );
 }
 
-/* Quadro do turno — tabela no estilo "Legenda" das outras cenas:
-   item, pessoas (em destaque, na cor do turno, com barra) e % do turno.
-   Com `destaque` vira cartão maior, com borda na cor do turno e o item líder
+/* Quadro da classe — tabela no estilo "Legenda" das outras cenas:
+   item, pessoas (em destaque, na cor da classe, com barra) e % da classe.
+   Com `destaque` vira cartão maior, com borda na cor da classe e o item líder
    realçado (Cidade, Cargos e Funções). */
 function Quadro({
   titulo,
