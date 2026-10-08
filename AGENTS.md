@@ -14,6 +14,7 @@
 
 - **Stack**: TanStack Start (SSR via nitro) + Vite 8 + React 19 + Supabase. Package manager is **bun** (`bun.lock`, `bunfig.toml`), but the container runs on the **`node:22`** image and executes Vite via Docker/Compose.
 - **Run**: `docker compose -f docker-compose.base44.yml up -d`. The dev server (`vite dev`) listens on **port 3000** (overridden via `--port 3000` CLI flag; the Lovable config defaults to 8080). See `docker-compose.base44.yml` and `package.json` for local start commands.
+- **Timezone**: the compose sets `TZ=America/Sao_Paulo` on the `web` service — the app's date logic assumes it. `parseModificado` (`drive-auto-import.ts`) reads the Drive folder view dates (e.g. `"Oct 7"`, no hour) as **server-local** midnight, and the panel formats the resulting instant in the browser's zone. With the container in UTC the selo "Atualizado" shifted back 3 h and showed the **previous day** (e.g. `06/10 21:00` for an `Oct 7` file). Do not drop this env var.
 - **Env vars**: `.env.base44-defaults` holds non-secret placeholders (Supabase publishable keys, gate credentials `admin`/`lopas2026`, service-role placeholder). Real secrets land in `/run/base44/...` and are injected into the container environment.
   - `SESSION_SECRET` — **required at boot**; the site-access gate (`gate.server.ts`) throws without it. Generated for development.
   - `SUPABASE_SERVICE_ROLE_KEY` — needed for live Supabase data (historico/sync/valor-faturado stores). Without it, APIs fail gracefully and the dashboard shows built-in sample data (`initialSyncData`).
