@@ -156,6 +156,7 @@ export default function VideoResumoDashboard({
   const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
   const [mostrarSync, setMostrarSync] = useState(false);
   const [relatorio, setRelatorio] = useState(false);
+  const [exportando, setExportando] = useState(false);
   const cenaAnteriorRef = useRef(0);
 
   /* Data/hora da última sincronização com a pasta do Drive */
@@ -217,6 +218,43 @@ export default function VideoResumoDashboard({
     };
   }, []);
 
+  /* Payload único do relatório impresso e do Excel analítico. */
+  const dadosPainel: VideoResumoProps = {
+    kpis,
+    unidades,
+    ocupacao,
+    semana,
+    turnos,
+    mensal,
+    abc,
+    avarias,
+    pendentes,
+    reservados,
+    semReserva,
+    valorFaturado,
+    saidasCD,
+    foraDeLinha,
+    paletas,
+    recebimentoSemanal,
+    producaoSemanal,
+    resumo,
+    sincronizacao,
+  };
+
+  /* Exporta o .xlsx analítico — pausa a apresentação enquanto monta o arquivo. */
+  const exportarExcel = async () => {
+    setPausado(true);
+    setExportando(true);
+    try {
+      const { exportarExcelLopas } = await import("@/lib/export-excel-lopas");
+      await exportarExcelLopas(dadosPainel);
+    } catch (erro) {
+      console.error("Falha ao gerar o Excel", erro);
+    } finally {
+      setExportando(false);
+    }
+  };
+
   const propsCena = {
     kpis,
     unidades,
@@ -238,6 +276,8 @@ export default function VideoResumoDashboard({
     resumo,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
+    onExportarExcel: exportarExcel,
+    exportando,
     onPausar: () => setPausado(true),
   };
 
@@ -273,10 +313,7 @@ export default function VideoResumoDashboard({
       </div>
 
       {relatorio && (
-        <RelatorioLopas
-          dados={{ kpis, unidades, ocupacao, semana, turnos, mensal, abc, avarias, pendentes, reservados, semReserva, valorFaturado, saidasCD, foraDeLinha, paletas, producaoSemanal, resumo, sincronizacao }}
-          onFechar={() => setRelatorio(false)}
-        />
+        <RelatorioLopas dados={dadosPainel} onFechar={() => setRelatorio(false)} />
       )}
 
       {/* Conteúdo */}
