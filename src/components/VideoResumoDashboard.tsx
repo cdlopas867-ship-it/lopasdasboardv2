@@ -124,8 +124,8 @@ type Props = {
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 12;
-const DURACOES = [8000, 5000, 6500, 5000, 5000, 5000, 9000, 5500, 8000, 7000, 7000, 12000];
+const TOTAL_CENAS = 14;
+const DURACOES = [8000, 5000, 6500, 5000, 5000, 5000, 9000, 5500, 8000, 7000, 7000, 10000, 11000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
@@ -292,7 +292,7 @@ export default function VideoResumoDashboard({
                 className="flex cursor-pointer items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20"
               >
                 <span className="size-1.5 animate-pulse rounded-full bg-primary" />
-                Sincronizado {syncEmTxt}
+                Atualizado {syncEmTxt}
               </button>
               {mostrarSync && (
                 <div className="absolute top-full right-0 z-20 mt-2 w-72 rounded-xl border border-white/20 bg-[#1e2c10]/95 p-3 text-left shadow-xl backdrop-blur-md">

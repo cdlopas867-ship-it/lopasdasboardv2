@@ -55,9 +55,28 @@ function arrSig(arr: unknown[] | undefined): string {
   return `${arr.length}:${sum}:${key(first)}:${key(last)}`;
 }
 
+/* Assinatura da produção da semana (PCP 003) — dias e totais de toneladas/
+   unidades. Precisa entrar na chave: a planilha de produção muda sem alterar
+   estoque/resumo, e sem isso o painel ignorava a atualização (a cena ficava
+   congelada). */
+function prodSig(arr: unknown[] | undefined): string {
+  if (!arr?.length) return "0";
+  const a = arr as Record<string, unknown>[];
+  let tonPrev = 0, tonRec = 0, unPrev = 0, unRec = 0;
+  for (const d of a) {
+    tonPrev += (typeof d["tonPrevisto"] === "number" ? d["tonPrevisto"] : 0);
+    tonRec += (typeof d["tonEntregue"] === "number" ? d["tonEntregue"] : 0);
+    unPrev += (typeof d["previsto"] === "number" ? d["previsto"] : 0);
+    unRec += (typeof d["entregue"] === "number" ? d["entregue"] : 0);
+  }
+  const first = a[0]?.["iso"] ?? "";
+  const last = a[a.length - 1]?.["iso"] ?? "";
+  return `${a.length}:${first}:${last}:${Math.round(tonPrev)}:${Math.round(tonRec)}:${unPrev}:${unRec}`;
+}
+
 /* Chave barata para detectar se o payload recebido já está aplicado —
    evita re-render desnecessário no polling quando nada mudou. */
-function dataKey(payload: unknown): string {
+function dataKey(payload: unknown, incluirSync = true): string {
   const p = (payload as Record<string, unknown>) ?? {};
   const r = (p["resumo"] as Record<string, unknown>) ?? {};
   return JSON.stringify({
@@ -83,7 +102,8 @@ function dataKey(payload: unknown): string {
       ?.tipos?.map(({ tipo, total }) => [tipo, total]),
     me: (p["mensal"] as unknown[])?.length,
     sc: !!p["saidasCD"],
-    sy: (p["sincronizacao"] as { em?: string } | undefined)?.em,
+    ps: prodSig(p["producaoSemanal"] as unknown[] | undefined),
+    ...(incluirSync ? { sy: (p["sincronizacao"] as { em?: string } | undefined)?.em } : {}),
   });
 }
 
@@ -92,6 +112,9 @@ export function useDadosSync<T>(initial: T) {
   const [loaded, setLoaded] = useState(false);
   const skipNext = useRef(false);
   const appliedKey = useRef<string>("");
+  /* Chave só do conteúdo (sem o carimbo de sincronização) — o carimbo muda a
+     cada leitura da pasta e não deve ser tratado como "dados novos". */
+  const appliedContentKey = useRef<string>("");
 
   const applyIfNew = (payload: T) => {
     if (skipNext.current) {
@@ -101,15 +124,17 @@ export function useDadosSync<T>(initial: T) {
     if (!isValidPainel(payload)) return;
     const key = dataKey(payload);
     if (key === appliedKey.current) return;
+    const contentKey = dataKey(payload, false);
     /* Avisa quando chegam dados novos depois da primeira carga —
        ou seja, quando a planilha da pasta foi atualizada. */
-    if (appliedKey.current) {
+    if (appliedContentKey.current && contentKey !== appliedContentKey.current) {
       toast.success("Dados atualizados", {
         description: "O painel recebeu novos dados da planilha.",
         duration: 6000,
       });
     }
     appliedKey.current = key;
+    appliedContentKey.current = contentKey;
     setDados(payload);
     setLoaded(true);
   };
@@ -161,6 +186,7 @@ export function useDadosSync<T>(initial: T) {
     setLoaded(true);
     skipNext.current = true; // evita eco do próprio envio voltando via SSE/polling
     appliedKey.current = dataKey(novos);
+    appliedContentKey.current = dataKey(novos, false);
     try {
       await fetch("/api/sync-data", {
         method: "POST",

@@ -1,13 +1,12 @@
-import jardimAsset from "@/assets/resumo/lopas-jardim-aereo.webp.asset.json";
-import fabricaAsset from "@/assets/resumo/lopas-fabrica-aerea.webp.asset.json";
-import valeAsset from "@/assets/resumo/lopas-vale-aereo.webp.asset.json";
-import verdeAsset from "@/assets/resumo/lopas-verde-aereo.webp.asset.json";
+/* Fundo do resumo — fotos aéreas da Lopas que se alternam a cada cena.
+   As imagens ficam em `public/` (as antigas vinham do CDN do Lovable e não
+   existem neste repositório, o que causava 404 e fundo em branco). */
 
 const IMAGENS = [
-  jardimAsset.url,
-  fabricaAsset.url,
-  valeAsset.url,
-  verdeAsset.url,
+  "/fundo-satelite-real.jpg",
+  "/fundo-satelite.jpg",
+  "/fundo-lopas-final.webp",
+  "/fundo-apresentacao.jpg",
 ] as const;
 
 type Props = {

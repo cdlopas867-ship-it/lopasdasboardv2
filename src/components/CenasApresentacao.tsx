@@ -12,6 +12,8 @@ import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaPaletes from "@/components/CenaPaletes";
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
+import CenaQlpCd from "@/components/CenaQlpCd";
+import CenaProdutividade from "@/components/CenaProdutividade";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -36,7 +38,7 @@ import type {
   VideoUnidade,
   RecebimentoSemanalDia,
 } from "./VideoResumoDashboard";
-import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
+import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 /* Cenas da apresentação — conteúdo de cada slide, isolado em um componente
    para permitir renderizar também a cópia da cena que sai na transição suave. */
@@ -314,8 +316,18 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 12 — encerramento */}
+      {/* Cena 12 — QLP · CD: lotação de pessoal por classe */}
       {cena === 11 && (
+        <CenaQlpCd anim={anim} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 13 — Produtividade por colaborador e por turma */}
+      {cena === 12 && (
+        <CenaProdutividade anim={anim} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 14 — encerramento */}
+      {cena === 13 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -331,16 +343,6 @@ export default function CenasApresentacao({
           >
             ↻ Reiniciar agora
           </button>
-          {onGerarRelatorio && (
-            <button
-              type="button"
-              onClick={onGerarRelatorio}
-              className="video-sobe mt-3 cursor-pointer rounded-full border border-white/40 bg-white/10 px-8 py-3 text-xs font-bold tracking-widest text-white uppercase shadow-xl backdrop-blur-sm transition-transform hover:scale-105"
-              style={{ animationDelay: "0.55s" }}
-            >
-              Gerar relatório
-            </button>
-          )}
         </div>
       )}
 
@@ -639,7 +641,7 @@ function CardFocoProducao({
   dias?: ProducaoSemanalDia[] | undefined;
   onTogglePausar: () => void;
 }) {
-  const semana = (dias ?? []).slice(-7);
+  const semana = semanaAtual(dias);
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
   const totalEntregue = semana.reduce((s, d) => s + d.entregue, 0);
   const totalPendente = semana.reduce((s, d) => s + d.pendente, 0);
