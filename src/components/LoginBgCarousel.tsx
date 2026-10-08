@@ -1,14 +1,8 @@
 import { useEffect, useState } from "react";
+import { FOTOS_LOGIN } from "@/data/fotos-lopas";
 
-/* Fotos do carrossel de login — arquivos em `public/` (as antigas vinham do
-   CDN do Lovable e não existem neste repositório, o que causava 404). */
-const IMAGENS = [
-  "/login-bg-1.jpg",
-  "/login-bg-2.jpg",
-  "/login-bg-3.jpg",
-  "/login-bg-warehouse.jpeg",
-  "/fundo-satelite-real.jpg",
-];
+/* Fotos reais da Lopas enviadas pelo usuário. */
+const IMAGENS = FOTOS_LOGIN;
 const INTERVALO = 6000;
 
 function carregarImagem(src: string) {

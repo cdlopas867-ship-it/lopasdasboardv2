@@ -55,7 +55,7 @@ export default function Apresentacao({
   return (
     <div role="dialog" aria-label={titulo} className="fixed inset-0 z-[120] flex flex-col overflow-hidden">
       <img
-        src="/fundo-apresentacao.jpg"
+        src="/__l5e/assets-v1/d1f0d0f3-0886-49b2-bd07-4437ce8191fb/lopas-fabrica-aerea.webp"
         alt=""
         aria-hidden="true"
         decoding="async"

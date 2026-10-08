@@ -145,7 +145,7 @@ export function useDadosSync<T>(initial: T) {
     let cancelled = false;
     const fetchLatest = async () => {
       try {
-        const res = await fetch("/api/sync-data");
+        const res = await fetch(`/api/sync-data?t=${Date.now()}`, { cache: "no-store" });
         if (!res.ok || cancelled) return;
         const payload = await res.json();
         if (payload && !cancelled) applyIfNew(payload as T);
@@ -155,9 +155,17 @@ export function useDadosSync<T>(initial: T) {
     };
     fetchLatest();
     const interval = setInterval(fetchLatest, 10000);
+    /* Ao voltar para a aba/tela, busca na hora (o navegador atrasa timers em segundo plano). */
+    const onVisivel = () => { if (document.visibilityState === "visible") fetchLatest(); };
+    document.addEventListener("visibilitychange", onVisivel);
+    window.addEventListener("focus", fetchLatest);
+    window.addEventListener("online", fetchLatest);
     return () => {
       cancelled = true;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisivel);
+      window.removeEventListener("focus", fetchLatest);
+      window.removeEventListener("online", fetchLatest);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
