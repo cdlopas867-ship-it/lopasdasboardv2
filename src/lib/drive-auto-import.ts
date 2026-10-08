@@ -96,7 +96,10 @@ function parseModificado(mod: string): Date | undefined {
     const isPM = /pm/i.test(timeMatch[3]!);
     if (isPM && hours !== 12) hours += 12;
     if (!isPM && hours === 12) hours = 0;
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+    /* Hora exibida pelo Drive está no fuso de São Paulo (UTC-3), mesmo quando
+       o servidor publicado roda em UTC. */
+    const sp = new Date(now.getTime() - 3 * 3600_000);
+    return new Date(Date.UTC(sp.getUTCFullYear(), sp.getUTCMonth(), sp.getUTCDate(), hours + 3, minutes));
   }
   const meses: Record<string, number> = {
     Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
