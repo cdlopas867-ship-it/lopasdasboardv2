@@ -55,6 +55,25 @@ function arrSig(arr: unknown[] | undefined): string {
   return `${arr.length}:${sum}:${key(first)}:${key(last)}`;
 }
 
+/* Assinatura da produção da semana (PCP 003) — dias e totais de toneladas/
+   unidades. Precisa entrar na chave: a planilha de produção muda sem alterar
+   estoque/resumo, e sem isso o painel ignorava a atualização (a cena ficava
+   congelada). */
+function prodSig(arr: unknown[] | undefined): string {
+  if (!arr?.length) return "0";
+  const a = arr as Record<string, unknown>[];
+  let tonPrev = 0, tonRec = 0, unPrev = 0, unRec = 0;
+  for (const d of a) {
+    tonPrev += (typeof d["tonPrevisto"] === "number" ? d["tonPrevisto"] : 0);
+    tonRec += (typeof d["tonEntregue"] === "number" ? d["tonEntregue"] : 0);
+    unPrev += (typeof d["previsto"] === "number" ? d["previsto"] : 0);
+    unRec += (typeof d["entregue"] === "number" ? d["entregue"] : 0);
+  }
+  const first = a[0]?.["iso"] ?? "";
+  const last = a[a.length - 1]?.["iso"] ?? "";
+  return `${a.length}:${first}:${last}:${Math.round(tonPrev)}:${Math.round(tonRec)}:${unPrev}:${unRec}`;
+}
+
 /* Chave barata para detectar se o payload recebido já está aplicado —
    evita re-render desnecessário no polling quando nada mudou. */
 function dataKey(payload: unknown, incluirSync = true): string {
@@ -83,6 +102,7 @@ function dataKey(payload: unknown, incluirSync = true): string {
       ?.tipos?.map(({ tipo, total }) => [tipo, total]),
     me: (p["mensal"] as unknown[])?.length,
     sc: !!p["saidasCD"],
+    ps: prodSig(p["producaoSemanal"] as unknown[] | undefined),
     ...(incluirSync ? { sy: (p["sincronizacao"] as { em?: string } | undefined)?.em } : {}),
   });
 }
