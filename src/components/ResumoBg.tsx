@@ -1,13 +1,7 @@
-/* Fundo do resumo — fotos aéreas da Lopas que se alternam a cada cena.
-   As imagens ficam em `public/` (as antigas vinham do CDN do Lovable e não
-   existem neste repositório, o que causava 404 e fundo em branco). */
+/* Fundo do resumo — fotos reais da Lopas que se alternam a cada cena. */
+import { FOTOS_RESUMO } from "@/data/fotos-lopas";
 
-const IMAGENS = [
-  "/fundo-satelite-real.jpg",
-  "/fundo-satelite.jpg",
-  "/fundo-lopas-final.webp",
-  "/fundo-apresentacao.jpg",
-] as const;
+const IMAGENS = FOTOS_RESUMO;
 
 type Props = {
   cena?: number;
