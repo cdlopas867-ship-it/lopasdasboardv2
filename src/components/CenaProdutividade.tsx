@@ -23,7 +23,6 @@ import {
 import { FICHAS_QLP, type FichaQlp } from "@/data/qlp-fichas";
 import DestaquesProdutividade from "@/components/DestaquesProdutividade";
 import ComparativoProdutividade from "@/components/ComparativoProdutividade";
-import CenaQlpCd from "@/components/CenaQlpCd";
 
 const CORES = ["#00FFCC", "#FFA500", "#7C9CFF", "#FF5FA2"];
 
@@ -98,6 +97,8 @@ export default function CenaProdutividade({
         <QuadroTurmas turmas={turmas} total={tipo.ton} cor={cor} />
       </div>
 
+      <ComparativoProdutividade tipo={tipo} cor={cor} />
+
       <DestaquesProdutividade tipo={tipo} />
 
       <p className="mx-auto mt-3 max-w-4xl text-center text-[8px] leading-tight text-white/40">
@@ -109,14 +110,6 @@ export default function CenaProdutividade({
         PRODUTIVIDADE POR COLABORADOR + CD - QLP.xlsx, {PRODUTIVIDADE.atualizadoEm}.
       </p>
 
-      {/* Lotação de pessoal (QLP · CD) — antes era uma cena própria, agora
-          vem logo abaixo da produtividade na mesma cena. O comparativo de
-          desempenho (atividade × carregado) fica logo abaixo das classes do
-          QLP para facilitar a análise. */}
-      <div className="mt-6 w-full max-w-4xl border-t border-white/15 pt-4">
-        <CenaQlpCd anim={anim} cena={cena} onPausar={onPausar} />
-        <ComparativoProdutividade tipo={tipo} cor={cor} />
-      </div>
     </div>
   );
 }
