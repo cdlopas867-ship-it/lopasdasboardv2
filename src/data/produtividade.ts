@@ -22,10 +22,7 @@ export type ProdColaborador = {
 
 export type ProdMes = { mes: string; ton: number };
 
-export type ProdTurma = { nome: string; ton: number; cx: number; pessoas: number }; };
-
-
-export type ProdMes = { mes: string; ton: number };
+export type ProdTurma = { nome: string; ton: number; cx: number; pessoas: number };
 
 export type ProdTipo = {
   id: string;
@@ -46,12 +43,7 @@ export const PRODUTIVIDADE = {
   periodo: "06/01/2026 a 07/10/2026",
   tipos: [
     {
-      {
       id: "separacao-manual",
-      nome: "Separação manual",
-      periodo: "06/01/2026 a 07/10/2026",
-      ton: 61256.3,
-      cx: 13117367,
       nome: "Separação manual",
       periodo: "06/01/2026 a 07/10/2026",
       ton: 61256.3,
