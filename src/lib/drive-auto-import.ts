@@ -947,6 +947,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const avariasRaw = lerAvarias(wb);
       if (avariasRaw.length > 0) listasAvarias.push(avariasRaw);
 
+      /* Lê dados de "Em Linha × Fora de Linha" da planilha local — sem isso
+         a pasta do Drive sem a planilha correspondente deixa o bloco fora
+         do payload e o app cai no fallback estático (valores desatualizados). */
+      const fdl = lerForaDeLinha(wb);
+      if (fdl) melhorForaDeLinha = fdl;
+
       const itensEstoque = lerItensEstoque(wb);
       if (itensEstoque.length > (melhorItens?.length ?? 0)) melhorItens = itensEstoque;
 
