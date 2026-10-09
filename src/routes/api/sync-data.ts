@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { setData, getLatestData } from "@/lib/sync-store";
 import { addRegistro } from "@/lib/historico-store";
 import { requireApiAccess } from "@/lib/gate.server";
-import { iniciarAutoImport, importarSeMudou } from "@/lib/drive-auto-import";
+import { importarSeMudou } from "@/lib/drive-auto-import";
 
 /* GET — confere a data oficial dos arquivos no Drive antes de responder.
  * Quando nada mudou, a consulta é rápida; quando mudou, devolve os valores
@@ -14,8 +14,6 @@ export const Route = createFileRoute("/api/sync-data")({
       GET: async () => {
         const denied = await requireApiAccess();
         if (denied) return denied;
-
-        iniciarAutoImport();
 
         await importarSeMudou().catch((error) => {
           console.error("[sync-data] falha ao verificar o Drive:", error);
