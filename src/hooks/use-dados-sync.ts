@@ -158,7 +158,7 @@ export function useDadosSync<T>(initial: T) {
       }
     };
     fetchLatest();
-    const interval = setInterval(fetchLatest, 10000);
+    const interval = setInterval(fetchLatest, 5000);
     /* Ao voltar para a aba/tela, busca na hora (o navegador atrasa timers em segundo plano). */
     const onVisivel = () => { if (document.visibilityState === "visible") fetchLatest(); };
     document.addEventListener("visibilitychange", onVisivel);

@@ -227,6 +227,13 @@ function QuadroColaboradores({
             );
           })}
         </tbody>
+        <tfoot>
+          <tr className="border-t-2 border-white/25 font-bold">
+            <td className="py-1" style={{ color: cor }}>Total · {colabs.length} colaboradores</td>
+            <td className="py-1 text-right font-mono text-[13px]" style={{ color: cor }}>{fmtBrMax(colabs.reduce((s, c) => s + c.ton, 0), 0)}</td>
+            <td className="py-1 pl-2 text-right font-mono text-[10px] text-white/65">100%</td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   );
@@ -337,6 +344,13 @@ function QuadroTurmas({
             );
           })}
         </tbody>
+        <tfoot>
+          <tr className="border-t-2 border-white/20 font-bold">
+            <td className="py-1 text-white">Total · {turmas.length} turmas</td>
+            <td className="py-1 text-right font-mono text-[13px] text-white">{fmtBrMax(turmas.reduce((s, t) => s + t.ton, 0), 0)}</td>
+            <td className="py-1 pl-2 text-right font-mono text-[10px] text-white/65">100%</td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   );

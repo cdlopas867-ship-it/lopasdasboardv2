@@ -88,6 +88,9 @@ function criarAba(wb: Workbook, nome: string, larguras: number[]): Worksheet {
   larguras.forEach((largura, i) => {
     ws.getColumn(i + 1).width = largura;
   });
+  ws.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+  ws.pageMargins = { left: 0.5, right: 0.5, top: 0.7, bottom: 0.5, header: 0.3, footer: 0.3 };
+  ws.headerFooter = { oddFooter: '&LLOPAS · CD&P&DTHR-Painel de Estoque' };
   return ws;
 }
 
@@ -104,7 +107,7 @@ function cabecalho(ws: Worksheet, titulo: string, subtitulo: string, largura: nu
   }
 
   const marca = ws.getCell(1, 1);
-  marca.value = "LOPAS · CONTROLE DE ESTOQUE · CD";
+  marca.value = "MÓVEIS LOPAS · CONTROLE DE ESTOQUE · CD";
   marca.font = { name: "Calibri", size: 10, bold: true, color: { argb: BRANCO } };
   marca.alignment = { vertical: "middle", indent: 1 };
   ws.mergeCells(1, 1, 1, largura);
@@ -1470,13 +1473,62 @@ function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, 
   const estoque = refs["estoque"] ?? {};
   let linha = LINHA_INICIAL + 3;
   linha = secao(ws, linha, "Números-chave", 5);
-  linha =
-    listaValores(ws, "Capa", linha, [
-      ["Peso em estoque (t)", liga(estoque["ton"], d.resumo?.ton ?? 0), TON],
-      ["Itens ativos", liga(estoque["itens"], d.resumo?.itens ?? 0), INT],
-      ["Valor em estoque", liga(estoque["valor"], d.resumo?.valor ?? 0), MOEDA0],
-      ["Ocupação do CD", liga(estoque["ocupacaoPct"], d.ocupacao.pct * 100), PCT],
-    ]).proxima + 1;
+
+  /* KPI cards em caixas coloridas — visual executivo */
+  const kpis: Array<[string, string, string, number]> = [
+    ["Peso em estoque", "t", TON, d.resumo?.ton ?? 0],
+    ["Itens ativos", "un", INT, d.resumo?.itens ?? 0],
+    ["Valor em estoque", "R$", MOEDA0, d.resumo?.valor ?? 0],
+    ["Ocupação do CD", "%", PCT, d.ocupacao.pct * 100],
+  ];
+  const coresKpi = [VERDE_MEDIO, VERDE_MEDIO, VERDE_MEDIO, AMBAR];
+  kpis.forEach(([rotulo, unidade, fmt, valor], i) => {
+    /* Caixa: rótulo em verde-claro, valor grande em verde */
+    const celRotulo = ws.getCell(linha, 1);
+    celRotulo.value = rotulo;
+    celRotulo.font = { name: "Calibri", size: 9, bold: true, color: { argb: CINZA } };
+    celRotulo.alignment = { vertical: "middle", indent: 1 };
+    celRotulo.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_CLARO } };
+    celRotulo.border = {
+      top: { style: "medium", color: { argb: coresKpi[i] } },
+      left: { style: "thin", color: { argb: BORDA_FINA } },
+      right: { style: "thin", color: { argb: BORDA_FINA } },
+    };
+
+    const celValor = ws.getCell(linha, 2);
+    celValor.value = liga(estoque[["ton", "itens", "valor", "ocupacaoPct"][i]], valor) as CellValue;
+    celValor.font = { name: "Calibri", size: 16, bold: true, color: { argb: VERDE } };
+    celValor.alignment = { horizontal: "right", vertical: "middle" };
+    if (fmt) celValor.numFmt = fmt;
+    celValor.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_CLARO } };
+    celValor.border = {
+      top: { style: "medium", color: { argb: coresKpi[i] } },
+      left: { style: "thin", color: { argb: BORDA_FINA } },
+      right: { style: "thin", color: { argb: BORDA_FINA } },
+    };
+
+    const celUn = ws.getCell(linha, 3);
+    celUn.value = unidade;
+    celUn.font = { name: "Calibri", size: 9, color: { argb: CINZA } };
+    celUn.alignment = { vertical: "middle", indent: 1 };
+    celUn.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_CLARO } };
+    celUn.border = {
+      top: { style: "medium", color: { argb: coresKpi[i] } },
+      right: { style: "thin", color: { argb: BORDA_FINA } },
+    };
+    ws.mergeCells(linha, 3, linha, 5);
+
+    ws.getRow(linha).height = 32;
+    linha += 1;
+
+    /* Linha separadora entre cards */
+    for (let c = 1; c <= 5; c += 1) {
+      ws.getCell(linha, c).border = { bottom: { style: "hair", color: { argb: BORDA_FINA } } };
+    }
+    ws.getRow(linha).height = 4;
+    linha += 1;
+  });
+  linha += 1;
 
   const abas: Array<[string, string, string]> = [
     ["Resumo", "Resumo consolidado", "Todos os totais em fórmulas"],

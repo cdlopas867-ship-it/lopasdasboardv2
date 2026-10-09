@@ -748,7 +748,7 @@ export async function importarSeMudou(forcar = false): Promise<boolean> {
   const st = (globalThis.__driveImportState ??= { ultimo: 0, assinatura: "", emAndamento: null });
   if (st.emAndamento) return st.emAndamento;
   const agora = Date.now();
-  if (!forcar && agora - st.ultimo < 10_000) return false;
+  if (!forcar && agora - st.ultimo < 5_000) return false;
   st.ultimo = agora;
   st.emAndamento = (async () => {
     try {
@@ -1355,7 +1355,7 @@ export function iniciarAutoImport() {
     importarSeMudou().catch((e) =>
       console.error("[auto-import] falha no ciclo:", e),
     );
-  }, 15 * 1000);
+  }, 5 * 1000);
 
-  console.info("[auto-import] ciclo de importação automática do Drive iniciado (a cada 15 s)");
+  console.info("[auto-import] ciclo de importação automática do Drive iniciado (a cada 5 s)");
 }

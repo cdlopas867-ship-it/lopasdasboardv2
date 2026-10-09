@@ -250,6 +250,15 @@ function Quadro({
             );
           })}
         </tbody>
+        <tfoot>
+          <tr className="border-t-2 border-white/15 font-bold">
+            <td className={cn("py-1", destaque ? "pl-1" : "")} style={{ color: cor }}>Total</td>
+            <td className={cn("text-right font-mono", destaque ? "py-1 text-[16px]" : "py-0.5 text-[13px]")} style={{ color: cor }}>
+              {fmtInt(linhas.reduce((s, l) => s + l.pessoas, 0))}
+            </td>
+            <td className={cn("pl-2 text-right font-mono text-white/65", destaque ? "py-1 pr-1 text-[11px]" : "py-0.5 text-[10px]")}>100%</td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   );
