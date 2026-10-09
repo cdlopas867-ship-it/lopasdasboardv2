@@ -20,7 +20,12 @@ export type ProdColaborador = {
   tempo: number;
 };
 
-export type ProdTurma = { nome: string; ton: number; cx: number; pessoas: number };
+export type ProdMes = { mes: string; ton: number };
+
+export type ProdTurma = { nome: string; ton: number; cx: number; pessoas: number }; };
+
+
+export type ProdMes = { mes: string; ton: number };
 
 export type ProdTipo = {
   id: string;
@@ -32,6 +37,8 @@ export type ProdTipo = {
   pessoas: number;
   colaboradores: ProdColaborador[];
   turmas: ProdTurma[];
+  /** tonelagem por mês (PESO kg ÷ 1000, agrupado por mês da coluna DIA) */
+  mensal: ProdMes[];
 };
 
 export const PRODUTIVIDADE = {
@@ -39,7 +46,12 @@ export const PRODUTIVIDADE = {
   periodo: "06/01/2026 a 07/10/2026",
   tipos: [
     {
+      {
       id: "separacao-manual",
+      nome: "Separação manual",
+      periodo: "06/01/2026 a 07/10/2026",
+      ton: 61256.3,
+      cx: 13117367,
       nome: "Separação manual",
       periodo: "06/01/2026 a 07/10/2026",
       ton: 61256.3,
