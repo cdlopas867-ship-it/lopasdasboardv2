@@ -544,7 +544,10 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
     }
   }
 
-  /* Formato 2: aba "Resultado" do WF0126 (Tipo LA, Situação, Quantidade) */
+  /* Formato 2: aba "Resultado" do WF0126 — suporta dois subformatos:
+     a) Tabela pivô com coluna "Quantidade" (sumarizada por Situação).
+     b) Dados crus: uma linha por endereço (Situação, Tipo LA, Endereço) —
+        conta as linhas por Situação quando não há coluna Quantidade. */
   const wsResultado = wb.Sheets["Resultado"];
   if (wsResultado) {
     const rows = XLSX.utils.sheet_to_json<unknown[]>(wsResultado, { header: 1, defval: null });
@@ -555,16 +558,22 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
       const headers = (rows[hi] ?? []).map((c) => String(c ?? "").toUpperCase().trim());
       const colSituacao = headers.findIndex((h) => /SITUAÇ/i.test(h));
       const colQtd = headers.findIndex((h) => /QUANTIDADE/i.test(h));
-      if (colSituacao >= 0 && colQtd >= 0) {
+      if (colSituacao >= 0) {
         let ocupados = 0, livres = 0, bloqueados = 0;
         for (let i = hi + 1; i < rows.length; i++) {
           const r = rows[i] ?? [];
           const situacao = String(r[colSituacao] ?? "").toUpperCase().trim();
           if (!situacao) continue;
-          const qtd = Number(r[colQtd] ?? 0) || 0;
-          if (situacao.includes("OCUPAD")) ocupados += qtd;
-          else if (situacao.includes("LIVRE")) livres += qtd;
-          else if (situacao.includes("BLOQUE")) bloqueados += qtd;
+          if (colQtd >= 0) {
+            const qtd = Number(r[colQtd] ?? 0) || 0;
+            if (situacao.includes("OCUPAD")) ocupados += qtd;
+            else if (situacao.includes("LIVRE")) livres += qtd;
+            else if (situacao.includes("BLOQUE")) bloqueados += qtd;
+          } else {
+            if (situacao.includes("OCUPAD")) ocupados++;
+            else if (situacao.includes("LIVRE")) livres++;
+            else if (situacao.includes("BLOQUE")) bloqueados++;
+          }
         }
         const total = ocupados + livres + bloqueados;
         if (total > 0) {
@@ -968,9 +977,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       if (cargAte && (!carregadoAte || cargAte > carregadoAte)) carregadoAte = cargAte;
       if (cargMap && cargMap.size > 0 && !carregadoDriveMap) carregadoDriveMap = cargMap;
 
-      /* Extrai ocupação do CD do relatório WF0126 local */
+      /* Extrai ocupação do CD do relatório WF0126 local — apenas como fallback
+         (não sobrescreve a ocupação já obtida do Drive, que é mais recente). */
       const ocupacao = extrairOcupacao(wb);
-      if (ocupacao) melhorOcupacao = ocupacao;
+      if (ocupacao && !melhorOcupacao) melhorOcupacao = ocupacao;
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }
@@ -1157,6 +1167,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       melhorForaDeLinha = rebuilt;
       console.info(`[auto-import] Fora de Linha reconstruído a partir de ${melhorItens.length} itens do Drive (valores atualizados)`);
     }
+  }
+
+  if (melhorOcupacao) {
+    console.info(`[auto-import] ocupação: ${fmtInt(melhorOcupacao.ocupados)} ocupados, ${fmtInt(melhorOcupacao.livres)} livres, ${fmtInt(melhorOcupacao.bloqueados)} bloqueados, ${fmtInt(melhorOcupacao.total)} total (${(melhorOcupacao.pct * 100).toFixed(1)}%)`);
+  } else {
+    console.warn("[auto-import] ocupação: não encontrada em nenhuma planilha");
   }
 
   /* Recomputa KPIs e unidades a partir dos dados do Drive, substituindo
