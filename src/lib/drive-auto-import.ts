@@ -25,7 +25,7 @@ import { faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado"
 import { existsSync, readFileSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
-import { lerForaDeLinha, aplicarCustos } from "./fora-de-linha-import";
+import { lerForaDeLinha, aplicarCustos, rebuildForaDeLinhaFromItens } from "./fora-de-linha-import";
 
 /* Planilha analise-estoque não traz custo: usa o custo médio da planilha de reservas. */
 function comCustos(
@@ -1133,6 +1133,32 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     }
   }
 
+  /* Reconstrói os dados de Fora de Linha a partir dos itens mais recentes do
+     Drive, mantendo a classificação em linha / fora de linha da última
+     planilha "Em Linha × Fora de Linha". Isso garante que os valores (saldo,
+     custo, valor) venham da planilha mais atual do Drive, não de uma
+     planilha antiga com dados desatualizados. */
+  if (melhorItens && melhorForaDeLinha && melhorForaDeLinha.itens.length > 0) {
+    const foraDeLinhaItemSet = new Set(melhorForaDeLinha.itens.map(i => {
+      const maskNum = i.mascara.match(/\((\d+)\)/)?.[1] ?? "";
+      return `${i.item}|${maskNum}`;
+    }));
+    const reservadosMap = new Map<string, { qtd: number; custo: number; pesoBrt: number }>();
+    if (melhorReservados) {
+      for (const r of melhorReservados.itens) {
+        const maskNum = r.mascara.match(/\((\d+)\)/)?.[1] ?? "";
+        const entry = { qtd: r.qtdReservada, custo: r.custoMedio, pesoBrt: r.pesoBrt };
+        reservadosMap.set(`${r.cod}|${maskNum}`, entry);
+        if (!reservadosMap.has(r.cod)) reservadosMap.set(r.cod, entry);
+      }
+    }
+    const rebuilt = rebuildForaDeLinhaFromItens(melhorItens, foraDeLinhaItemSet, reservadosMap);
+    if (rebuilt) {
+      melhorForaDeLinha = rebuilt;
+      console.info(`[auto-import] Fora de Linha reconstruído a partir de ${melhorItens.length} itens do Drive (valores atualizados)`);
+    }
+  }
+
   /* Recomputa KPIs e unidades a partir dos dados do Drive, substituindo
      os valores estáticos do initialSyncData pelos valores reais atualizados. */
   const existingForKpis = await getLatestData() as Record<string, unknown> | null;
@@ -1194,7 +1220,14 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const manual = existingForKpis?.["foraDeLinha"] as { importadoEm?: string } | undefined;
       const manualEm = manual?.importadoEm ? Date.parse(manual.importadoEm) : 0;
       if (manualEm && manualEm >= melhorFdlMod) return { foraDeLinha: manual };
-      return melhorForaDeLinha ? { foraDeLinha: comCustos(melhorForaDeLinha, melhorReservados) } : {};
+      /* Se o Fora de Linha foi reconstruído a partir dos itens do Drive, os
+         valores já estão corretos. Caso contrário (planilha antida sem
+         custos), aplica os custos da planilha de reservas. */
+      if (!melhorForaDeLinha) return {};
+      const foiReconstruido = melhorItens && melhorForaDeLinha.itens.length > 0
+        && melhorForaDeLinha.posicaoTotal.valorEstoque > 0
+        && melhorItens.some(it => (it.valor > 0 || it.custo > 0));
+      return { foraDeLinha: foiReconstruido ? melhorForaDeLinha : comCustos(melhorForaDeLinha, melhorReservados) };
     })(),
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
     ...(melhorOcupacao
