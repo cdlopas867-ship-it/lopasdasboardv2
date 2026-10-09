@@ -22,7 +22,7 @@ export default function ForaDeLinha() {
   const [categoria, setCategoria] = useState("");
   const [origem, setOrigem] = useState("");
 
-  const itensBase = (dados as Record<string, unknown>)["foraDeLinha"] as { itens: ItemForaDeLinha[]; posicaoEmLinha: PosicaoEstoque; posicaoForaDeLinha: PosicaoEstoque; posicaoTotal: PosicaoEstoque } | undefined;
+  const itensBase = (dados as Record<string, unknown>)["foraDeLinha"] as { itens: ItemForaDeLinha[]; posicaoEmLinha: PosicaoEstoque; posicaoForaDeLinha: PosicaoEstoque; posicaoNaoCadastrado: PosicaoEstoque; posicaoTotal: PosicaoEstoque } | undefined;
   const itensForaDeLinha = itensBase?.itens ?? ITENS_FORA_DE_LINHA;
 
   const itens = useMemo(() => {
@@ -64,7 +64,7 @@ export default function ForaDeLinha() {
           itens={itens}
           valorFiltrado={valorFiltrado}
           totalItens={itensForaDeLinha.length}
-          posicoes={itensBase ? { emLinha: itensBase.posicaoEmLinha, fora: itensBase.posicaoForaDeLinha, total: itensBase.posicaoTotal } : undefined}
+          posicoes={itensBase ? { emLinha: itensBase.posicaoEmLinha, fora: itensBase.posicaoForaDeLinha, naoCadastrado: itensBase.posicaoNaoCadastrado, total: itensBase.posicaoTotal } : undefined}
         />
       )}
     </Apresentacao>
