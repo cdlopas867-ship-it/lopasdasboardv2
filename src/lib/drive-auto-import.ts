@@ -544,7 +544,46 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
     }
   }
 
-  /* Formato 2: aba "Resultado" do WF0126 — suporta dois subformatos:
+  /* Formato 2: aba "Planilha1" do WF0126 — tabela pivô resumida com coluna
+     "Quantidade" e linha "--subtotal--". O subtotal traz o total real;
+     as linhas individuais podem ter duplicatas (ex.: "Ocupado" aparece
+     duas vezes, sendo a segunda um subconjunto da primeira), por isso
+     o ocupados é recalculado como total − livres − bloqueados. */
+  const wsPlanilha1 = wb.Sheets["Planilha1"];
+  if (wsPlanilha1) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(wsPlanilha1, { header: 1, defval: null });
+    const hi = rows.findIndex((r) =>
+      r?.some((c) => /SITUAÇ/i.test(String(c ?? "").trim())),
+    );
+    if (hi >= 0) {
+      const headers = (rows[hi] ?? []).map((c) => String(c ?? "").toUpperCase().trim());
+      const colSituacao = headers.findIndex((h) => /SITUAÇ/i.test(h));
+      const colQtd = headers.findIndex((h) => /QUANTIDADE/i.test(h));
+      if (colSituacao >= 0 && colQtd >= 0) {
+        let livres = 0, bloqueados = 0, subtotalTotal = 0;
+        let hasSubtotal = false;
+        for (let i = hi + 1; i < rows.length; i++) {
+          const r = rows[i] ?? [];
+          const situacao = String(r[colSituacao] ?? "").toUpperCase().trim();
+          if (!situacao) continue;
+          if (situacao.includes("SUBTOTAL")) {
+            subtotalTotal = Number(r[colQtd] ?? 0) || 0;
+            hasSubtotal = true;
+            break;
+          }
+          const qtd = Number(r[colQtd] ?? 0) || 0;
+          if (situacao.includes("LIVRE")) livres += qtd;
+          else if (situacao.includes("BLOQUE")) bloqueados += qtd;
+        }
+        if (hasSubtotal && subtotalTotal > 0) {
+          const ocupados = subtotalTotal - livres - bloqueados;
+          return { pct: ocupados / subtotalTotal, ocupados, livres, bloqueados, total: subtotalTotal };
+        }
+      }
+    }
+  }
+
+  /* Formato 3: aba "Resultado" do WF0126 — suporta dois subformatos:
      a) Tabela pivô com coluna "Quantidade" (sumarizada por Situação).
      b) Dados crus: uma linha por endereço (Situação, Tipo LA, Endereço) —
         conta as linhas por Situação quando não há coluna Quantidade. */
