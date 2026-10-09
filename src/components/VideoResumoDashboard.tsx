@@ -15,9 +15,6 @@ export type VideoOcupacao = { pct: number; ocupados: number; livres: number; blo
 export type VideoDia = { dia: string; data: string; ton: number; meta: number; iso?: string };
 export type VideoTurno = { nome: string; faixa?: string; ton?: number; pct: number };
 export type VideoMes = { mes: string; recebido: number; carregado: number };
-export type VideoSaidasCDMes = { mes: string; tonelada: number; faturado: number; motivos: { motivo: string; tonelada: number; faturado: number }[] };
-export type VideoSaidasCD = { meses: VideoSaidasCDMes[]; totalTonelada: number; totalFaturado: number };
-
 export type VideoAvariaTipo = {
   tipo: string;
   imagem: string;
@@ -64,17 +61,6 @@ export type VideoReservados = {
     pctReservado: number;
   }[];
 } | null;
-export type VideoClasseAbc = {
-  classe: string;
-  itens: number;
-  pctItens: number;
-  pctValor: number;
-  ton?: number;
-};
-export type VideoAbc = {
-  recebimento: VideoClasseAbc[] | null;
-  estoque: VideoClasseAbc[] | null;
-} | null;
 export type VideoPaletas = {
   porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
   totalPaletes: number;
@@ -108,12 +94,10 @@ type Props = {
   turnos: VideoTurno[];
   mensal?: VideoMes[] | undefined;
   avarias?: VideoAvarias | undefined;
-  abc?: VideoAbc | undefined;
   pendentes?: VideoPendentes | undefined;
   reservados?: VideoReservados | undefined;
   semReserva?: VideoReservados | undefined;
   valorFaturado?: number | undefined;
-  saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
@@ -134,13 +118,11 @@ export default function VideoResumoDashboard({
   semana,
   turnos,
   mensal,
-  abc,
   avarias,
   pendentes,
   reservados,
   semReserva,
   valorFaturado,
-  saidasCD,
   foraDeLinha,
   resumo,
   paletas,
@@ -154,16 +136,10 @@ export default function VideoResumoDashboard({
   const [pausado, setPausado] = useState(false);
   const [anim, setAnim] = useState(false);
   const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
-  const [mostrarSync, setMostrarSync] = useState(false);
   const [relatorio, setRelatorio] = useState(false);
   const [exportando, setExportando] = useState(false);
   const cenaAnteriorRef = useRef(0);
 
-  /* Data/hora da última sincronização com a pasta do Drive */
-  const syncEm = sincronizacao?.em ? new Date(sincronizacao.em) : null;
-  const syncEmTxt = syncEm
-    ? `${String(syncEm.getDate()).padStart(2, "0")}/${String(syncEm.getMonth() + 1).padStart(2, "0")}/${syncEm.getFullYear()} ${String(syncEm.getHours()).padStart(2, "0")}:${String(syncEm.getMinutes()).padStart(2, "0")}`
-    : null;
 
   /* Troca de cena: guarda a cena anterior para o fade de saída e dispara
      as animações da nova cena */
@@ -226,13 +202,11 @@ export default function VideoResumoDashboard({
     semana,
     turnos,
     mensal,
-    abc,
     avarias,
     pendentes,
     reservados,
     semReserva,
     valorFaturado,
-    saidasCD,
     foraDeLinha,
     paletas,
     recebimentoSemanal,
@@ -262,13 +236,11 @@ export default function VideoResumoDashboard({
     semana,
     turnos,
     mensal,
-    abc,
     avarias,
     pendentes,
     reservados,
     semReserva,
     valorFaturado,
-    saidasCD,
     foraDeLinha,
     paletas,
     recebimentoSemanal,
@@ -320,47 +292,7 @@ export default function VideoResumoDashboard({
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         {/* Topo — última sincronização + controle de saída */}
         <div className="flex items-center justify-end gap-3 px-5 pt-3 sm:px-8">
-          {syncEmTxt && (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMostrarSync((v) => !v)}
-                aria-label="Ver planilhas sincronizadas"
-                className="flex cursor-pointer items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20"
-              >
-                <span className="size-1.5 animate-pulse rounded-full bg-primary" />
-                Atualizado {syncEmTxt}
-              </button>
-              {mostrarSync && (
-                <div className="absolute top-full right-0 z-20 mt-2 w-72 rounded-xl border border-white/20 bg-[#1e2c10]/95 p-3 text-left shadow-xl backdrop-blur-md">
-                  <p className="mb-2 text-[9px] font-bold tracking-[0.2em] text-white/50 uppercase">
-                    Planilhas da pasta do Drive
-                  </p>
-                  <ul className="max-h-56 space-y-1.5 overflow-y-auto">
-                    {(sincronizacao?.planilhas ?? []).map((pl) => (
-                      <li key={pl.nome} className="text-[10px] leading-tight text-white/85">
-                        <span className="block truncate font-semibold">{pl.nome}</span>
-                        {pl.modificado && (
-                          <span className="text-white/45">
-                            alterada em {new Date(pl.modificado).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                    {!(sincronizacao?.planilhas ?? []).length && (
-                      <li className="text-[10px] text-white/45">Nenhuma planilha listada.</li>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-          <a
-            href="/analise-estoque"
-            className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20"
-          >
-            Análise de estoque
-          </a>
+
           {onLogout && (
             <button
               type="button"

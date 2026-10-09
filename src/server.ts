@@ -14,6 +14,19 @@ type ServerEntry = {
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
+/* Inicia o ciclo de sincronização do Drive (a cada 5 s) de forma preguiçosa
+   na primeira requisição — independente do gate de acesso. O sync de fundo
+   busca dados do Drive e atualiza o sync-store; o gate só controla quem pode
+   ver os dados, não se eles são sincronizados. */
+let autoImportStarted = false;
+function ensureAutoImport() {
+  if (autoImportStarted) return;
+  autoImportStarted = true;
+  import("@/lib/drive-auto-import")
+    .then(({ iniciarAutoImport }) => iniciarAutoImport())
+    .catch((e) => console.error("[server] falha ao iniciar auto-import:", e));
+}
+
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
@@ -46,6 +59,7 @@ function errorResponse(error: unknown): Response {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      ensureAutoImport();
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
 

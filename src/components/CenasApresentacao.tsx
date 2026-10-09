@@ -24,7 +24,6 @@ export type VideoForaDeLinha = {
   posicaoTotal: PosicaoEstoque;
 } | null;
 import type {
-  VideoAbc,
   VideoAvarias,
   VideoDia,
   VideoKpi,
@@ -33,7 +32,6 @@ import type {
   VideoPaletas,
   VideoPendentes,
   VideoReservados,
-  VideoSaidasCD,
   VideoTurno,
   VideoUnidade,
   RecebimentoSemanalDia,
@@ -53,12 +51,10 @@ type Props = {
   turnos: VideoTurno[];
   mensal?: VideoMes[] | undefined;
   avarias?: VideoAvarias | undefined;
-  abc?: VideoAbc | undefined;
   pendentes?: VideoPendentes | undefined;
   reservados?: VideoReservados | undefined;
   semReserva?: VideoReservados | undefined;
   valorFaturado?: number | undefined;
-  saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
@@ -80,13 +76,11 @@ export default function CenasApresentacao({
   semana,
   turnos,
   mensal,
-  abc,
   avarias,
   pendentes,
   reservados,
   semReserva,
   valorFaturado,
-  saidasCD,
   foraDeLinha,
   paletas,
   recebimentoSemanal,

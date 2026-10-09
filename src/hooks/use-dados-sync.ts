@@ -95,13 +95,22 @@ function dataKey(payload: unknown, incluirSync = true): string {
     co: (p["composicoes"] as unknown[])?.length,
     ri2: (p["recebimentoItens"] as unknown[])?.length,
     ce: p["composicoesEm"],
-    od: (p["ocupacaoDetalhes"] as unknown[])?.length,
+    oc: (() => {
+      const o = p["ocupacao"] as { ocupados?: number; livres?: number; bloqueados?: number; total?: number } | undefined;
+      return o ? `${o.ocupados ?? 0}|${o.livres ?? 0}|${o.bloqueados ?? 0}|${o.total ?? 0}` : "";
+    })(),
+    od: (() => {
+      const d = p["ocupacaoDetalhes"] as { cd1?: number; cd2?: number; total?: number }[] | undefined;
+      if (!d?.length) return "0";
+      let s = 0;
+      for (const r of d) s += (r.cd1 ?? 0) + (r.cd2 ?? 0) + (r.total ?? 0);
+      return `${d.length}:${s}`;
+    })(),
     rr: !!p["reservadosResumo"],
     pr: !!p["pendentesResumo"],
     ar: (p["avariasResumo"] as { tipos?: { tipo: string; total: number }[] } | undefined)
       ?.tipos?.map(({ tipo, total }) => [tipo, total]),
     me: (p["mensal"] as unknown[])?.length,
-    sc: !!p["saidasCD"],
     ps: prodSig(p["producaoSemanal"] as unknown[] | undefined),
     fl: (() => {
       const f = p["foraDeLinha"] as { importadoEm?: string; itens?: unknown[]; posicaoTotal?: { pesoTon?: number } } | undefined;
@@ -158,7 +167,7 @@ export function useDadosSync<T>(initial: T) {
       }
     };
     fetchLatest();
-    const interval = setInterval(fetchLatest, 10000);
+    const interval = setInterval(fetchLatest, 5000);
     /* Ao voltar para a aba/tela, busca na hora (o navegador atrasa timers em segundo plano). */
     const onVisivel = () => { if (document.visibilityState === "visible") fetchLatest(); };
     document.addEventListener("visibilitychange", onVisivel);

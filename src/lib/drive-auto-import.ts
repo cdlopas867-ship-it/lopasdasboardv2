@@ -17,16 +17,15 @@ import { calcularPendentesResumo } from "./pendentes-resumo";
 import { lerAvarias, mesclarAvarias } from "./avarias";
 import { calcularAvariasResumo } from "./avarias-resumo";
 import { buscarCarregamentoMensal, lerCarregadoMensal, lerUltimaDataCarregado, CARREGADO_SEM_DRIVE } from "./carregamento";
-import { lerSaidasCD } from "./saidas-cd";
 import { calcularRecebimento } from "./recebimento";
 import { calcularProducaoSemanal, calcularRecebidoPorDia, type ProducaoSemanalDia } from "./producao-semanal";
-import { lerItensEstoque, curvaAbcEstoque, curvaAbcRecebimento } from "./base-estoque";
+import { lerItensEstoque } from "./base-estoque";
 import { lerPaletes, calcularResumoPaletes } from "./paletes";
 import { faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado";
 import { existsSync, readFileSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
-import { lerForaDeLinha, aplicarCustos } from "./fora-de-linha-import";
+import { lerForaDeLinha, aplicarCustos, rebuildForaDeLinhaFromItens } from "./fora-de-linha-import";
 
 /* Planilha analise-estoque não traz custo: usa o custo médio da planilha de reservas. */
 function comCustos(
@@ -60,7 +59,6 @@ const PLANILHAS_HISTORICAS = ["1KJ7LbljnIPqa6caCtqyt6T418Q0-Xgpk"];
 const PLANILHAS_LOCAIS = [
   "public/planilhas/avarias.xlsx",
   "public/planilhas/carregado.xlsx",
-  "public/planilhas/saidascd.xlsx",
   "public/planilhas/estoque.xlsx",
   "public/planilhas/paletes.xlsx",
   "public/planilhas/estoque-em-linha.xlsx",
@@ -546,7 +544,10 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
     }
   }
 
-  /* Formato 2: aba "Resultado" do WF0126 (Tipo LA, Situação, Quantidade) */
+  /* Formato 2: aba "Resultado" do WF0126 — suporta dois subformatos:
+     a) Tabela pivô com coluna "Quantidade" (sumarizada por Situação).
+     b) Dados crus: uma linha por endereço (Situação, Tipo LA, Endereço) —
+        conta as linhas por Situação quando não há coluna Quantidade. */
   const wsResultado = wb.Sheets["Resultado"];
   if (wsResultado) {
     const rows = XLSX.utils.sheet_to_json<unknown[]>(wsResultado, { header: 1, defval: null });
@@ -557,16 +558,22 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
       const headers = (rows[hi] ?? []).map((c) => String(c ?? "").toUpperCase().trim());
       const colSituacao = headers.findIndex((h) => /SITUAÇ/i.test(h));
       const colQtd = headers.findIndex((h) => /QUANTIDADE/i.test(h));
-      if (colSituacao >= 0 && colQtd >= 0) {
+      if (colSituacao >= 0) {
         let ocupados = 0, livres = 0, bloqueados = 0;
         for (let i = hi + 1; i < rows.length; i++) {
           const r = rows[i] ?? [];
           const situacao = String(r[colSituacao] ?? "").toUpperCase().trim();
           if (!situacao) continue;
-          const qtd = Number(r[colQtd] ?? 0) || 0;
-          if (situacao.includes("OCUPAD")) ocupados += qtd;
-          else if (situacao.includes("LIVRE")) livres += qtd;
-          else if (situacao.includes("BLOQUE")) bloqueados += qtd;
+          if (colQtd >= 0) {
+            const qtd = Number(r[colQtd] ?? 0) || 0;
+            if (situacao.includes("OCUPAD")) ocupados += qtd;
+            else if (situacao.includes("LIVRE")) livres += qtd;
+            else if (situacao.includes("BLOQUE")) bloqueados += qtd;
+          } else {
+            if (situacao.includes("OCUPAD")) ocupados++;
+            else if (situacao.includes("LIVRE")) livres++;
+            else if (situacao.includes("BLOQUE")) bloqueados++;
+          }
         }
         const total = ocupados + livres + bloqueados;
         if (total > 0) {
@@ -748,7 +755,7 @@ export async function importarSeMudou(forcar = false): Promise<boolean> {
   const st = (globalThis.__driveImportState ??= { ultimo: 0, assinatura: "", emAndamento: null });
   if (st.emAndamento) return st.emAndamento;
   const agora = Date.now();
-  if (!forcar && agora - st.ultimo < 10_000) return false;
+  if (!forcar && agora - st.ultimo < 5_000) return false;
   st.ultimo = agora;
   st.emAndamento = (async () => {
     try {
@@ -808,14 +815,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorAvariasResumo: ReturnType<typeof calcularAvariasResumo> | null = null;
   let carregadoDriveMap: Map<string, number> | null = null;
   let carregadoAte: string | null = null;
-  let melhorSaidasCD: ReturnType<typeof lerSaidasCD> | null = null;
   const listasAvarias: Avaria[][] = [];
   let melhorAvarias: Avaria[] | null = null;
   let melhorPendentes: PendenteProducao[] | null = null;
   let melhorRecebimento: ReturnType<typeof calcularRecebimento> | null = null;
   let melhorItens: ItemEstoque[] | null = null;
   let melhorItensMod: Date | undefined;
-  let abcRecebimento: ReturnType<typeof curvaAbcRecebimento> | null = null;
   let melhorUnidadesResumo: UnidadeResumo[] | null = null;
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
   let melhorFdlMod = 0;
@@ -882,10 +887,6 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         melhorItensMod = parseModificado(arq.modificado ?? "");
       }
 
-      /* Curva ABC do recebimento */
-      const abcReceb = curvaAbcRecebimento(wb);
-      if (abcReceb.length > 0) abcRecebimento = abcReceb;
-
       /* Extrai dados por unidade (Guarda-Roupas, Complementos, Salas) da aba Resumo */
       const unidadesResumo = extrairUnidadesResumo(wb);
       if (unidadesResumo && unidadesResumo.length > 0) melhorUnidadesResumo = unidadesResumo;
@@ -922,10 +923,6 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const cargAte = lerUltimaDataCarregado(wb);
       if (cargAte && (!carregadoAte || cargAte > carregadoAte)) carregadoAte = cargAte;
       if (cargMap && cargMap.size > 0) carregadoDriveMap = cargMap;
-
-      /* Extrai Saídas CD da aba SAIDAS CD */
-      const saidasCD = lerSaidasCD(wb);
-      if (saidasCD && saidasCD.meses.length > 0) melhorSaidasCD = saidasCD;
 
       /* Procura reserva em qualquer planilha */
       if (reservadoTon == null) {
@@ -980,12 +977,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       if (cargAte && (!carregadoAte || cargAte > carregadoAte)) carregadoAte = cargAte;
       if (cargMap && cargMap.size > 0 && !carregadoDriveMap) carregadoDriveMap = cargMap;
 
-      const saidasCD = lerSaidasCD(wb);
-      if (saidasCD && saidasCD.meses.length > 0 && !melhorSaidasCD) melhorSaidasCD = saidasCD;
-
-      /* Extrai ocupação do CD do relatório WF0126 local */
+      /* Extrai ocupação do CD do relatório WF0126 local — apenas como fallback
+         (não sobrescreve a ocupação já obtida do Drive, que é mais recente). */
       const ocupacao = extrairOcupacao(wb);
-      if (ocupacao) melhorOcupacao = ocupacao;
+      if (ocupacao && !melhorOcupacao) melhorOcupacao = ocupacao;
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }
@@ -1148,6 +1143,38 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     }
   }
 
+  /* Reconstrói os dados de Fora de Linha a partir dos itens mais recentes do
+     Drive, mantendo a classificação em linha / fora de linha da última
+     planilha "Em Linha × Fora de Linha". Isso garante que os valores (saldo,
+     custo, valor) venham da planilha mais atual do Drive, não de uma
+     planilha antiga com dados desatualizados. */
+  if (melhorItens && melhorForaDeLinha && melhorForaDeLinha.itens.length > 0) {
+    const foraDeLinhaItemSet = new Set(melhorForaDeLinha.itens.map(i => {
+      const maskNum = i.mascara.match(/\((\d+)\)/)?.[1] ?? "";
+      return `${i.item}|${maskNum}`;
+    }));
+    const reservadosMap = new Map<string, { qtd: number; custo: number; pesoBrt: number }>();
+    if (melhorReservados) {
+      for (const r of melhorReservados.itens) {
+        const maskNum = r.mascara.match(/\((\d+)\)/)?.[1] ?? "";
+        const entry = { qtd: r.qtdReservada, custo: r.custoMedio, pesoBrt: r.pesoBrt };
+        reservadosMap.set(`${r.cod}|${maskNum}`, entry);
+        if (!reservadosMap.has(r.cod)) reservadosMap.set(r.cod, entry);
+      }
+    }
+    const rebuilt = rebuildForaDeLinhaFromItens(melhorItens, foraDeLinhaItemSet, reservadosMap);
+    if (rebuilt) {
+      melhorForaDeLinha = rebuilt;
+      console.info(`[auto-import] Fora de Linha reconstruído a partir de ${melhorItens.length} itens do Drive (valores atualizados)`);
+    }
+  }
+
+  if (melhorOcupacao) {
+    console.info(`[auto-import] ocupação: ${fmtInt(melhorOcupacao.ocupados)} ocupados, ${fmtInt(melhorOcupacao.livres)} livres, ${fmtInt(melhorOcupacao.bloqueados)} bloqueados, ${fmtInt(melhorOcupacao.total)} total (${(melhorOcupacao.pct * 100).toFixed(1)}%)`);
+  } else {
+    console.warn("[auto-import] ocupação: não encontrada em nenhuma planilha");
+  }
+
   /* Recomputa KPIs e unidades a partir dos dados do Drive, substituindo
      os valores estáticos do initialSyncData pelos valores reais atualizados. */
   const existingForKpis = await getLatestData() as Record<string, unknown> | null;
@@ -1167,7 +1194,6 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(melhorAvariasResumo ? { avariasResumo: melhorAvariasResumo } : {}),
     ...(mensalData ? { mensal: mensalData } : {}),
     ...(carregadoAte ? { carregadoAte } : {}),
-    ...(melhorSaidasCD ? { saidasCD: melhorSaidasCD } : {}),
     ...(melhorAvarias ? { avarias: melhorAvarias } : {}),
     ...(melhorPendentes ? { pendentes: melhorPendentes } : {}),
     ...(melhorReservados ? { reservados: melhorReservados.itens } : {}),
@@ -1194,14 +1220,6 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       });
       return { recebimentoSemanal };
     })()),
-    ...(melhorItens || abcRecebimento
-      ? {
-          abc: {
-            estoque: melhorItens ? curvaAbcEstoque(melhorItens) : null,
-            recebimento: abcRecebimento ?? null,
-          },
-        }
-      : {}),
     ...(melhorRecebimento
       ? {
           dias: melhorRecebimento.dias,
@@ -1218,7 +1236,14 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const manual = existingForKpis?.["foraDeLinha"] as { importadoEm?: string } | undefined;
       const manualEm = manual?.importadoEm ? Date.parse(manual.importadoEm) : 0;
       if (manualEm && manualEm >= melhorFdlMod) return { foraDeLinha: manual };
-      return melhorForaDeLinha ? { foraDeLinha: comCustos(melhorForaDeLinha, melhorReservados) } : {};
+      /* Se o Fora de Linha foi reconstruído a partir dos itens do Drive, os
+         valores já estão corretos. Caso contrário (planilha antida sem
+         custos), aplica os custos da planilha de reservas. */
+      if (!melhorForaDeLinha) return {};
+      const foiReconstruido = melhorItens && melhorForaDeLinha.itens.length > 0
+        && melhorForaDeLinha.posicaoTotal.valorEstoque > 0
+        && melhorItens.some(it => (it.valor > 0 || it.custo > 0));
+      return { foraDeLinha: foiReconstruido ? melhorForaDeLinha : comCustos(melhorForaDeLinha, melhorReservados) };
     })(),
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
     ...(melhorOcupacao
@@ -1325,8 +1350,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     (melhorReservados ? ` · ${melhorReservados.itens.length} itens reservados` : "") +
     (pendentesResumo ? ` · ${pendentesResumo.itens} pendências` : "") +
     (melhorAvariasResumo ? ` · ${melhorAvariasResumo.total} avarias` : "") +
-    (mensalData ? ` · ${mensalData.length} meses carregamento` : "") +
-    (melhorSaidasCD ? ` · ${melhorSaidasCD.meses.length} meses saídas CD` : ""),
+    (mensalData ? ` · ${mensalData.length} meses carregamento` : ""),
   );
   return true;
 }
@@ -1355,7 +1379,7 @@ export function iniciarAutoImport() {
     importarSeMudou().catch((e) =>
       console.error("[auto-import] falha no ciclo:", e),
     );
-  }, 15 * 1000);
+  }, 5 * 1000);
 
-  console.info("[auto-import] ciclo de importação automática do Drive iniciado (a cada 15 s)");
+  console.info("[auto-import] ciclo de importação automática do Drive iniciado (a cada 5 s)");
 }

@@ -84,6 +84,15 @@ export default function CenaOcupacao({
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1 text-white">Total</td>
+              <td className="py-1 text-center text-white/50">—</td>
+              <td className="py-1 text-right font-mono text-white">{fmtInt((ocupacao.detalhes ?? []).reduce((s, d) => s + d.cd1, 0))}</td>
+              <td className="py-1 text-right font-mono text-white">{fmtInt((ocupacao.detalhes ?? []).reduce((s, d) => s + d.cd2, 0))}</td>
+              <td className="py-1 text-right font-mono text-white bg-white/10">{fmtInt((ocupacao.detalhes ?? []).reduce((s, d) => s + d.total, 0))}</td>
+            </tr>
+          </tfoot>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
           * 1.800 kg/posição CD1. * 2.500 kg/posição CD2. * 20 volumes/posição.

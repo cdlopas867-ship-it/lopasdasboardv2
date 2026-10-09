@@ -88,6 +88,9 @@ function criarAba(wb: Workbook, nome: string, larguras: number[]): Worksheet {
   larguras.forEach((largura, i) => {
     ws.getColumn(i + 1).width = largura;
   });
+  ws.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+  ws.pageMargins = { left: 0.5, right: 0.5, top: 0.7, bottom: 0.5, header: 0.3, footer: 0.3 };
+  ws.headerFooter = { oddFooter: '&LLOPAS · CD&P&DTHR-Painel de Estoque' };
   return ws;
 }
 
@@ -104,7 +107,7 @@ function cabecalho(ws: Worksheet, titulo: string, subtitulo: string, largura: nu
   }
 
   const marca = ws.getCell(1, 1);
-  marca.value = "LOPAS · CONTROLE DE ESTOQUE · CD";
+  marca.value = "MÓVEIS LOPAS · CONTROLE DE ESTOQUE · CD";
   marca.font = { name: "Calibri", size: 10, bold: true, color: { argb: BRANCO } };
   marca.alignment = { vertical: "middle", indent: 1 };
   ws.mergeCells(1, 1, 1, largura);
@@ -774,87 +777,6 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
   return refs;
 }
 
-function abaSaidasCD(wb: Workbook, d: VideoResumoProps): Refs {
-  const ws = novaAba(
-    wb,
-    "SaidasCD",
-    "Saídas do CD",
-    "Tonelagem e valor faturado por mês, com a abertura por motivo.",
-    [18, 18, 20, 38],
-  );
-  const refs: Refs = {};
-  let linha = LINHA_INICIAL;
-
-  const meses = d.saidasCD?.meses ?? [];
-  linha = secao(ws, linha, "Saídas por mês", 4);
-  if (meses.length) {
-    const primeira = linha + 1;
-    const ultima = linha + meses.length;
-    const linhas: Valor[][] = meses.map((mes) => [mes.mes, mes.tonelada, mes.faturado]);
-    linhas.push([
-      "Total",
-      f(`SUM(B${primeira}:B${ultima})`, d.saidasCD?.totalTonelada ?? meses.reduce((s, m) => s + m.tonelada, 0)),
-      f(`SUM(C${primeira}:C${ultima})`, d.saidasCD?.totalFaturado ?? meses.reduce((s, m) => s + m.faturado, 0)),
-    ]);
-    linha =
-      tabela(
-        ws,
-        linha,
-        [
-          { titulo: "Mês", align: "left" },
-          { titulo: "Toneladas", fmt: TON },
-          { titulo: "Faturado", fmt: MOEDA0 },
-        ],
-        linhas,
-      ) + 1;
-    destacarLinha(ws, ultima + 1, 4);
-    refs["toneladas"] = ref("SaidasCD", ultima + 1, 2);
-    refs["faturado"] = ref("SaidasCD", ultima + 1, 3);
-  } else {
-    linha = nota(ws, linha, "Sem saídas do CD no payload atual.", 4) + 1;
-  }
-
-  const comMotivos = meses.filter((mes) => mes.motivos.length);
-  linha = secao(ws, linha, "Abertura por motivo", 4);
-  if (comMotivos.length) {
-    const linhas: Valor[][] = [];
-    comMotivos.forEach((mes) => {
-      mes.motivos.forEach((motivo) => {
-        linhas.push([mes.mes, motivo.motivo, motivo.tonelada, motivo.faturado]);
-      });
-    });
-    const primeira = linha + 1;
-    const ultima = linha + linhas.length;
-    linhas.push([
-      "Total",
-      "",
-      f(`SUM(C${primeira}:C${ultima})`, linhas.reduce((s, l) => s + Number(l[2] ?? 0), 0)),
-      f(`SUM(D${primeira}:D${ultima})`, linhas.reduce((s, l) => s + Number(l[3] ?? 0), 0)),
-    ]);
-    linha =
-      tabela(
-        ws,
-        linha,
-        [
-          { titulo: "Mês", align: "left" },
-          { titulo: "Motivo", align: "left" },
-          { titulo: "Toneladas", fmt: TON },
-          { titulo: "Faturado", fmt: MOEDA0 },
-        ],
-        linhas,
-      ) + 1;
-    destacarLinha(ws, ultima + 1, 4);
-  } else {
-    linha = nota(ws, linha, "Sem abertura por motivo.", 4) + 1;
-  }
-
-  if (d.valorFaturado !== undefined) {
-    linha = nota(ws, linha, `Valor faturado acumulado (indicador do painel): ${d.valorFaturado}.`, 4) + 1;
-  }
-
-  return refs;
-}
-
 function abaAvarias(wb: Workbook, d: VideoResumoProps): Refs {
   const ws = novaAba(
     wb,
@@ -946,47 +868,6 @@ function abaAvarias(wb: Workbook, d: VideoResumoProps): Refs {
   } else {
     linha = nota(ws, linha, "Sem abertura por tipo.", 5) + 1;
   }
-
-  return refs;
-}
-
-function abaCurvaAbc(wb: Workbook, d: VideoResumoProps): Refs {
-  const ws = novaAba(
-    wb,
-    "CurvaABC",
-    "Curva ABC",
-    "Classe dos itens no recebimento e no estoque, por itens e por valor.",
-    [18, 16, 18, 18, 16],
-  );
-  const refs: Refs = {};
-  let linha = LINHA_INICIAL;
-
-  const escrever = (
-    titulo: string,
-    classes: { classe: string; itens: number; pctItens: number; pctValor: number; ton?: number }[] | null | undefined,
-  ): void => {
-    linha = secao(ws, linha, titulo, 5);
-    if (!classes?.length) {
-      linha = nota(ws, linha, "Sem classe ABC para este bloco.", 5) + 1;
-      return;
-    }
-    linha =
-      tabela(
-        ws,
-        linha,
-        [
-          { titulo: "Classe", align: "left" },
-          { titulo: "Itens", fmt: INT },
-          { titulo: "% dos itens", fmt: PCT },
-          { titulo: "% do valor", fmt: PCT },
-          { titulo: "Toneladas", fmt: TON },
-        ],
-        classes.map((c) => [c.classe, c.itens, c.pctItens, c.pctValor, c.ton ?? ""] as Valor[]),
-      ) + 1;
-  };
-
-  escrever("Recebimento", d.abc?.recebimento);
-  escrever("Estoque", d.abc?.estoque);
 
   return refs;
 }
@@ -1356,7 +1237,6 @@ function preencherResumo(ws: Worksheet, d: VideoResumoProps, refs: Record<string
   const recebimento = refs["recebimento"] ?? {};
   const reservas = refs["reservas"] ?? {};
   const fora = refs["fora"] ?? {};
-  const saidas = refs["saidas"] ?? {};
   const avarias = refs["avarias"] ?? {};
   const pendentes = refs["pendentes"] ?? {};
   const producao = refs["producao"] ?? {};
@@ -1416,8 +1296,6 @@ function preencherResumo(ws: Worksheet, d: VideoResumoProps, refs: Record<string
   linha = secao(ws, linha, "Comercial e riscos", 4);
   linha =
     listaValores(ws, "Resumo", linha, [
-      ["Valor faturado (saídas do CD)", liga(saidas["faturado"], d.saidasCD?.totalFaturado ?? 0), MOEDA0],
-      ["Toneladas saídas do CD", liga(saidas["toneladas"], d.saidasCD?.totalTonelada ?? 0), TON],
       ["Valor reservado na carteira", liga(reservas["reservadoValor"], d.reservados?.totalValor ?? 0), MOEDA0],
       ["Peso reservado (t)", liga(reservas["reservadoTon"], d.reservados?.totalTon ?? 0), TON],
       [
@@ -1470,13 +1348,62 @@ function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, 
   const estoque = refs["estoque"] ?? {};
   let linha = LINHA_INICIAL + 3;
   linha = secao(ws, linha, "Números-chave", 5);
-  linha =
-    listaValores(ws, "Capa", linha, [
-      ["Peso em estoque (t)", liga(estoque["ton"], d.resumo?.ton ?? 0), TON],
-      ["Itens ativos", liga(estoque["itens"], d.resumo?.itens ?? 0), INT],
-      ["Valor em estoque", liga(estoque["valor"], d.resumo?.valor ?? 0), MOEDA0],
-      ["Ocupação do CD", liga(estoque["ocupacaoPct"], d.ocupacao.pct * 100), PCT],
-    ]).proxima + 1;
+
+  /* KPI cards em caixas coloridas — visual executivo */
+  const kpis: Array<[string, string, string, number]> = [
+    ["Peso em estoque", "t", TON, d.resumo?.ton ?? 0],
+    ["Itens ativos", "un", INT, d.resumo?.itens ?? 0],
+    ["Valor em estoque", "R$", MOEDA0, d.resumo?.valor ?? 0],
+    ["Ocupação do CD", "%", PCT, d.ocupacao.pct * 100],
+  ];
+  const coresKpi = [VERDE_MEDIO, VERDE_MEDIO, VERDE_MEDIO, AMBAR];
+  kpis.forEach(([rotulo, unidade, fmt, valor], i) => {
+    /* Caixa: rótulo em verde-claro, valor grande em verde */
+    const celRotulo = ws.getCell(linha, 1);
+    celRotulo.value = rotulo;
+    celRotulo.font = { name: "Calibri", size: 9, bold: true, color: { argb: CINZA } };
+    celRotulo.alignment = { vertical: "middle", indent: 1 };
+    celRotulo.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_CLARO } };
+    celRotulo.border = {
+      top: { style: "medium", color: { argb: coresKpi[i] } },
+      left: { style: "thin", color: { argb: BORDA_FINA } },
+      right: { style: "thin", color: { argb: BORDA_FINA } },
+    };
+
+    const celValor = ws.getCell(linha, 2);
+    celValor.value = liga(estoque[["ton", "itens", "valor", "ocupacaoPct"][i]], valor) as CellValue;
+    celValor.font = { name: "Calibri", size: 16, bold: true, color: { argb: VERDE } };
+    celValor.alignment = { horizontal: "right", vertical: "middle" };
+    if (fmt) celValor.numFmt = fmt;
+    celValor.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_CLARO } };
+    celValor.border = {
+      top: { style: "medium", color: { argb: coresKpi[i] } },
+      left: { style: "thin", color: { argb: BORDA_FINA } },
+      right: { style: "thin", color: { argb: BORDA_FINA } },
+    };
+
+    const celUn = ws.getCell(linha, 3);
+    celUn.value = unidade;
+    celUn.font = { name: "Calibri", size: 9, color: { argb: CINZA } };
+    celUn.alignment = { vertical: "middle", indent: 1 };
+    celUn.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_CLARO } };
+    celUn.border = {
+      top: { style: "medium", color: { argb: coresKpi[i] } },
+      right: { style: "thin", color: { argb: BORDA_FINA } },
+    };
+    ws.mergeCells(linha, 3, linha, 5);
+
+    ws.getRow(linha).height = 32;
+    linha += 1;
+
+    /* Linha separadora entre cards */
+    for (let c = 1; c <= 5; c += 1) {
+      ws.getCell(linha, c).border = { bottom: { style: "hair", color: { argb: BORDA_FINA } } };
+    }
+    ws.getRow(linha).height = 4;
+    linha += 1;
+  });
+  linha += 1;
 
   const abas: Array<[string, string, string]> = [
     ["Resumo", "Resumo consolidado", "Todos os totais em fórmulas"],
@@ -1484,9 +1411,7 @@ function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, 
     ["Recebimento", "Recebimento e fluxo", "Semana, turnos e mensal"],
     ["Reservas", "Carteira de reservas", "Reservado × sem reserva"],
     ["ForaDeLinha", "Em linha × fora de linha", "Saldos, peso e valor"],
-    ["SaidasCD", "Saídas do CD", "Tonelagem e faturado"],
     ["Avarias", "Avarias", "Volumes por mês"],
-    ["CurvaABC", "Curva ABC", "Recebimento e estoque"],
     ["Pendentes", "Pendências", "A produzir por mês"],
     ["Producao", "Produção da semana", "Programado × produzido"],
     ["Produtividade", "Produtividade", "Por colaborador e turma"],
@@ -1554,9 +1479,7 @@ export async function exportarExcelLopas(dados: VideoResumoProps): Promise<void>
     recebimento: abaRecebimento(wb, dados),
     reservas: abaReservas(wb, dados),
     fora: abaForaDeLinha(wb, dados),
-    saidas: abaSaidasCD(wb, dados),
     avarias: abaAvarias(wb, dados),
-    abc: abaCurvaAbc(wb, dados),
     pendentes: abaPendentes(wb, dados),
     producao: abaProducao(wb, dados),
     produtividade: abaProdutividade(wb),

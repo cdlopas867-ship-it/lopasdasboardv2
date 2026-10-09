@@ -151,6 +151,15 @@ export default function CenaProducaoSemana({
               );
             })}
           </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1" />
+              <td className="py-1 text-white">Total</td>
+              <td className="py-1 text-right font-mono text-white">{fmtInt(totalRecebido + unFalta)}</td>
+              <td className="py-1 text-right font-mono text-white">{fmtBrMax(totalTonRec + tonFalta, 1)}</td>
+              <td className="py-1 text-right font-mono text-white">100%</td>
+            </tr>
+          </tfoot>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
           * Recebido: já chegou ao estoque. Diferença: o que falta receber (peso previsto da semana − recebido). % sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.

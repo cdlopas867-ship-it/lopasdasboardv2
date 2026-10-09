@@ -8,6 +8,8 @@
 
 import * as XLSX from "xlsx";
 import type { ItemForaDeLinha, PosicaoEstoque } from "@/data/fora-de-linha";
+import type { ItemEstoque } from "./base-estoque";
+import type { ItemReservado } from "./reservados";
 
 const num = (v: unknown) => (typeof v === "number" ? v : Number(v ?? 0) || 0);
 const str = (v: unknown) => (v == null ? "" : String(v).trim());
@@ -367,6 +369,81 @@ export function aplicarCustos(
   const em = { ...fdl.posicaoEmLinha, valorEstoque: fdl.posicaoEmLinha.pesoTon * 1000 * custoMedioGeral, valorReservado: fdl.posicaoEmLinha.pesoReservadoTon * 1000 * custoMedioGeral };
   const total = { ...fdl.posicaoTotal, valorEstoque: em.valorEstoque + vFora, valorReservado: em.valorReservado + rFora };
   return { itens, posicaoEmLinha: em, posicaoForaDeLinha: fora, posicaoTotal: total };
+}
+
+/* Reconstrói os dados de Fora de Linha a partir dos itens mais recentes do
+   Drive, mantendo a classificação em linha / fora de linha da última
+   planilha "Em Linha × Fora de Linha" que teve a coluna SITUAÇÃO.
+   Isso garante que os valores (saldo, custo, valor) venham da planilha
+   mais atual do Drive, e não de uma planilha antiga. */
+export function rebuildForaDeLinhaFromItens(
+  itens: ItemEstoque[],
+  foraDeLinhaItemSet: Set<string>,
+  reservadosMap?: Map<string, { qtd: number; custo: number; pesoBrt: number }>,
+): ForaDeLinhaData | null {
+  if (!itens.length) return null;
+
+  const em = vazio("EM LINHA");
+  const fora = vazio("FORA DE LINHA");
+  const foraItens: ItemForaDeLinha[] = [];
+
+  for (const it of itens) {
+    const maskNum = it.mascara.match(/\((\d+)\)/)?.[1] ?? "";
+    const isFora = foraDeLinhaItemSet.has(`${it.item}|${maskNum}`);
+    const valor = it.valor > 0 ? it.valor : it.saldo * it.custo;
+    const pesoKg = it.peso;
+    const res = reservadosMap?.get(`${it.item}|${maskNum}`)
+      ?? reservadosMap?.get(it.item);
+    const reservas = res?.qtd ?? 0;
+    const custo = it.custo;
+    const valorReservado = custo * reservas;
+    const pesoReservadoKg = (res?.pesoBrt ?? 0) * reservas;
+
+    const acc = isFora ? fora : em;
+    acc.itens++;
+    acc.saldoFocco += it.saldo;
+    acc.reservas += reservas;
+    acc.disponivel += it.saldo - reservas;
+    acc.pesoTon += pesoKg / 1000;
+    acc.pesoReservadoTon += pesoReservadoKg / 1000;
+    acc.valorEstoque += valor;
+    acc.valorReservado += valorReservado;
+
+    if (isFora) {
+      foraItens.push({
+        chave: `${it.item}.${maskNum || foraItens.length}`,
+        item: Number(it.item) || 0,
+        desc: it.desc,
+        mascara: it.mascara,
+        categoria: it.unidade,
+        origem: "CD",
+        saldoFocco: it.saldo,
+        saldoFull: 0,
+        reservas,
+        disponivel: it.saldo - reservas,
+        pesoKg,
+        pesoReservadoKg,
+        valorEstoque: valor,
+        valorReservado,
+      });
+    }
+  }
+
+  const soma = (k: keyof PosicaoEstoque) => (em[k] as number) + (fora[k] as number);
+  const total: PosicaoEstoque = {
+    grupo: "TOTAL GERAL",
+    itens: soma("itens"),
+    saldoFocco: soma("saldoFocco"),
+    saldoFull: 0,
+    reservas: soma("reservas"),
+    disponivel: soma("disponivel"),
+    pesoTon: soma("pesoTon"),
+    pesoReservadoTon: soma("pesoReservadoTon"),
+    valorEstoque: soma("valorEstoque"),
+    valorReservado: soma("valorReservado"),
+  };
+
+  return { itens: foraItens, posicaoEmLinha: em, posicaoForaDeLinha: fora, posicaoTotal: total };
 }
 
 export function lerForaDeLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
