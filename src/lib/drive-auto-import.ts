@@ -818,6 +818,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let abcRecebimento: ReturnType<typeof curvaAbcRecebimento> | null = null;
   let melhorUnidadesResumo: UnidadeResumo[] | null = null;
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
+  let melhorFdlMod = 0;
   let melhorOcupacao: OcupacaoData | null = null;
   let melhorPaletes: ReturnType<typeof lerPaletes> | null = null;
   let wbProducao: XLSX.WorkBook | null = null;
@@ -833,7 +834,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 
       /* Extrai dados de "Fora de Linha" (itens descontinuados) da planilha */
       const fdl = lerForaDeLinha(wb);
-      if (fdl) melhorForaDeLinha = fdl;
+      if (fdl) { melhorForaDeLinha = fdl; melhorFdlMod = Math.max(melhorFdlMod, Number(parseModificado(arq.modificado ?? "")) || 0); }
 
       /* Extrai itens reservados detalhados da planilha */
       const itensReservados = lerReservados(wb);
@@ -953,7 +954,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
          a pasta do Drive sem a planilha correspondente deixa o bloco fora
          do payload e o app cai no fallback estático (valores desatualizados). */
       const fdl = lerForaDeLinha(wb);
-      if (fdl) melhorForaDeLinha = fdl;
+      if (fdl && !melhorForaDeLinha) melhorForaDeLinha = fdl;
 
       const itensEstoque = lerItensEstoque(wb);
       if (itensEstoque.length > (melhorItens?.length ?? 0)) melhorItens = itensEstoque;
@@ -1211,9 +1212,14 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(melhorProducao ? { producaoSemanal: melhorProducao } : {}),
     ...(kpisRecomputed.length > 0 ? { kpis: kpisRecomputed } : {}),
     ...(unidadesRecomputed.length > 0 ? { unidades: unidadesRecomputed } : {}),
-    ...(melhorForaDeLinha
-      ? { foraDeLinha: comCustos(melhorForaDeLinha, melhorReservados) }
-      : {}),
+    ...(() => {
+      /* Importação manual (ferramenta Análise de estoque) prevalece até que
+         o Drive traga uma planilha de fora de linha mais nova que ela. */
+      const manual = existingForKpis?.["foraDeLinha"] as { importadoEm?: string } | undefined;
+      const manualEm = manual?.importadoEm ? Date.parse(manual.importadoEm) : 0;
+      if (manualEm && manualEm >= melhorFdlMod) return { foraDeLinha: manual };
+      return melhorForaDeLinha ? { foraDeLinha: comCustos(melhorForaDeLinha, melhorReservados) } : {};
+    })(),
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
     ...(melhorOcupacao
       ? {
