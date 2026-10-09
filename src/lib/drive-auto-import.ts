@@ -45,39 +45,7 @@ function comCustos(
   return aplicarCustos(fdl, custos, porKg);
 }
 
-/* Reconcilia o total do foraDeLinha com o valor real do estoque (resumo.valor).
-   Quando o parser não captura os itens "NÃO CADASTRADO" (planilha do Drive sem
-   a aba Linha) ou quando a planilha local está desatualizada, a diferença entre
-   o resumo.valor e a soma de emLinha+foraDeLinha é preenchida como "NÃO
-   CADASTRADO" para que o total do dashboard coincida com o valor real. */
-function reconciliarForaDeLinha(
-  fdl: NonNullable<ReturnType<typeof lerForaDeLinha>>,
-  resumoValor: number,
-  resumoItens?: number,
-) {
-  const em = fdl.posicaoEmLinha;
-  const fora = fdl.posicaoForaDeLinha;
-  let nc = fdl.posicaoNaoCadastrado;
-  const somaEmFora = em.valorEstoque + fora.valorEstoque;
-  const diferenca = resumoValor - somaEmFora;
-  /* Só reconcilia quando a diferença é significativa (> 0,5% do total) —
-     evita sobrescrever o NC quando o parser já o capturou corretamente. */
-  if (Math.abs(diferenca) > Math.abs(resumoValor) * 0.005) {
-    /* Quando o parser não capturou itens NC (itens=0 mas há saldo), e o
-       resumo tem contagem de itens, estima NC a partir da diferença. */
-    if (nc.itens === 0 && resumoItens && resumoItens > em.itens + fora.itens) {
-      nc = { ...nc, itens: resumoItens - em.itens - fora.itens };
-    }
-    nc = { ...nc, valorEstoque: diferenca };
-  }
-  const total = {
-    ...fdl.posicaoTotal,
-    itens: em.itens + fora.itens + nc.itens,
-    valorEstoque: em.valorEstoque + fora.valorEstoque + nc.valorEstoque,
-    valorReservado: em.valorReservado + fora.valorReservado + nc.valorReservado,
-  };
-  return { ...fdl, posicaoEmLinha: em, posicaoForaDeLinha: fora, posicaoNaoCadastrado: nc, posicaoTotal: total };
-}
+
 import type { Avaria } from "./avarias";
 import type { PendenteProducao } from "./pendentes";
 import type { ItemEstoque } from "./base-estoque";
@@ -1244,7 +1212,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(kpisRecomputed.length > 0 ? { kpis: kpisRecomputed } : {}),
     ...(unidadesRecomputed.length > 0 ? { unidades: unidadesRecomputed } : {}),
     ...(melhorForaDeLinha
-      ? { foraDeLinha: reconciliarForaDeLinha(comCustos(melhorForaDeLinha, melhorReservados), melhorResumo.valor, melhorResumo.itens) }
+      ? { foraDeLinha: comCustos(melhorForaDeLinha, melhorReservados) }
       : {}),
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
     ...(melhorOcupacao

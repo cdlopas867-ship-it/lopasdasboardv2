@@ -21,7 +21,6 @@ export type VideoForaDeLinha = {
   itens: ItemForaDeLinha[];
   posicaoEmLinha: PosicaoEstoque;
   posicaoForaDeLinha: PosicaoEstoque;
-  posicaoNaoCadastrado: PosicaoEstoque;
   posicaoTotal: PosicaoEstoque;
 } | null;
 import type {

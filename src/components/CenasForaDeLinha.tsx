@@ -4,7 +4,6 @@ import {
   ITENS_FORA_DE_LINHA,
   POSICAO_EM_LINHA,
   POSICAO_FORA_DE_LINHA,
-  POSICAO_NAO_CADASTRADO,
   POSICAO_TOTAL as POSICAO_TOTAL_FIXO,
   type ItemForaDeLinha,
   type PosicaoEstoque,
@@ -39,7 +38,7 @@ type Props = {
   itens: ItemForaDeLinha[];
   valorFiltrado: number;
   totalItens?: number;
-  posicoes?: { emLinha: PosicaoEstoque; fora: PosicaoEstoque; naoCadastrado: PosicaoEstoque; total: PosicaoEstoque };
+  posicoes?: { emLinha: PosicaoEstoque; fora: PosicaoEstoque; total: PosicaoEstoque };
 };
 
 function KpiCard({
