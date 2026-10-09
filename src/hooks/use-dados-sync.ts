@@ -103,6 +103,10 @@ function dataKey(payload: unknown, incluirSync = true): string {
     me: (p["mensal"] as unknown[])?.length,
     sc: !!p["saidasCD"],
     ps: prodSig(p["producaoSemanal"] as unknown[] | undefined),
+    fl: (() => {
+      const f = p["foraDeLinha"] as { importadoEm?: string; itens?: unknown[]; posicaoTotal?: { pesoTon?: number } } | undefined;
+      return f ? `${f.importadoEm ?? ""}|${f.itens?.length ?? 0}|${f.posicaoTotal?.pesoTon ?? 0}` : "";
+    })(),
     ...(incluirSync ? { sy: (p["sincronizacao"] as { em?: string } | undefined)?.em } : {}),
   });
 }
