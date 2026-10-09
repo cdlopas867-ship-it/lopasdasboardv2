@@ -16,6 +16,7 @@ import { Route as ViagensRouteImport } from './routes/viagens'
 import { Route as ApiAutoImportRouteImport } from './routes/api/auto-import'
 import { Route as ApiCarregamentoRouteImport } from './routes/api/carregamento'
 import { Route as ApiCarregamentoMensalRouteImport } from './routes/api/carregamento-mensal'
+import { Route as ApiForaDeLinhaRouteImport } from './routes/api/fora-de-linha'
 import { Route as ApiImportarDriveRouteImport } from './routes/api/importar-drive'
 import { Route as ApiInterpretarEstoqueRouteImport } from './routes/api/interpretar-estoque'
 import { Route as ApiSyncDataRouteImport } from './routes/api/sync-data'
@@ -57,6 +58,11 @@ const ApiCarregamentoRoute = ApiCarregamentoRouteImport.update({
 const ApiCarregamentoMensalRoute = ApiCarregamentoMensalRouteImport.update({
   id: '/api/carregamento-mensal',
   path: '/api/carregamento-mensal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiForaDeLinhaRoute = ApiForaDeLinhaRouteImport.update({
+  id: '/api/fora-de-linha',
+  path: '/api/fora-de-linha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiImportarDriveRoute = ApiImportarDriveRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
+  '/api/fora-de-linha': typeof ApiForaDeLinhaRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
   '/api/interpretar-estoque': typeof ApiInterpretarEstoqueRoute
   '/api/sync-data': typeof ApiSyncDataRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
+  '/api/fora-de-linha': typeof ApiForaDeLinhaRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
   '/api/interpretar-estoque': typeof ApiInterpretarEstoqueRoute
   '/api/sync-data': typeof ApiSyncDataRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
+  '/api/fora-de-linha': typeof ApiForaDeLinhaRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
   '/api/interpretar-estoque': typeof ApiInterpretarEstoqueRoute
   '/api/sync-data': typeof ApiSyncDataRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
+    | '/api/fora-de-linha'
     | '/api/importar-drive'
     | '/api/interpretar-estoque'
     | '/api/sync-data'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
+    | '/api/fora-de-linha'
     | '/api/importar-drive'
     | '/api/interpretar-estoque'
     | '/api/sync-data'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
+    | '/api/fora-de-linha'
     | '/api/importar-drive'
     | '/api/interpretar-estoque'
     | '/api/sync-data'
@@ -203,6 +215,7 @@ export interface RootRouteChildren {
   ApiAutoImportRoute: typeof ApiAutoImportRoute
   ApiCarregamentoRoute: typeof ApiCarregamentoRoute
   ApiCarregamentoMensalRoute: typeof ApiCarregamentoMensalRoute
+  ApiForaDeLinhaRoute: typeof ApiForaDeLinhaRoute
   ApiImportarDriveRoute: typeof ApiImportarDriveRoute
   ApiInterpretarEstoqueRoute: typeof ApiInterpretarEstoqueRoute
   ApiSyncDataRoute: typeof ApiSyncDataRoute
@@ -261,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/api/carregamento-mensal'
       fullPath: '/api/carregamento-mensal'
       preLoaderRoute: typeof ApiCarregamentoMensalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/fora-de-linha': {
+      id: '/api/fora-de-linha'
+      path: '/api/fora-de-linha'
+      fullPath: '/api/fora-de-linha'
+      preLoaderRoute: typeof ApiForaDeLinhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/importar-drive': {
@@ -323,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAutoImportRoute: ApiAutoImportRoute,
   ApiCarregamentoRoute: ApiCarregamentoRoute,
   ApiCarregamentoMensalRoute: ApiCarregamentoMensalRoute,
+  ApiForaDeLinhaRoute: ApiForaDeLinhaRoute,
   ApiImportarDriveRoute: ApiImportarDriveRoute,
   ApiInterpretarEstoqueRoute: ApiInterpretarEstoqueRoute,
   ApiSyncDataRoute: ApiSyncDataRoute,
