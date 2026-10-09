@@ -26,7 +26,7 @@ let logoImageId: number | null = null;
 
 async function carregarLogo(wb: Workbook): Promise<number | null> {
   try {
-    const resp = await fetch("/lopas-logo-clover.png");
+    const resp = await fetch("/logo-lopas-trevo.png");
     if (!resp.ok) return null;
     const bytes = new Uint8Array(await resp.arrayBuffer());
     let binary = "";
@@ -34,7 +34,8 @@ async function carregarLogo(wb: Workbook): Promise<number | null> {
       binary += String.fromCharCode(bytes[i]);
     }
     const base64 = btoa(binary);
-    return wb.addImage({ buffer: base64, extension: "png" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return wb.addImage({ buffer: base64 as any, extension: "png" });
   } catch {
     return null;
   }
@@ -124,26 +125,26 @@ function cabecalho(ws: Worksheet, titulo: string, subtitulo: string, largura: nu
   }
 
   if (logoImageId !== null) {
-    ws.addImage(logoImageId, { tl: { col: 0.15, row: 0.15 }, ext: { width: 30, height: 30 } });
+    ws.addImage(logoImageId, { tl: { col: 0.1, row: 0.1 }, ext: { width: 52, height: 52 } });
   }
 
   const marca = ws.getCell(1, 1);
   marca.value = "LOPAS · CONTROLE DE ESTOQUE · CD";
-  marca.font = { name: "Calibri", size: 9, bold: true, color: { argb: BRANCO } };
-  marca.alignment = { vertical: "middle", indent: 7 };
+  marca.font = { name: "Calibri", size: 10, bold: true, color: { argb: BRANCO } };
+  marca.alignment = { vertical: "middle", indent: 8 };
   ws.mergeCells(1, 1, 1, largura);
 
   /* linha 2 — título */
   const tit = ws.getCell(2, 1);
   tit.value = titulo;
-  tit.font = { name: "Calibri", size: 20, bold: true, color: { argb: VERDE } };
+  tit.font = { name: "Calibri", size: 22, bold: true, color: { argb: VERDE_MEDIO } };
   tit.alignment = { vertical: "middle", indent: 1 };
   ws.mergeCells(2, 1, 2, largura);
 
   /* linha 3 — subtítulo */
   const sub = ws.getCell(3, 1);
   sub.value = subtitulo;
-  sub.font = { name: "Calibri", size: 10, color: { argb: CINZA } };
+  sub.font = { name: "Calibri", size: 10, italic: true, color: { argb: CINZA } };
   sub.alignment = { vertical: "middle", wrapText: true, indent: 1 };
   ws.mergeCells(3, 1, 3, largura);
 
@@ -155,11 +156,11 @@ function cabecalho(ws: Worksheet, titulo: string, subtitulo: string, largura: nu
     };
   }
 
-  ws.getRow(1).height = 30;
-  ws.getRow(2).height = 30;
-  ws.getRow(3).height = 18;
-  ws.getRow(4).height = 6;
-  ws.getRow(5).height = 6;
+  ws.getRow(1).height = 54;
+  ws.getRow(2).height = 34;
+  ws.getRow(3).height = 20;
+  ws.getRow(4).height = 8;
+  ws.getRow(5).height = 8;
 }
 
 function novaAba(wb: Workbook, nome: string, titulo: string, subtitulo: string, larguras: number[]): Worksheet {
@@ -171,18 +172,18 @@ function novaAba(wb: Workbook, nome: string, titulo: string, subtitulo: string, 
 function secao(ws: Worksheet, linha: number, texto: string, largura: number): number {
   for (let c = 1; c <= largura; c += 1) {
     const cel = ws.getCell(linha, c);
-    cel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_MEDIO } };
+    cel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE } };
     cel.border = {
       top: { style: "thin", color: { argb: VERDE } },
-      bottom: { style: "thin", color: { argb: AMBAR } },
+      bottom: { style: "medium", color: { argb: AMBAR } },
     };
   }
   const celula = ws.getCell(linha, 1);
   celula.value = texto.toUpperCase();
-  celula.font = { name: "Calibri", size: 10, bold: true, color: { argb: BRANCO } };
+  celula.font = { name: "Calibri", size: 11, bold: true, color: { argb: BRANCO } };
   celula.alignment = { vertical: "middle", indent: 1 };
   ws.mergeCells(linha, 1, linha, largura);
-  ws.getRow(linha).height = 22;
+  ws.getRow(linha).height = 24;
   return linha + 1;
 }
 
@@ -208,7 +209,7 @@ function tabela(ws: Worksheet, linha: number, colunas: Coluna[], linhas: Valor[]
   colunas.forEach((coluna, i) => {
     const celula = ws.getCell(linha, i + 1);
     celula.value = coluna.titulo;
-    celula.font = { name: "Calibri", size: 9, bold: true, color: { argb: BRANCO } };
+    celula.font = { name: "Calibri", size: 10, bold: true, color: { argb: BRANCO } };
     celula.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_MEDIO } };
     celula.alignment = {
       horizontal: coluna.align ?? (i === 0 ? "left" : "right"),
@@ -221,7 +222,7 @@ function tabela(ws: Worksheet, linha: number, colunas: Coluna[], linhas: Valor[]
       bottom: { style: "medium", color: { argb: AMBAR } },
     };
   });
-  ws.getRow(linha).height = 20;
+  ws.getRow(linha).height = 22;
 
   let atual = linha + 1;
   linhas.forEach((valores, indice) => {
@@ -236,11 +237,11 @@ function tabela(ws: Worksheet, linha: number, colunas: Coluna[], linhas: Valor[]
       };
       if (coluna.fmt) celula.numFmt = coluna.fmt;
       if (indice % 2 === 1) {
-        celula.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ZEBRA } };
+        celula.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_BANDA } };
       }
       celula.border = bordaPadrao;
     });
-    ws.getRow(atual).height = 16;
+    ws.getRow(atual).height = 18;
     atual += 1;
   });
   return atual;
@@ -264,7 +265,7 @@ function listaValores(
 
   itens.forEach(([rotulo, valor, fmt, observacao], indice) => {
     const fill = indice % 2 === 1
-      ? { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: ZEBRA } }
+      ? { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: VERDE_BANDA } }
       : undefined;
 
     const nome = ws.getCell(atual, 1);
@@ -302,16 +303,16 @@ function listaValores(
 function destacarLinha(ws: Worksheet, linha: number, largura: number): void {
   for (let c = 1; c <= largura; c += 1) {
     const celula = ws.getCell(linha, c);
-    celula.font = { name: "Calibri", size: 10, bold: true, color: { argb: VERDE } };
+    celula.font = { name: "Calibri", size: 11, bold: true, color: { argb: VERDE } };
     celula.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_CLARO } };
     celula.border = {
       top: { style: "medium", color: { argb: VERDE_MEDIO } },
-      bottom: { style: "medium", color: { argb: VERDE_MEDIO } },
+      bottom: { style: "medium", color: { argb: AMBAR } },
       left: { style: "thin", color: { argb: BORDA_FINA } },
       right: { style: "thin", color: { argb: BORDA_FINA } },
     };
   }
-  ws.getRow(linha).height = 18;
+  ws.getRow(linha).height = 20;
 }
 
 /** Referência de outra aba com valor em cache. */
@@ -1479,20 +1480,25 @@ function preencherResumo(ws: Worksheet, d: VideoResumoProps, refs: Record<string
 function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, Refs>): void {
   cabecalho(ws, "Painel de Estoque", "CD Lopas · controle de estoque, fluxo, avarias e pessoas", 5, false);
 
-  const atualizado = ws.getCell(LINHA_INICIAL, 1);
+  /* logo grande centralizado na capa */
+  if (logoImageId !== null) {
+    ws.addImage(logoImageId, { tl: { col: 1.8, row: LINHA_INICIAL - 1 }, ext: { width: 120, height: 120 } });
+  }
+
+  const atualizado = ws.getCell(LINHA_INICIAL + 8, 1);
   atualizado.value = `Atualizado na pasta do Drive em ${dataHora(d.sincronizacao?.em)}`;
   atualizado.font = { name: "Calibri", size: 11, bold: true, color: { argb: VERDE_MEDIO } };
   atualizado.alignment = { indent: 1 };
-  ws.mergeCells(LINHA_INICIAL, 1, LINHA_INICIAL, 5);
+  ws.mergeCells(LINHA_INICIAL + 8, 1, LINHA_INICIAL + 8, 5);
 
-  const gerado = ws.getCell(LINHA_INICIAL + 1, 1);
+  const gerado = ws.getCell(LINHA_INICIAL + 9, 1);
   gerado.value = `Arquivo gerado em ${dataHora()}`;
   gerado.font = { name: "Calibri", size: 10, color: { argb: CINZA } };
   gerado.alignment = { indent: 1 };
-  ws.mergeCells(LINHA_INICIAL + 1, 1, LINHA_INICIAL + 1, 5);
+  ws.mergeCells(LINHA_INICIAL + 9, 1, LINHA_INICIAL + 9, 5);
 
   const estoque = refs["estoque"] ?? {};
-  let linha = LINHA_INICIAL + 3;
+  let linha = LINHA_INICIAL + 11;
   linha = secao(ws, linha, "Números-chave", 5);
   linha =
     listaValores(ws, "Capa", linha, [
@@ -1532,7 +1538,7 @@ function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, 
     obs.border = { bottom: { style: "hair", color: { argb: BORDA_FINA } } };
     ws.mergeCells(linha, 2, linha, 5);
     if (i % 2 === 1) {
-      const fill = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: ZEBRA } };
+      const fill = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: VERDE_BANDA } };
       link.fill = fill;
       obs.fill = fill;
     }
