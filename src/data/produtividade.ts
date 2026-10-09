@@ -45,6 +45,7 @@ export const PRODUTIVIDADE = {
     {
       id: "separacao-manual",
       nome: "Separação manual",
+      mensal: [{ mes: "Jan", ton: 4410.3 }, { mes: "Fev", ton: 3678.8 }, { mes: "Mar", ton: 7648.4 }, { mes: "Abr", ton: 6776.8 }, { mes: "Mai", ton: 7652.1 }, { mes: "Jun", ton: 7173.4 }, { mes: "Jul", ton: 8186.1 }, { mes: "Ago", ton: 6848.5 }, { mes: "Set", ton: 7375.8 }, { mes: "Out", ton: 1507.1 }],
       periodo: "06/01/2026 a 07/10/2026",
       ton: 61256.3,
       cx: 13117367,
@@ -193,6 +194,7 @@ export const PRODUTIVIDADE = {
     {
       id: "separacao-empilhadeira",
       nome: "Separação com empilhadeira",
+      mensal: [{ mes: "Jan", ton: 808.7 }, { mes: "Fev", ton: 674.5 }, { mes: "Mar", ton: 1402.3 }, { mes: "Abr", ton: 1242.5 }, { mes: "Mai", ton: 1403.0 }, { mes: "Jun", ton: 1315.2 }, { mes: "Jul", ton: 1500.8 }, { mes: "Ago", ton: 1255.6 }, { mes: "Set", ton: 1351.3 }, { mes: "Out", ton: 276.3 }],
       periodo: "06/01/2026 a 07/10/2026",
       ton: 11231.8,
       cx: 649924,
@@ -323,6 +325,7 @@ export const PRODUTIVIDADE = {
     {
       id: "recebimento",
       nome: "Recebimento",
+      mensal: [{ mes: "Jan", ton: 4341.9 }, { mes: "Fev", ton: 3621.8 }, { mes: "Mar", ton: 7529.7 }, { mes: "Abr", ton: 6671.9 }, { mes: "Mai", ton: 7533.5 }, { mes: "Jun", ton: 7062.3 }, { mes: "Jul", ton: 8059.2 }, { mes: "Ago", ton: 6742.2 }, { mes: "Set", ton: 7261.3 }, { mes: "Out", ton: 1483.8 }],
       periodo: "01/04/2026 a 31/08/2026",
       ton: 60307.4,
       cx: 25578875,
