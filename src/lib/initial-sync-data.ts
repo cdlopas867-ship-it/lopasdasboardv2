@@ -83,20 +83,24 @@ export const initialSyncData = {
 		{
 			"id": "ocupacao",
 			"rotulo": "Ocupação do CD",
-			"valor": "66,7%",
-			"detalhe": "3.644 endereços ocupados de um total de 5.466. Ainda há 1.822 posições livres — fôlego para o pico de recebimento.",
+			"valor": "59,8%",
+			"detalhe": "3.427 endereços ocupados de um total de 5.735. Ainda há 2.256 posições livres e 52 bloqueadas — fôlego para o pico de recebimento.",
 			"extra": [
 				[
 					"Ocupados",
-					"3.644"
+					"3.427"
 				],
 				[
 					"Livres",
-					"1.822"
+					"2.256"
+				],
+				[
+					"Bloqueados",
+					"52"
 				],
 				[
 					"Total de endereços",
-					"5.466"
+					"5.735"
 				],
 				[
 					"ÁREA TOTAL",
@@ -108,7 +112,7 @@ export const initialSyncData = {
 				],
 				[
 					"POSIÇÕES",
-					"5.466 qtd"
+					"5.735 qtd"
 				],
 				[
 					"CAP. ARMAZENAGEM",
@@ -306,11 +310,11 @@ export const initialSyncData = {
 		"previsto": 27132099.260086685
 	},
 	"ocupacao": {
-		"pct": 0.6667,
-		"ocupados": 3644,
-		"livres": 1822,
-		"bloqueados": 0,
-		"total": 5466
+		"pct": 0.5977,
+		"ocupados": 3427,
+		"livres": 2256,
+		"bloqueados": 52,
+		"total": 5735
 	},
 	"ocupacaoDetalhes": [
 		{
@@ -332,7 +336,7 @@ export const initialSyncData = {
 			"unidade": "qtd",
 			"cd1": 3150,
 			"cd2": 2820,
-			"total": 5466
+			"total": 5735
 		},
 		{
 			"atributo": "CAP. ARMAZENAGEM",
