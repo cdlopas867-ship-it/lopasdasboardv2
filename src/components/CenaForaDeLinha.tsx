@@ -114,22 +114,18 @@ export default function CenaForaDeLinha({
             </tr>
           </thead>
           <tbody>
-            {linhas.map((linha, i) => {
-              const ativa = linha.grupo === foco;
+            {linhas.filter((l) => l.grupo === foco).map((linha, i) => {
               const cor = linha.grupo === 0 ? COR_EM_LINHA : COR_FORA;
               return (
                 <tr
-                  key={i}
-                  className={cn(
-                    "border-b border-white/10 transition-all duration-300",
-                    i === linhas.length - 1 && "last:border-0",
-                    ativa ? "bg-white/[0.04]" : "opacity-35",
-                  )}
+                  key={`${foco}-${i}`}
+                  className="video-sobe border-b border-white/10 bg-white/[0.04]"
+                  style={{ color: cor, animationDelay: `${0.05 * i}s` }}
                 >
-                  <td className="py-0.5" style={ativa ? { color: cor } : undefined}>
+                  <td className="py-0.5">
                     {linha.rotulo}
                   </td>
-                  <td className={cn("py-0.5 text-right font-mono", linha.destaque ? "font-extrabold text-base" : "font-semibold")} style={ativa ? { color: cor } : undefined}>
+                  <td className={cn("py-0.5 text-right font-mono", linha.destaque ? "font-extrabold text-base" : "font-semibold")}>
                     {linha.valor}
                   </td>
                 </tr>

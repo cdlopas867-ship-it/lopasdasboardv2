@@ -34,14 +34,14 @@ export type PosicaoEstoque = {
 
 export const POSICAO_EM_LINHA: PosicaoEstoque = {
   "grupo": "EM LINHA",
-  "itens": 546,
-  "saldoFocco": 110087,
+  "itens": 638,
+  "saldoFocco": 133306,
   "saldoFull": 0,
   "reservas": 61550,
-  "disponivel": 48537,
-  "pesoTon": 3204.7,
+  "disponivel": 71756,
+  "pesoTon": 3801.6,
   "pesoReservadoTon": 1904.9,
-  "valorEstoque": 13618918.64,
+  "valorEstoque": 16069660.22,
   "valorReservado": 8331759.25
 };
 
@@ -60,14 +60,14 @@ export const POSICAO_FORA_DE_LINHA: PosicaoEstoque = {
 
 export const POSICAO_TOTAL: PosicaoEstoque = {
   "grupo": "TOTAL GERAL",
-  "itens": 693,
-  "saldoFocco": 114622,
+  "itens": 785,
+  "saldoFocco": 137841,
   "saldoFull": 0,
   "reservas": 63474,
-  "disponivel": 51148,
-  "pesoTon": 3364.3,
-  "pesoReservadoTon": 1973,
-  "valorEstoque": 14288347.98,
+  "disponivel": 74367,
+  "pesoTon": 3961.2,
+  "pesoReservadoTon": 1973.0,
+  "valorEstoque": 16739089.56,
   "valorReservado": 8595340.33
 };
 

@@ -80,19 +80,16 @@ export default function CenaReservados({
             </tr>
           </thead>
           <tbody>
-            {linhas.map((l, i) => {
-              const ativa = l.grupo === foco;
+            {linhas.filter((l) => l.grupo === foco).map((l, i) => {
               const cor = l.grupo === 0 ? COR_RESERVADO : COR_SEM;
               return (
                 <tr
-                  key={i}
-                  className={cn(
-                    "border-b border-white/10 last:border-0 transition-all duration-300",
-                    ativa ? "bg-white/[0.04]" : "opacity-35",
-                  )}
+                  key={`${foco}-${i}`}
+                  className="video-sobe border-b border-white/10 bg-white/[0.04]"
+                  style={{ color: cor, animationDelay: `${0.05 * i}s` }}
                 >
-                  <td className="py-0.5" style={ativa ? { color: cor } : undefined}>{l.rotulo}</td>
-                  <td className={cn("py-0.5 text-right font-mono", l.destaque ? "font-extrabold text-base" : "font-semibold")} style={ativa ? { color: cor } : undefined}>{l.valor}</td>
+                  <td className="py-0.5">{l.rotulo}</td>
+                  <td className={cn("py-0.5 text-right font-mono", l.destaque ? "font-extrabold text-base" : "font-semibold")}>{l.valor}</td>
                 </tr>
               );
             })}

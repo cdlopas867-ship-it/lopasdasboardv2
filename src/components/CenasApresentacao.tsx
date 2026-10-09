@@ -66,6 +66,8 @@ type Props = {
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
+  onExportarExcel?: (() => void) | undefined;
+  exportando?: boolean | undefined;
   onPausar?: (() => void) | undefined;
 };
 
@@ -92,6 +94,8 @@ export default function CenasApresentacao({
   resumo,
   onReiniciar,
   onGerarRelatorio,
+  onExportarExcel,
+  exportando,
   onPausar,
 }: Props) {
   /* Mostra todos os meses com recebimento ou carregamento — meses sem
@@ -335,14 +339,23 @@ export default function CenasApresentacao({
           <p className="video-sobe mt-2 text-sm text-white/60" style={{ animationDelay: "0.35s" }}>
             A apresentação reinicia automaticamente.
           </p>
-          <button
-            type="button"
-            onClick={onReiniciar}
-            className="video-sobe mt-6 cursor-pointer rounded-full bg-white px-8 py-3 text-xs font-bold tracking-widest text-brand-dark uppercase shadow-xl transition-transform hover:scale-105"
-            style={{ animationDelay: "0.45s" }}
-          >
-            ↻ Reiniciar agora
-          </button>
+          <div className="video-sobe mt-6 flex flex-wrap items-center justify-center gap-3" style={{ animationDelay: "0.45s" }}>
+            <button
+              type="button"
+              onClick={onExportarExcel}
+              disabled={exportando}
+              className="cursor-pointer rounded-full border border-white/30 bg-white/10 px-8 py-3 text-xs font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-60"
+            >
+              {exportando ? "Gerando Excel…" : "⬇ Exportar Excel"}
+            </button>
+            <button
+              type="button"
+              onClick={onReiniciar}
+              className="cursor-pointer rounded-full bg-white px-8 py-3 text-xs font-bold tracking-widest text-brand-dark uppercase shadow-xl transition-transform hover:scale-105"
+            >
+              ↻ Reiniciar agora
+            </button>
+          </div>
         </div>
       )}
 

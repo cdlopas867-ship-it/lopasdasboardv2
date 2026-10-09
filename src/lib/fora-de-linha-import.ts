@@ -286,7 +286,6 @@ function lerFormatoEstoqueLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
   const itens: ItemForaDeLinha[] = [];
   const posEm = vazio("EM LINHA");
   const posFora = vazio("FORA DE LINHA");
-
   for (let i = hiEst + 1; i < rowsEst.length; i++) {
     const r = rowsEst[i];
     if (!r || !r[0] || str(r[0]) === "") continue;
@@ -294,6 +293,9 @@ function lerFormatoEstoqueLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
     if (!chave.includes(".")) continue;
 
     const situacao = situacaoMap.get(chave) ?? "";
+    /* Itens sem cadastro na aba Linha (NÃO CADASTRADO) são tratados como
+       EM LINHA — não estão marcados como FORA DE LINHA, então pertencem
+       ao estoque em linha. Isso faz o total refletir todo o estoque. */
     const item = num(r[cItem]);
     const mascara = cMascara >= 0 ? str(r[cMascara]) : "";
     const maskNum = mascara.match(/\((\d+)\)/)?.[1] ?? "";
@@ -305,17 +307,15 @@ function lerFormatoEstoqueLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
     const valorEstoque = custo * saldoFocco;
     const valorReservado = custo * reservas;
 
-    const acc = situacao === "FORA DE LINHA" ? posFora : situacao === "EM LINHA" ? posEm : null;
-    if (acc) {
-      acc.itens++;
-      acc.saldoFocco += saldoFocco;
-      acc.reservas += reservas;
-      acc.disponivel += saldoFocco - reservas;
-      acc.pesoTon += pesoKg / 1000;
-      acc.pesoReservadoTon += pesoUn * reservas / 1000;
-      acc.valorEstoque += valorEstoque;
-      acc.valorReservado += valorReservado;
-    }
+    const acc = situacao === "FORA DE LINHA" ? posFora : posEm;
+    acc.itens++;
+    acc.saldoFocco += saldoFocco;
+    acc.reservas += reservas;
+    acc.disponivel += saldoFocco - reservas;
+    acc.pesoTon += pesoKg / 1000;
+    acc.pesoReservadoTon += pesoUn * reservas / 1000;
+    acc.valorEstoque += valorEstoque;
+    acc.valorReservado += valorReservado;
 
     if (situacao === "FORA DE LINHA") {
       itens.push({
@@ -382,8 +382,9 @@ export function lerForaDeLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
 
   return {
     itens: itens ?? [],
-    posicaoEmLinha: resumo.emLinha ?? { grupo: "EM LINHA", itens: 0, saldoFocco: 0, saldoFull: 0, reservas: 0, disponivel: 0, pesoTon: 0, pesoReservadoTon: 0, valorEstoque: 0, valorReservado: 0 },
-    posicaoForaDeLinha: resumo.foraDeLinha ?? { grupo: "FORA DE LINHA", itens: 0, saldoFocco: 0, saldoFull: 0, reservas: 0, disponivel: 0, pesoTon: 0, pesoReservadoTon: 0, valorEstoque: 0, valorReservado: 0 },
-    posicaoTotal: resumo.total ?? { grupo: "TOTAL GERAL", itens: 0, saldoFocco: 0, saldoFull: 0, reservas: 0, disponivel: 0, pesoTon: 0, pesoReservadoTon: 0, valorEstoque: 0, valorReservado: 0 },
+    posicaoEmLinha: resumo.emLinha ?? vazio("EM LINHA"),
+    posicaoForaDeLinha: resumo.foraDeLinha ?? vazio("FORA DE LINHA"),
+
+    posicaoTotal: resumo.total ?? vazio("TOTAL GERAL"),
   };
 }

@@ -44,6 +44,8 @@ function comCustos(
   const porKg = res.totalPesoEstoque > 0 ? res.totalValorEstoque / (res.totalPesoEstoque * 1000) : 0;
   return aplicarCustos(fdl, custos, porKg);
 }
+
+
 import type { Avaria } from "./avarias";
 import type { PendenteProducao } from "./pendentes";
 import type { ItemEstoque } from "./base-estoque";
@@ -121,34 +123,40 @@ function parseModificado(mod: string): Date | undefined {
 async function listarPlanilhasDaPasta(folderId: string): Promise<ArquivoDrive[]> {
   const headers = gatewayHeaders();
   if (headers) {
-    const params = new URLSearchParams({
-      q: `'${folderId}' in parents and trashed = false`,
-      fields: "files(id,name,mimeType,modifiedTime)",
-      pageSize: "1000",
-      orderBy: "modifiedTime desc",
-    });
-    const apiRes = await fetch(`${DRIVE_GATEWAY}/files?${params}`, {
-      headers,
-      cache: "no-store",
-    });
-    if (!apiRes.ok) {
-      const body = await apiRes.text();
-      throw new Error(`Google Drive ${apiRes.status}: ${body}`);
+    /* A conexão do Drive no gateway pode expirar ou ser revogada. A pasta é
+       pública, então, se o gateway falhar, seguimos para a leitura direta do
+       HTML em vez de abortar a importação inteira. */
+    try {
+      const params = new URLSearchParams({
+        q: `'${folderId}' in parents and trashed = false`,
+        fields: "files(id,name,mimeType,modifiedTime)",
+        pageSize: "1000",
+        orderBy: "modifiedTime desc",
+      });
+      const apiRes = await fetch(`${DRIVE_GATEWAY}/files?${params}`, {
+        headers,
+        cache: "no-store",
+      });
+      if (!apiRes.ok) {
+        throw new Error(`Google Drive ${apiRes.status}: ${await apiRes.text()}`);
+      }
+      const payload = await apiRes.json() as {
+        files?: Array<{ id?: string; name?: string; mimeType?: string; modifiedTime?: string }>;
+      };
+      return (payload.files ?? [])
+        .filter((file) => file.id && (
+          file.mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+          file.mimeType === "application/vnd.ms-excel" ||
+          file.mimeType === "application/vnd.google-apps.spreadsheet"
+        ))
+        .map((file) => ({
+          id: file.id ?? "",
+          nome: file.name ?? "",
+          modificado: file.modifiedTime,
+        }));
+    } catch (e) {
+      console.warn(`[auto-import] gateway do Drive indisponível — lendo a pasta pública: ${(e as Error).message}`);
     }
-    const payload = await apiRes.json() as {
-      files?: Array<{ id?: string; name?: string; mimeType?: string; modifiedTime?: string }>;
-    };
-    return (payload.files ?? [])
-      .filter((file) => file.id && (
-        file.mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-        file.mimeType === "application/vnd.ms-excel" ||
-        file.mimeType === "application/vnd.google-apps.spreadsheet"
-      ))
-      .map((file) => ({
-        id: file.id ?? "",
-        nome: file.name ?? "",
-        modificado: file.modifiedTime,
-      }));
   }
 
   const res = await fetch(
@@ -198,20 +206,25 @@ async function listarPlanilhasDaPasta(folderId: string): Promise<ArquivoDrive[]>
 async function baixarPlanilha(id: string): Promise<ArrayBuffer> {
   const headers = gatewayHeaders();
   if (headers && !PLANILHAS_HISTORICAS.includes(id)) {
-    const res = await fetch(`${DRIVE_GATEWAY}/files/${id}?alt=media`, {
-      headers,
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`Google Drive ${res.status}: ${body}`);
+    /* Mesmo caso da listagem: se o gateway falhar, tenta o download público
+       (docs.google / drive.google) antes de desistir da planilha. */
+    try {
+      const res = await fetch(`${DRIVE_GATEWAY}/files/${id}?alt=media`, {
+        headers,
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        throw new Error(`Google Drive ${res.status}: ${await res.text()}`);
+      }
+      const buf = await res.arrayBuffer();
+      const bytes = new Uint8Array(buf, 0, 2);
+      if ((bytes[0] === 0x50 && bytes[1] === 0x4b) || (bytes[0] === 0xd0 && bytes[1] === 0xcf)) {
+        return buf;
+      }
+      throw new Error("conteúdo não é uma planilha Excel");
+    } catch (e) {
+      console.warn(`[auto-import] download pelo gateway falhou (${id}) — tentando acesso público: ${(e as Error).message}`);
     }
-    const buf = await res.arrayBuffer();
-    const bytes = new Uint8Array(buf, 0, 2);
-    if ((bytes[0] === 0x50 && bytes[1] === 0x4b) || (bytes[0] === 0xd0 && bytes[1] === 0xcf)) {
-      return buf;
-    }
-    throw new Error(`Google Drive ${id}: conteúdo não é uma planilha Excel`);
   }
 
   const urls = [
@@ -936,6 +949,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const avariasRaw = lerAvarias(wb);
       if (avariasRaw.length > 0) listasAvarias.push(avariasRaw);
 
+      /* Lê dados de "Em Linha × Fora de Linha" da planilha local — sem isso
+         a pasta do Drive sem a planilha correspondente deixa o bloco fora
+         do payload e o app cai no fallback estático (valores desatualizados). */
+      const fdl = lerForaDeLinha(wb);
+      if (fdl) melhorForaDeLinha = fdl;
+
       const itensEstoque = lerItensEstoque(wb);
       if (itensEstoque.length > (melhorItens?.length ?? 0)) melhorItens = itensEstoque;
 
@@ -1192,7 +1211,9 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(melhorProducao ? { producaoSemanal: melhorProducao } : {}),
     ...(kpisRecomputed.length > 0 ? { kpis: kpisRecomputed } : {}),
     ...(unidadesRecomputed.length > 0 ? { unidades: unidadesRecomputed } : {}),
-    ...(melhorForaDeLinha ? { foraDeLinha: comCustos(melhorForaDeLinha, melhorReservados) } : {}),
+    ...(melhorForaDeLinha
+      ? { foraDeLinha: comCustos(melhorForaDeLinha, melhorReservados) }
+      : {}),
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
     ...(melhorOcupacao
       ? {
