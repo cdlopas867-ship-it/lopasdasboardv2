@@ -28,12 +28,12 @@ async function carregarLogo(wb: Workbook): Promise<number | null> {
   try {
     const resp = await fetch("/lopas-logo-clover.png");
     if (!resp.ok) return null;
-    const blob = await resp.blob();
-    const base64 = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve((reader.result as string).split(",")[1]);
-      reader.readAsDataURL(blob);
-    });
+    const bytes = new Uint8Array(await resp.arrayBuffer());
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
     return wb.addImage({ buffer: base64, extension: "png" });
   } catch {
     return null;
@@ -45,12 +45,16 @@ async function carregarLogo(wb: Workbook): Promise<number | null> {
 const VERDE = "FF2F4415";
 const VERDE_MEDIO = "FF4A6B20";
 const VERDE_CLARO = "FFE9EFDC";
+const VERDE_BANDA = "FFF2F6E7";
 const AMBAR = "FFE08A28";
+const AMBAR_CLARO = "FFFBF0DD";
 const ZEBRA = "FFF6F8F1";
 const BORDA = "FFC7D0B4";
+const BORDA_FINA = "FFDDE3D0";
 const BRANCO = "FFFFFFFF";
 const TEXTO = "FF1F2418";
 const CINZA = "FF6B7566";
+const CINZA_CLARO = "FF9CA59A";
 
 /* ---------- formatos numéricos ---------- */
 
@@ -112,37 +116,50 @@ function cabecalho(ws: Worksheet, titulo: string, subtitulo: string, largura: nu
   if (congelar) ws.views = [{ state: "frozen", ySplit: LINHA_INICIAL - 1, showGridLines: false }];
   else ws.views = [{ showGridLines: false }];
 
+  /* linha 1 — faixa verde com logo + marca */
+  for (let c = 1; c <= largura; c += 1) {
+    const cel = ws.getCell(1, c);
+    cel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE } };
+    cel.border = { bottom: { style: "medium", color: { argb: AMBAR } } };
+  }
+
   if (logoImageId !== null) {
-    ws.addImage(logoImageId, { tl: { col: 0, row: 0 }, ext: { width: 38, height: 38 } });
+    ws.addImage(logoImageId, { tl: { col: 0.15, row: 0.15 }, ext: { width: 30, height: 30 } });
   }
 
   const marca = ws.getCell(1, 1);
   marca.value = "LOPAS · CONTROLE DE ESTOQUE · CD";
-  marca.font = { name: "Calibri", size: 9, bold: true, color: { argb: VERDE_MEDIO } };
-  marca.alignment = { vertical: "middle", indent: 6 };
+  marca.font = { name: "Calibri", size: 9, bold: true, color: { argb: BRANCO } };
+  marca.alignment = { vertical: "middle", indent: 7 };
   ws.mergeCells(1, 1, 1, largura);
 
+  /* linha 2 — título */
   const tit = ws.getCell(2, 1);
   tit.value = titulo;
-  tit.font = { name: "Calibri", size: 18, bold: true, color: { argb: VERDE } };
-  tit.alignment = { vertical: "middle", indent: 6 };
+  tit.font = { name: "Calibri", size: 20, bold: true, color: { argb: VERDE } };
+  tit.alignment = { vertical: "middle", indent: 1 };
   ws.mergeCells(2, 1, 2, largura);
 
+  /* linha 3 — subtítulo */
   const sub = ws.getCell(3, 1);
   sub.value = subtitulo;
   sub.font = { name: "Calibri", size: 10, color: { argb: CINZA } };
-  sub.alignment = { vertical: "middle", wrapText: true };
+  sub.alignment = { vertical: "middle", wrapText: true, indent: 1 };
   ws.mergeCells(3, 1, 3, largura);
 
+  /* linha 4 — borda âmbar + verde */
   for (let c = 1; c <= largura; c += 1) {
-    ws.getCell(4, c).border = { bottom: { style: "medium", color: { argb: AMBAR } } };
+    ws.getCell(4, c).border = {
+      top: { style: "thin", color: { argb: AMBAR } },
+      bottom: { style: "medium", color: { argb: VERDE_MEDIO } },
+    };
   }
 
-  ws.getRow(1).height = 28;
-  ws.getRow(2).height = 26;
-  ws.getRow(3).height = 16;
+  ws.getRow(1).height = 30;
+  ws.getRow(2).height = 30;
+  ws.getRow(3).height = 18;
   ws.getRow(4).height = 6;
-  ws.getRow(5).height = 8;
+  ws.getRow(5).height = 6;
 }
 
 function novaAba(wb: Workbook, nome: string, titulo: string, subtitulo: string, larguras: number[]): Worksheet {
@@ -152,26 +169,42 @@ function novaAba(wb: Workbook, nome: string, titulo: string, subtitulo: string, 
 }
 
 function secao(ws: Worksheet, linha: number, texto: string, largura: number): number {
+  for (let c = 1; c <= largura; c += 1) {
+    const cel = ws.getCell(linha, c);
+    cel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_MEDIO } };
+    cel.border = {
+      top: { style: "thin", color: { argb: VERDE } },
+      bottom: { style: "thin", color: { argb: AMBAR } },
+    };
+  }
   const celula = ws.getCell(linha, 1);
   celula.value = texto.toUpperCase();
-  celula.font = { name: "Calibri", size: 10, bold: true, color: { argb: VERDE_MEDIO } };
-  celula.alignment = { vertical: "middle" };
+  celula.font = { name: "Calibri", size: 10, bold: true, color: { argb: BRANCO } };
+  celula.alignment = { vertical: "middle", indent: 1 };
   ws.mergeCells(linha, 1, linha, largura);
-  ws.getRow(linha).height = 19;
+  ws.getRow(linha).height = 22;
   return linha + 1;
 }
 
 function nota(ws: Worksheet, linha: number, texto: string, largura: number): number {
   const celula = ws.getCell(linha, 1);
   celula.value = texto;
-  celula.font = { name: "Calibri", size: 9, italic: true, color: { argb: "FF8A9280" } };
-  celula.alignment = { vertical: "middle", wrapText: true };
+  celula.font = { name: "Calibri", size: 9, italic: true, color: { argb: CINZA_CLARO } };
+  celula.alignment = { vertical: "middle", wrapText: true, indent: 1 };
   ws.mergeCells(linha, 1, linha, largura);
+  ws.getRow(linha).height = 16;
   return linha + 1;
 }
 
 /** Tabela com cabeçalho verde, zebra e formato por coluna. Devolve a próxima linha livre. */
 function tabela(ws: Worksheet, linha: number, colunas: Coluna[], linhas: Valor[][]): number {
+  const bordaPadrao = {
+    top: { style: "thin" as const, color: { argb: BORDA_FINA } },
+    bottom: { style: "thin" as const, color: { argb: BORDA_FINA } },
+    left: { style: "thin" as const, color: { argb: BORDA_FINA } },
+    right: { style: "thin" as const, color: { argb: BORDA_FINA } },
+  };
+
   colunas.forEach((coluna, i) => {
     const celula = ws.getCell(linha, i + 1);
     celula.value = coluna.titulo;
@@ -181,9 +214,14 @@ function tabela(ws: Worksheet, linha: number, colunas: Coluna[], linhas: Valor[]
       horizontal: coluna.align ?? (i === 0 ? "left" : "right"),
       vertical: "middle",
       wrapText: true,
+      indent: i === 0 && coluna.align !== "center" ? 1 : 0,
+    };
+    celula.border = {
+      ...bordaPadrao,
+      bottom: { style: "medium", color: { argb: AMBAR } },
     };
   });
-  ws.getRow(linha).height = 18;
+  ws.getRow(linha).height = 20;
 
   let atual = linha + 1;
   linhas.forEach((valores, indice) => {
@@ -194,13 +232,15 @@ function tabela(ws: Worksheet, linha: number, colunas: Coluna[], linhas: Valor[]
       celula.alignment = {
         horizontal: coluna.align ?? (i === 0 ? "left" : "right"),
         vertical: "middle",
+        indent: i === 0 && coluna.align !== "center" ? 1 : 0,
       };
       if (coluna.fmt) celula.numFmt = coluna.fmt;
       if (indice % 2 === 1) {
         celula.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ZEBRA } };
       }
-      celula.border = { bottom: { style: "hair", color: { argb: BORDA } } };
+      celula.border = bordaPadrao;
     });
+    ws.getRow(atual).height = 16;
     atual += 1;
   });
   return atual;
@@ -215,29 +255,43 @@ function listaValores(
 ): { proxima: number; refs: string[] } {
   const refs: string[] = [];
   let atual = linha;
+  const bordaPadrao = {
+    top: { style: "thin" as const, color: { argb: BORDA_FINA } },
+    bottom: { style: "thin" as const, color: { argb: BORDA_FINA } },
+    left: { style: "thin" as const, color: { argb: BORDA_FINA } },
+    right: { style: "thin" as const, color: { argb: BORDA_FINA } },
+  };
+
   itens.forEach(([rotulo, valor, fmt, observacao], indice) => {
+    const fill = indice % 2 === 1
+      ? { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: ZEBRA } }
+      : undefined;
+
     const nome = ws.getCell(atual, 1);
     nome.value = rotulo;
     nome.font = { name: "Calibri", size: 10, color: { argb: TEXTO } };
+    nome.alignment = { vertical: "middle", indent: 1 };
+    nome.border = bordaPadrao;
+    if (fill) nome.fill = fill;
+    else nome.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_BANDA } };
 
     const conteudo = ws.getCell(atual, 2);
     conteudo.value = valor as CellValue;
-    conteudo.font = { name: "Calibri", size: 11, bold: true, color: { argb: VERDE } };
+    conteudo.font = { name: "Calibri", size: 12, bold: true, color: { argb: VERDE } };
     conteudo.alignment = { horizontal: "right", vertical: "middle" };
     if (fmt) conteudo.numFmt = fmt;
+    conteudo.border = bordaPadrao;
+    if (fill) conteudo.fill = fill;
 
     if (observacao) {
       const obs = ws.getCell(atual, 3);
       obs.value = observacao;
       obs.font = { name: "Calibri", size: 9, italic: true, color: { argb: "FF8A9280" } };
       obs.alignment = { horizontal: "left", vertical: "middle" };
+      obs.border = bordaPadrao;
+      if (fill) obs.fill = fill;
     }
 
-    if (indice % 2 === 1) {
-      const fill = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: ZEBRA } };
-      nome.fill = fill;
-      conteudo.fill = fill;
-    }
     refs.push(ref(aba, atual, 2));
     atual += 1;
   });
@@ -250,8 +304,14 @@ function destacarLinha(ws: Worksheet, linha: number, largura: number): void {
     const celula = ws.getCell(linha, c);
     celula.font = { name: "Calibri", size: 10, bold: true, color: { argb: VERDE } };
     celula.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_CLARO } };
-    celula.border = { top: { style: "thin", color: { argb: VERDE_MEDIO } } };
+    celula.border = {
+      top: { style: "medium", color: { argb: VERDE_MEDIO } },
+      bottom: { style: "medium", color: { argb: VERDE_MEDIO } },
+      left: { style: "thin", color: { argb: BORDA_FINA } },
+      right: { style: "thin", color: { argb: BORDA_FINA } },
+    };
   }
+  ws.getRow(linha).height = 18;
 }
 
 /** Referência de outra aba com valor em cache. */
@@ -1422,11 +1482,13 @@ function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, 
   const atualizado = ws.getCell(LINHA_INICIAL, 1);
   atualizado.value = `Atualizado na pasta do Drive em ${dataHora(d.sincronizacao?.em)}`;
   atualizado.font = { name: "Calibri", size: 11, bold: true, color: { argb: VERDE_MEDIO } };
+  atualizado.alignment = { indent: 1 };
   ws.mergeCells(LINHA_INICIAL, 1, LINHA_INICIAL, 5);
 
   const gerado = ws.getCell(LINHA_INICIAL + 1, 1);
   gerado.value = `Arquivo gerado em ${dataHora()}`;
   gerado.font = { name: "Calibri", size: 10, color: { argb: CINZA } };
+  gerado.alignment = { indent: 1 };
   ws.mergeCells(LINHA_INICIAL + 1, 1, LINHA_INICIAL + 1, 5);
 
   const estoque = refs["estoque"] ?? {};
@@ -1456,22 +1518,37 @@ function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, 
   ];
 
   linha = secao(ws, linha, "Abas deste arquivo", 5);
-  abas.forEach(([aba, tituloAba, descricao]) => {
+  abas.forEach(([aba, tituloAba, descricao], i) => {
     const link = ws.getCell(linha, 1);
     link.value = { text: tituloAba, hyperlink: `#'${aba}'!A1` };
     link.font = { name: "Calibri", size: 10, bold: true, color: { argb: VERDE_MEDIO }, underline: true };
+    link.alignment = { indent: 1 };
+    link.border = { bottom: { style: "hair", color: { argb: BORDA_FINA } } };
 
     const obs = ws.getCell(linha, 2);
     obs.value = `${aba} · ${descricao}`;
     obs.font = { name: "Calibri", size: 9, color: { argb: CINZA } };
+    obs.alignment = { indent: 1 };
+    obs.border = { bottom: { style: "hair", color: { argb: BORDA_FINA } } };
     ws.mergeCells(linha, 2, linha, 5);
+    if (i % 2 === 1) {
+      const fill = { type: "pattern" as const, pattern: "solid" as const, fgColor: { argb: ZEBRA } };
+      link.fill = fill;
+      obs.fill = fill;
+    }
+    ws.getRow(linha).height = 18;
     linha += 1;
   });
 
   linha += 1;
+  for (let c = 1; c <= 5; c += 1) {
+    ws.getCell(linha, c).border = { top: { style: "medium", color: { argb: AMBAR } } };
+  }
+  linha += 1;
   const assinatura = ws.getCell(linha, 1);
   assinatura.value = "Movidos pela fé";
-  assinatura.font = { name: "Calibri", size: 10, bold: true, color: { argb: VERDE_MEDIO } };
+  assinatura.font = { name: "Calibri", size: 12, bold: true, color: { argb: VERDE_MEDIO } };
+  assinatura.alignment = { indent: 1 };
 }
 
 /* ---------- entrada ---------- */
