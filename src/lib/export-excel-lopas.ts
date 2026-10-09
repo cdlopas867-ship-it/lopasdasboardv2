@@ -662,7 +662,7 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
     "ForaDeLinha",
     "Em linha × fora de linha",
     "Posição cruzada de saldos, reservas, peso e valor entre itens em linha e fora de linha.",
-    [16, 12, 34, 14, 16, 14, 14, 14, 14, 18, 18],
+    [16, 12, 34, 14, 16, 14, 14, 14, 14, 14, 14, 18, 18],
   );
   const refs: Refs = {};
   let linha = LINHA_INICIAL;
@@ -672,7 +672,7 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
   const foraDeLinha: PosicaoEstoque = drive?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
   const total: PosicaoEstoque = drive?.posicaoTotal ?? POSICAO_TOTAL;
 
-  linha = secao(ws, linha, "Posição por linha", 10);
+  linha = secao(ws, linha, "Posição por linha", 13);
   const primeira = linha + 1;
   const ultima = linha + 2;
   const linhasPos: Valor[][] = [emLinha, foraDeLinha].map((p) => [
@@ -714,13 +714,13 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
       ],
       linhasPos,
     ) + 1;
-  destacarLinha(ws, ultima + 1, 10);
+  destacarLinha(ws, ultima + 1, 9);
   refs["foraItens"] = ref("ForaDeLinha", ultima + 1, 2);
   refs["foraTon"] = ref("ForaDeLinha", ultima + 1, 6);
   refs["foraValor"] = ref("ForaDeLinha", ultima + 1, 8);
 
   const itens = drive?.itens ?? ITENS_FORA_DE_LINHA;
-  linha = secao(ws, linha, "Itens fora de linha", 10);
+  linha = secao(ws, linha, "Itens fora de linha", 13);
   if (itens.length) {
     const primeiraItem = linha + 1;
     const ultimaItem = linha + itens.length;
@@ -735,7 +735,9 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
       item.reservas,
       item.disponivel,
       item.pesoKg,
+      item.pesoReservadoKg,
       item.valorEstoque,
+      item.valorReservado,
     ]);
     linhas.push([
       "Total",
@@ -748,7 +750,9 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
       f(`SUM(H${primeiraItem}:H${ultimaItem})`, itens.reduce((s, i) => s + i.reservas, 0)),
       f(`SUM(I${primeiraItem}:I${ultimaItem})`, itens.reduce((s, i) => s + i.disponivel, 0)),
       f(`SUM(J${primeiraItem}:J${ultimaItem})`, itens.reduce((s, i) => s + i.pesoKg, 0)),
-      f(`SUM(K${primeiraItem}:K${ultimaItem})`, itens.reduce((s, i) => s + i.valorEstoque, 0)),
+      f(`SUM(K${primeiraItem}:K${ultimaItem})`, itens.reduce((s, i) => s + i.pesoReservadoKg, 0)),
+      f(`SUM(L${primeiraItem}:L${ultimaItem})`, itens.reduce((s, i) => s + i.valorEstoque, 0)),
+      f(`SUM(M${primeiraItem}:M${ultimaItem})`, itens.reduce((s, i) => s + i.valorReservado, 0)),
     ]);
     linha =
       tabela(
@@ -764,14 +768,16 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
           { titulo: "Saldo", fmt: INT },
           { titulo: "Reservas", fmt: INT },
           { titulo: "Disponível", fmt: INT },
-          { titulo: "Peso (kg)", fmt: INT },
-          { titulo: "Valor estoque", fmt: MOEDA0 },
+          { titulo: "Peso (kg)", fmt: "#,##0.0" },
+          { titulo: "Peso reservado (kg)", fmt: "#,##0.0" },
+          { titulo: "Valor estoque", fmt: MOEDA },
+          { titulo: "Valor reservado", fmt: MOEDA },
         ],
         linhas,
       ) + 1;
-    destacarLinha(ws, ultimaItem + 1, 11);
+    destacarLinha(ws, ultimaItem + 1, 13);
   } else {
-    linha = nota(ws, linha, "Sem itens fora de linha.", 10) + 1;
+    linha = nota(ws, linha, "Sem itens fora de linha.", 13) + 1;
   }
 
   return refs;
