@@ -355,6 +355,12 @@ export default function VideoResumoDashboard({
               )}
             </div>
           )}
+          <a
+            href="/analise-estoque"
+            className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20"
+          >
+            Análise de estoque
+          </a>
           {onLogout && (
             <button
               type="button"

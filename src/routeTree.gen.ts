@@ -10,12 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnaliseEstoqueRouteImport } from './routes/analise-estoque'
 import { Route as ForaDeLinhaRouteImport } from './routes/fora-de-linha'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ViagensRouteImport } from './routes/viagens'
 import { Route as ApiAutoImportRouteImport } from './routes/api/auto-import'
 import { Route as ApiCarregamentoRouteImport } from './routes/api/carregamento'
 import { Route as ApiCarregamentoMensalRouteImport } from './routes/api/carregamento-mensal'
+import { Route as ApiForaDeLinhaRouteImport } from './routes/api/fora-de-linha'
 import { Route as ApiImportarDriveRouteImport } from './routes/api/importar-drive'
 import { Route as ApiInterpretarEstoqueRouteImport } from './routes/api/interpretar-estoque'
 import { Route as ApiSyncDataRouteImport } from './routes/api/sync-data'
@@ -27,6 +29,11 @@ import { Route as ApiViagensRouteImport } from './routes/api/viagens'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnaliseEstoqueRoute = AnaliseEstoqueRouteImport.update({
+  id: '/analise-estoque',
+  path: '/analise-estoque',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForaDeLinhaRoute = ForaDeLinhaRouteImport.update({
@@ -57,6 +64,11 @@ const ApiCarregamentoRoute = ApiCarregamentoRouteImport.update({
 const ApiCarregamentoMensalRoute = ApiCarregamentoMensalRouteImport.update({
   id: '/api/carregamento-mensal',
   path: '/api/carregamento-mensal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiForaDeLinhaRoute = ApiForaDeLinhaRouteImport.update({
+  id: '/api/fora-de-linha',
+  path: '/api/fora-de-linha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiImportarDriveRoute = ApiImportarDriveRouteImport.update({
@@ -97,12 +109,14 @@ const ApiViagensRoute = ApiViagensRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analise-estoque': typeof AnaliseEstoqueRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
+  '/api/fora-de-linha': typeof ApiForaDeLinhaRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
   '/api/interpretar-estoque': typeof ApiInterpretarEstoqueRoute
   '/api/sync-data': typeof ApiSyncDataRoute
@@ -113,12 +127,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analise-estoque': typeof AnaliseEstoqueRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
+  '/api/fora-de-linha': typeof ApiForaDeLinhaRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
   '/api/interpretar-estoque': typeof ApiInterpretarEstoqueRoute
   '/api/sync-data': typeof ApiSyncDataRoute
@@ -130,12 +146,14 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analise-estoque': typeof AnaliseEstoqueRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
+  '/api/fora-de-linha': typeof ApiForaDeLinhaRoute
   '/api/importar-drive': typeof ApiImportarDriveRoute
   '/api/interpretar-estoque': typeof ApiInterpretarEstoqueRoute
   '/api/sync-data': typeof ApiSyncDataRoute
@@ -148,12 +166,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analise-estoque'
     | '/fora-de-linha'
     | '/login'
     | '/viagens'
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
+    | '/api/fora-de-linha'
     | '/api/importar-drive'
     | '/api/interpretar-estoque'
     | '/api/sync-data'
@@ -164,12 +184,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analise-estoque'
     | '/fora-de-linha'
     | '/login'
     | '/viagens'
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
+    | '/api/fora-de-linha'
     | '/api/importar-drive'
     | '/api/interpretar-estoque'
     | '/api/sync-data'
@@ -180,12 +202,14 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/analise-estoque'
     | '/fora-de-linha'
     | '/login'
     | '/viagens'
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
+    | '/api/fora-de-linha'
     | '/api/importar-drive'
     | '/api/interpretar-estoque'
     | '/api/sync-data'
@@ -197,12 +221,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnaliseEstoqueRoute: typeof AnaliseEstoqueRoute
   ForaDeLinhaRoute: typeof ForaDeLinhaRoute
   LoginRoute: typeof LoginRoute
   ViagensRoute: typeof ViagensRoute
   ApiAutoImportRoute: typeof ApiAutoImportRoute
   ApiCarregamentoRoute: typeof ApiCarregamentoRoute
   ApiCarregamentoMensalRoute: typeof ApiCarregamentoMensalRoute
+  ApiForaDeLinhaRoute: typeof ApiForaDeLinhaRoute
   ApiImportarDriveRoute: typeof ApiImportarDriveRoute
   ApiInterpretarEstoqueRoute: typeof ApiInterpretarEstoqueRoute
   ApiSyncDataRoute: typeof ApiSyncDataRoute
@@ -219,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analise-estoque': {
+      id: '/analise-estoque'
+      path: '/analise-estoque'
+      fullPath: '/analise-estoque'
+      preLoaderRoute: typeof AnaliseEstoqueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fora-de-linha': {
@@ -261,6 +294,13 @@ declare module '@tanstack/react-router' {
       path: '/api/carregamento-mensal'
       fullPath: '/api/carregamento-mensal'
       preLoaderRoute: typeof ApiCarregamentoMensalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/fora-de-linha': {
+      id: '/api/fora-de-linha'
+      path: '/api/fora-de-linha'
+      fullPath: '/api/fora-de-linha'
+      preLoaderRoute: typeof ApiForaDeLinhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/importar-drive': {
@@ -317,12 +357,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnaliseEstoqueRoute: AnaliseEstoqueRoute,
   ForaDeLinhaRoute: ForaDeLinhaRoute,
   LoginRoute: LoginRoute,
   ViagensRoute: ViagensRoute,
   ApiAutoImportRoute: ApiAutoImportRoute,
   ApiCarregamentoRoute: ApiCarregamentoRoute,
   ApiCarregamentoMensalRoute: ApiCarregamentoMensalRoute,
+  ApiForaDeLinhaRoute: ApiForaDeLinhaRoute,
   ApiImportarDriveRoute: ApiImportarDriveRoute,
   ApiInterpretarEstoqueRoute: ApiInterpretarEstoqueRoute,
   ApiSyncDataRoute: ApiSyncDataRoute,
