@@ -44,6 +44,8 @@ const INT = "#,##0";
 const TON = "#,##0.0";
 const PCT = '0.0"%"';
 const ANOS = '0.0" anos"';
+const TON_NEG = '#,##0.0;[Red]-#,##0.0';
+const INT_NEG = '#,##0;[Red]-#,##0';
 
 /* ---------- tipos auxiliares ---------- */
 
@@ -83,8 +85,23 @@ function dataHora(iso?: string): string {
 
 /* ---------- escrita ---------- */
 
+const CORES_ABA: Record<string, string> = {
+  Capa: VERDE,
+  Resumo: VERDE_MEDIO,
+  Estoque: VERDE_MEDIO,
+  Recebimento: AMBAR,
+  Reservas: VERDE_MEDIO,
+  ForaDeLinha: "FFC0392B",
+  Avarias: "FFC0392B",
+  Pendentes: AMBAR,
+  Producao: VERDE_MEDIO,
+  Produtividade: VERDE,
+  "QLP-CD": VERDE_MEDIO,
+};
+
 function criarAba(wb: Workbook, nome: string, larguras: number[]): Worksheet {
   const ws = wb.addWorksheet(nome);
+  ws.properties.tabColor = { argb: CORES_ABA[nome] ?? VERDE_MEDIO };
   larguras.forEach((largura, i) => {
     ws.getColumn(i + 1).width = largura;
   });
@@ -176,7 +193,7 @@ function nota(ws: Worksheet, linha: number, texto: string, largura: number): num
 }
 
 /** Tabela com cabeçalho verde, zebra e formato por coluna. Devolve a próxima linha livre. */
-function tabela(ws: Worksheet, linha: number, colunas: Coluna[], linhas: Valor[][]): number {
+function tabela(ws: Worksheet, linha: number, colunas: Coluna[], linhas: Valor[][], autoFiltro = true): number {
   const bordaPadrao = {
     top: { style: "thin" as const, color: { argb: BORDA_FINA } },
     bottom: { style: "thin" as const, color: { argb: BORDA_FINA } },
@@ -222,6 +239,9 @@ function tabela(ws: Worksheet, linha: number, colunas: Coluna[], linhas: Valor[]
     ws.getRow(atual).height = 18;
     atual += 1;
   });
+  if (autoFiltro) {
+    ws.autoFilter = { from: { row: linha, column: 1 }, to: { row: atual - 1, column: colunas.length } };
+  }
   return atual;
 }
 
@@ -252,7 +272,6 @@ function listaValores(
     nome.alignment = { vertical: "middle", indent: 1 };
     nome.border = bordaPadrao;
     if (fill) nome.fill = fill;
-    else nome.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE_BANDA } };
 
     const conteudo = ws.getCell(atual, 2);
     conteudo.value = valor as CellValue;
@@ -490,7 +509,7 @@ function abaRecebimento(wb: Workbook, d: VideoResumoProps): Refs {
           { titulo: "Mês", align: "left" },
           { titulo: "Recebido (t)", fmt: TON },
           { titulo: "Carregado (t)", fmt: TON },
-          { titulo: "Saldo (t)", fmt: TON },
+          { titulo: "Saldo (t)", fmt: TON_NEG },
         ],
         linhas,
       ) + 1;
@@ -706,7 +725,7 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
         { titulo: "Itens", fmt: INT },
         { titulo: "Saldo", fmt: INT },
         { titulo: "Reservas", fmt: INT },
-        { titulo: "Disponível", fmt: INT },
+        { titulo: "Disponível", fmt: INT_NEG },
         { titulo: "Peso (t)", fmt: TON },
         { titulo: "Peso reservado (t)", fmt: TON },
         { titulo: "Valor estoque", fmt: MOEDA0 },
@@ -767,7 +786,7 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
           { titulo: "Origem", align: "left" },
           { titulo: "Saldo", fmt: INT },
           { titulo: "Reservas", fmt: INT },
-          { titulo: "Disponível", fmt: INT },
+          { titulo: "Disponível", fmt: INT_NEG },
           { titulo: "Peso (kg)", fmt: "#,##0.0" },
           { titulo: "Peso reservado (kg)", fmt: "#,##0.0" },
           { titulo: "Valor estoque", fmt: MOEDA },
@@ -1017,7 +1036,7 @@ function abaProducao(wb: Workbook, d: VideoResumoProps): Refs {
           { titulo: "Data", align: "left" },
           { titulo: "Programado (un)", fmt: INT },
           { titulo: "Produzido (un)", fmt: INT },
-          { titulo: "A produzir (un)", fmt: INT },
+          { titulo: "A produzir (un)", fmt: INT_NEG },
           { titulo: "Ton. previsto", fmt: TON },
           { titulo: "Ton. produzido", fmt: TON },
           { titulo: "Ton. recebido", fmt: TON },
@@ -1314,6 +1333,7 @@ function preencherResumo(ws: Worksheet, d: VideoResumoProps, refs: Record<string
         liga(fora["foraValor"], d.foraDeLinha?.posicaoTotal.valorEstoque ?? POSICAO_TOTAL.valorEstoque),
         MOEDA0,
       ],
+      ["Valor faturado", d.valorFaturado ?? 0, MOEDA0],
       ["Volumes avariados", liga(avarias["total"], d.avarias?.total ?? 0), INT],
       ["Ordens pendentes", liga(pendentes["itens"], d.pendentes?.itens ?? 0), INT],
       ["Peso a produzir (t)", liga(pendentes["ton"], d.pendentes?.totalTon ?? 0), TON],
