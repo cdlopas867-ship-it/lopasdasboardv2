@@ -354,12 +354,15 @@ function abaRecebimento(wb: Workbook, d: VideoResumoProps): Refs {
       const pctMeta = dia.meta > 0 ? (dia.ton / dia.meta) * 100 : 0;
       return [dia.dia, dia.data, dia.ton, dia.meta, f(`IF(D${r}=0,0,C${r}/D${r}*100)`, pctMeta)];
     });
+    const totalRec = dias.reduce((s, x) => s + x.ton, 0);
+    const totalMeta = dias.reduce((s, x) => s + x.meta, 0);
+    const pctMetaTotal = totalMeta > 0 ? (totalRec / totalMeta) * 100 : 0;
     linhas.push([
       "Total da semana",
       "",
-      f(`SUM(C${primeira}:C${ultima})`, dias.reduce((s, x) => s + x.ton, 0)),
-      f(`SUM(D${primeira}:D${ultima})`, dias.reduce((s, x) => s + x.meta, 0)),
-      f(`IF(D${ultima + 1}=0,0,C${ultima + 1}/D${ultima + 1}*100)`, 0),
+      f(`SUM(C${primeira}:C${ultima})`, totalRec),
+      f(`SUM(D${primeira}:D${ultima})`, totalMeta),
+      f(`IF(D${ultima + 1}=0,0,C${ultima + 1}/D${ultima + 1}*100)`, pctMetaTotal),
     ]);
     linha =
       tabela(
@@ -477,11 +480,12 @@ function abaRecebimento(wb: Workbook, d: VideoResumoProps): Refs {
     const primeira = linha + 1;
     const ultima = linha + paletes.porTamanho.length;
     const linhas: Valor[][] = paletes.porTamanho.map((p) => [p.tamanho, p.paletes, p.itens, p.und]);
+    const totalUndPaletes = paletes.porTamanho.reduce((s, p) => s + p.und, 0);
     linhas.push([
       "Total",
       f(`SUM(B${primeira}:B${ultima})`, paletes.totalPaletes),
       f(`SUM(C${primeira}:C${ultima})`, paletes.totalItens),
-      "",
+      f(`SUM(D${primeira}:D${ultima})`, totalUndPaletes),
     ]);
     linha =
       tabela(
@@ -594,7 +598,7 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
     "ForaDeLinha",
     "Em linha × fora de linha",
     "Posição cruzada de saldos, reservas, peso e valor entre itens em linha e fora de linha.",
-    [16, 12, 34, 14, 16, 14, 14, 14, 14, 18],
+    [16, 12, 34, 14, 16, 14, 14, 14, 14, 18, 18],
   );
   const refs: Refs = {};
   let linha = LINHA_INICIAL;
