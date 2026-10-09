@@ -20,27 +20,6 @@ import {
   type PosicaoEstoque,
 } from "@/data/fora-de-linha";
 
-/* ---------- logo da marca (carregado uma vez no início da exportação) ---------- */
-
-let logoImageId: number | null = null;
-
-async function carregarLogo(wb: Workbook): Promise<number | null> {
-  try {
-    const resp = await fetch("/logo-lopas-trevo.png");
-    if (!resp.ok) return null;
-    const bytes = new Uint8Array(await resp.arrayBuffer());
-    let binary = "";
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    const base64 = btoa(binary);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return wb.addImage({ buffer: base64 as any, extension: "png" });
-  } catch {
-    return null;
-  }
-}
-
 /* ---------- paleta da marca (a mesma das cenas) ---------- */
 
 const VERDE = "FF2F4415";
@@ -117,21 +96,17 @@ function cabecalho(ws: Worksheet, titulo: string, subtitulo: string, largura: nu
   if (congelar) ws.views = [{ state: "frozen", ySplit: LINHA_INICIAL - 1, showGridLines: false }];
   else ws.views = [{ showGridLines: false }];
 
-  /* linha 1 — faixa verde com logo + marca */
+  /* linha 1 — faixa verde com a marca em texto, sem imagens */
   for (let c = 1; c <= largura; c += 1) {
     const cel = ws.getCell(1, c);
     cel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: VERDE } };
     cel.border = { bottom: { style: "medium", color: { argb: AMBAR } } };
   }
 
-  if (logoImageId !== null) {
-    ws.addImage(logoImageId, { tl: { col: 0.1, row: 0.1 }, ext: { width: 52, height: 52 } });
-  }
-
   const marca = ws.getCell(1, 1);
   marca.value = "LOPAS · CONTROLE DE ESTOQUE · CD";
   marca.font = { name: "Calibri", size: 10, bold: true, color: { argb: BRANCO } };
-  marca.alignment = { vertical: "middle", indent: 8 };
+  marca.alignment = { vertical: "middle", indent: 1 };
   ws.mergeCells(1, 1, 1, largura);
 
   /* linha 2 — título */
@@ -156,7 +131,7 @@ function cabecalho(ws: Worksheet, titulo: string, subtitulo: string, largura: nu
     };
   }
 
-  ws.getRow(1).height = 54;
+  ws.getRow(1).height = 28;
   ws.getRow(2).height = 34;
   ws.getRow(3).height = 20;
   ws.getRow(4).height = 8;
@@ -1480,25 +1455,20 @@ function preencherResumo(ws: Worksheet, d: VideoResumoProps, refs: Record<string
 function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, Refs>): void {
   cabecalho(ws, "Painel de Estoque", "CD Lopas · controle de estoque, fluxo, avarias e pessoas", 5, false);
 
-  /* logo grande centralizado na capa */
-  if (logoImageId !== null) {
-    ws.addImage(logoImageId, { tl: { col: 1.8, row: LINHA_INICIAL - 1 }, ext: { width: 120, height: 120 } });
-  }
-
-  const atualizado = ws.getCell(LINHA_INICIAL + 8, 1);
+  const atualizado = ws.getCell(LINHA_INICIAL, 1);
   atualizado.value = `Atualizado na pasta do Drive em ${dataHora(d.sincronizacao?.em)}`;
   atualizado.font = { name: "Calibri", size: 11, bold: true, color: { argb: VERDE_MEDIO } };
   atualizado.alignment = { indent: 1 };
-  ws.mergeCells(LINHA_INICIAL + 8, 1, LINHA_INICIAL + 8, 5);
+  ws.mergeCells(LINHA_INICIAL, 1, LINHA_INICIAL, 5);
 
-  const gerado = ws.getCell(LINHA_INICIAL + 9, 1);
+  const gerado = ws.getCell(LINHA_INICIAL + 1, 1);
   gerado.value = `Arquivo gerado em ${dataHora()}`;
   gerado.font = { name: "Calibri", size: 10, color: { argb: CINZA } };
   gerado.alignment = { indent: 1 };
-  ws.mergeCells(LINHA_INICIAL + 9, 1, LINHA_INICIAL + 9, 5);
+  ws.mergeCells(LINHA_INICIAL + 1, 1, LINHA_INICIAL + 1, 5);
 
   const estoque = refs["estoque"] ?? {};
-  let linha = LINHA_INICIAL + 11;
+  let linha = LINHA_INICIAL + 3;
   linha = secao(ws, linha, "Números-chave", 5);
   linha =
     listaValores(ws, "Capa", linha, [
@@ -1574,11 +1544,9 @@ export async function exportarExcelLopas(dados: VideoResumoProps): Promise<void>
   wb.creator = "CD Lopas · Painel de Estoque";
   wb.created = new Date();
 
-  logoImageId = await carregarLogo(wb);
-
   /* Capa e Resumo nascem primeiro para abrir o arquivo; o conteúdo entra no
      fim, quando as outras abas já devolveram as referências das suas células. */
-  const capa = criarAba(wb, "Capa", [4, 44, 24, 22, 26]);
+  const capa = criarAba(wb, "Capa", [48, 22, 18, 16, 16]);
   const resumo = criarAba(wb, "Resumo", [48, 22, 18, 46]);
 
   const refs: Record<string, Refs> = {
