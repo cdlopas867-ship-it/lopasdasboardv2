@@ -20,6 +20,26 @@ import {
   type PosicaoEstoque,
 } from "@/data/fora-de-linha";
 
+/* ---------- logo da marca (carregado uma vez no início da exportação) ---------- */
+
+let logoImageId: number | null = null;
+
+async function carregarLogo(wb: Workbook): Promise<number | null> {
+  try {
+    const resp = await fetch("/lopas-logo-clover.png");
+    if (!resp.ok) return null;
+    const blob = await resp.blob();
+    const base64 = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(",")[1]);
+      reader.readAsDataURL(blob);
+    });
+    return wb.addImage({ buffer: base64, extension: "png" });
+  } catch {
+    return null;
+  }
+}
+
 /* ---------- paleta da marca (a mesma das cenas) ---------- */
 
 const VERDE = "FF2F4415";
@@ -92,16 +112,20 @@ function cabecalho(ws: Worksheet, titulo: string, subtitulo: string, largura: nu
   if (congelar) ws.views = [{ state: "frozen", ySplit: LINHA_INICIAL - 1, showGridLines: false }];
   else ws.views = [{ showGridLines: false }];
 
+  if (logoImageId !== null) {
+    ws.addImage(logoImageId, { tl: { col: 0, row: 0 }, ext: { width: 38, height: 38 } });
+  }
+
   const marca = ws.getCell(1, 1);
   marca.value = "LOPAS · CONTROLE DE ESTOQUE · CD";
   marca.font = { name: "Calibri", size: 9, bold: true, color: { argb: VERDE_MEDIO } };
-  marca.alignment = { vertical: "middle" };
+  marca.alignment = { vertical: "middle", indent: 6 };
   ws.mergeCells(1, 1, 1, largura);
 
   const tit = ws.getCell(2, 1);
   tit.value = titulo;
   tit.font = { name: "Calibri", size: 18, bold: true, color: { argb: VERDE } };
-  tit.alignment = { vertical: "middle" };
+  tit.alignment = { vertical: "middle", indent: 6 };
   ws.mergeCells(2, 1, 2, largura);
 
   const sub = ws.getCell(3, 1);
@@ -114,7 +138,7 @@ function cabecalho(ws: Worksheet, titulo: string, subtitulo: string, largura: nu
     ws.getCell(4, c).border = { bottom: { style: "medium", color: { argb: AMBAR } } };
   }
 
-  ws.getRow(1).height = 16;
+  ws.getRow(1).height = 28;
   ws.getRow(2).height = 26;
   ws.getRow(3).height = 16;
   ws.getRow(4).height = 6;
@@ -1466,6 +1490,8 @@ export async function exportarExcelLopas(dados: VideoResumoProps): Promise<void>
   const wb = new Workbook();
   wb.creator = "CD Lopas · Painel de Estoque";
   wb.created = new Date();
+
+  logoImageId = await carregarLogo(wb);
 
   /* Capa e Resumo nascem primeiro para abrir o arquivo; o conteúdo entra no
      fim, quando as outras abas já devolveram as referências das suas células. */
