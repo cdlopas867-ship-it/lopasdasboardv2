@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AnaliseEstoqueRouteImport } from './routes/analise-estoque'
 import { Route as ForaDeLinhaRouteImport } from './routes/fora-de-linha'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ViagensRouteImport } from './routes/viagens'
@@ -28,6 +29,11 @@ import { Route as ApiViagensRouteImport } from './routes/api/viagens'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnaliseEstoqueRoute = AnaliseEstoqueRouteImport.update({
+  id: '/analise-estoque',
+  path: '/analise-estoque',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForaDeLinhaRoute = ForaDeLinhaRouteImport.update({
@@ -103,6 +109,7 @@ const ApiViagensRoute = ApiViagensRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analise-estoque': typeof AnaliseEstoqueRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analise-estoque': typeof AnaliseEstoqueRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
@@ -138,6 +146,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analise-estoque': typeof AnaliseEstoqueRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analise-estoque'
     | '/fora-de-linha'
     | '/login'
     | '/viagens'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analise-estoque'
     | '/fora-de-linha'
     | '/login'
     | '/viagens'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/analise-estoque'
     | '/fora-de-linha'
     | '/login'
     | '/viagens'
@@ -209,6 +221,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnaliseEstoqueRoute: typeof AnaliseEstoqueRoute
   ForaDeLinhaRoute: typeof ForaDeLinhaRoute
   LoginRoute: typeof LoginRoute
   ViagensRoute: typeof ViagensRoute
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analise-estoque': {
+      id: '/analise-estoque'
+      path: '/analise-estoque'
+      fullPath: '/analise-estoque'
+      preLoaderRoute: typeof AnaliseEstoqueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fora-de-linha': {
@@ -337,6 +357,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnaliseEstoqueRoute: AnaliseEstoqueRoute,
   ForaDeLinhaRoute: ForaDeLinhaRoute,
   LoginRoute: LoginRoute,
   ViagensRoute: ViagensRoute,
