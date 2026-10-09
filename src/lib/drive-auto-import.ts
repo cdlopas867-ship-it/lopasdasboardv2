@@ -17,10 +17,9 @@ import { calcularPendentesResumo } from "./pendentes-resumo";
 import { lerAvarias, mesclarAvarias } from "./avarias";
 import { calcularAvariasResumo } from "./avarias-resumo";
 import { buscarCarregamentoMensal, lerCarregadoMensal, lerUltimaDataCarregado, CARREGADO_SEM_DRIVE } from "./carregamento";
-import { lerSaidasCD } from "./saidas-cd";
 import { calcularRecebimento } from "./recebimento";
 import { calcularProducaoSemanal, calcularRecebidoPorDia, type ProducaoSemanalDia } from "./producao-semanal";
-import { lerItensEstoque, curvaAbcEstoque, curvaAbcRecebimento } from "./base-estoque";
+import { lerItensEstoque } from "./base-estoque";
 import { lerPaletes, calcularResumoPaletes } from "./paletes";
 import { faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado";
 import { existsSync, readFileSync } from "./fs-compat";
@@ -60,7 +59,6 @@ const PLANILHAS_HISTORICAS = ["1KJ7LbljnIPqa6caCtqyt6T418Q0-Xgpk"];
 const PLANILHAS_LOCAIS = [
   "public/planilhas/avarias.xlsx",
   "public/planilhas/carregado.xlsx",
-  "public/planilhas/saidascd.xlsx",
   "public/planilhas/estoque.xlsx",
   "public/planilhas/paletes.xlsx",
   "public/planilhas/estoque-em-linha.xlsx",
@@ -808,14 +806,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorAvariasResumo: ReturnType<typeof calcularAvariasResumo> | null = null;
   let carregadoDriveMap: Map<string, number> | null = null;
   let carregadoAte: string | null = null;
-  let melhorSaidasCD: ReturnType<typeof lerSaidasCD> | null = null;
   const listasAvarias: Avaria[][] = [];
   let melhorAvarias: Avaria[] | null = null;
   let melhorPendentes: PendenteProducao[] | null = null;
   let melhorRecebimento: ReturnType<typeof calcularRecebimento> | null = null;
   let melhorItens: ItemEstoque[] | null = null;
   let melhorItensMod: Date | undefined;
-  let abcRecebimento: ReturnType<typeof curvaAbcRecebimento> | null = null;
   let melhorUnidadesResumo: UnidadeResumo[] | null = null;
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
   let melhorFdlMod = 0;
@@ -882,10 +878,6 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         melhorItensMod = parseModificado(arq.modificado ?? "");
       }
 
-      /* Curva ABC do recebimento */
-      const abcReceb = curvaAbcRecebimento(wb);
-      if (abcReceb.length > 0) abcRecebimento = abcReceb;
-
       /* Extrai dados por unidade (Guarda-Roupas, Complementos, Salas) da aba Resumo */
       const unidadesResumo = extrairUnidadesResumo(wb);
       if (unidadesResumo && unidadesResumo.length > 0) melhorUnidadesResumo = unidadesResumo;
@@ -922,10 +914,6 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const cargAte = lerUltimaDataCarregado(wb);
       if (cargAte && (!carregadoAte || cargAte > carregadoAte)) carregadoAte = cargAte;
       if (cargMap && cargMap.size > 0) carregadoDriveMap = cargMap;
-
-      /* Extrai Saídas CD da aba SAIDAS CD */
-      const saidasCD = lerSaidasCD(wb);
-      if (saidasCD && saidasCD.meses.length > 0) melhorSaidasCD = saidasCD;
 
       /* Procura reserva em qualquer planilha */
       if (reservadoTon == null) {
@@ -979,9 +967,6 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const cargAte = lerUltimaDataCarregado(wb);
       if (cargAte && (!carregadoAte || cargAte > carregadoAte)) carregadoAte = cargAte;
       if (cargMap && cargMap.size > 0 && !carregadoDriveMap) carregadoDriveMap = cargMap;
-
-      const saidasCD = lerSaidasCD(wb);
-      if (saidasCD && saidasCD.meses.length > 0 && !melhorSaidasCD) melhorSaidasCD = saidasCD;
 
       /* Extrai ocupação do CD do relatório WF0126 local */
       const ocupacao = extrairOcupacao(wb);
@@ -1167,7 +1152,6 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(melhorAvariasResumo ? { avariasResumo: melhorAvariasResumo } : {}),
     ...(mensalData ? { mensal: mensalData } : {}),
     ...(carregadoAte ? { carregadoAte } : {}),
-    ...(melhorSaidasCD ? { saidasCD: melhorSaidasCD } : {}),
     ...(melhorAvarias ? { avarias: melhorAvarias } : {}),
     ...(melhorPendentes ? { pendentes: melhorPendentes } : {}),
     ...(melhorReservados ? { reservados: melhorReservados.itens } : {}),
@@ -1194,14 +1178,6 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       });
       return { recebimentoSemanal };
     })()),
-    ...(melhorItens || abcRecebimento
-      ? {
-          abc: {
-            estoque: melhorItens ? curvaAbcEstoque(melhorItens) : null,
-            recebimento: abcRecebimento ?? null,
-          },
-        }
-      : {}),
     ...(melhorRecebimento
       ? {
           dias: melhorRecebimento.dias,
@@ -1325,8 +1301,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     (melhorReservados ? ` · ${melhorReservados.itens.length} itens reservados` : "") +
     (pendentesResumo ? ` · ${pendentesResumo.itens} pendências` : "") +
     (melhorAvariasResumo ? ` · ${melhorAvariasResumo.total} avarias` : "") +
-    (mensalData ? ` · ${mensalData.length} meses carregamento` : "") +
-    (melhorSaidasCD ? ` · ${melhorSaidasCD.meses.length} meses saídas CD` : ""),
+    (mensalData ? ` · ${mensalData.length} meses carregamento` : ""),
   );
   return true;
 }

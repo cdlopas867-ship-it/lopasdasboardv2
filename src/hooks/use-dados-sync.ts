@@ -101,7 +101,6 @@ function dataKey(payload: unknown, incluirSync = true): string {
     ar: (p["avariasResumo"] as { tipos?: { tipo: string; total: number }[] } | undefined)
       ?.tipos?.map(({ tipo, total }) => [tipo, total]),
     me: (p["mensal"] as unknown[])?.length,
-    sc: !!p["saidasCD"],
     ps: prodSig(p["producaoSemanal"] as unknown[] | undefined),
     fl: (() => {
       const f = p["foraDeLinha"] as { importadoEm?: string; itens?: unknown[]; posicaoTotal?: { pesoTon?: number } } | undefined;

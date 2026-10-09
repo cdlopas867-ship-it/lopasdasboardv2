@@ -15,9 +15,6 @@ export type VideoOcupacao = { pct: number; ocupados: number; livres: number; blo
 export type VideoDia = { dia: string; data: string; ton: number; meta: number; iso?: string };
 export type VideoTurno = { nome: string; faixa?: string; ton?: number; pct: number };
 export type VideoMes = { mes: string; recebido: number; carregado: number };
-export type VideoSaidasCDMes = { mes: string; tonelada: number; faturado: number; motivos: { motivo: string; tonelada: number; faturado: number }[] };
-export type VideoSaidasCD = { meses: VideoSaidasCDMes[]; totalTonelada: number; totalFaturado: number };
-
 export type VideoAvariaTipo = {
   tipo: string;
   imagem: string;
@@ -64,17 +61,6 @@ export type VideoReservados = {
     pctReservado: number;
   }[];
 } | null;
-export type VideoClasseAbc = {
-  classe: string;
-  itens: number;
-  pctItens: number;
-  pctValor: number;
-  ton?: number;
-};
-export type VideoAbc = {
-  recebimento: VideoClasseAbc[] | null;
-  estoque: VideoClasseAbc[] | null;
-} | null;
 export type VideoPaletas = {
   porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
   totalPaletes: number;
@@ -108,12 +94,10 @@ type Props = {
   turnos: VideoTurno[];
   mensal?: VideoMes[] | undefined;
   avarias?: VideoAvarias | undefined;
-  abc?: VideoAbc | undefined;
   pendentes?: VideoPendentes | undefined;
   reservados?: VideoReservados | undefined;
   semReserva?: VideoReservados | undefined;
   valorFaturado?: number | undefined;
-  saidasCD?: VideoSaidasCD | undefined;
   foraDeLinha?: VideoForaDeLinha | undefined;
   paletas?: VideoPaletas | undefined;
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
@@ -134,13 +118,11 @@ export default function VideoResumoDashboard({
   semana,
   turnos,
   mensal,
-  abc,
   avarias,
   pendentes,
   reservados,
   semReserva,
   valorFaturado,
-  saidasCD,
   foraDeLinha,
   resumo,
   paletas,
@@ -226,13 +208,11 @@ export default function VideoResumoDashboard({
     semana,
     turnos,
     mensal,
-    abc,
     avarias,
     pendentes,
     reservados,
     semReserva,
     valorFaturado,
-    saidasCD,
     foraDeLinha,
     paletas,
     recebimentoSemanal,
@@ -262,13 +242,11 @@ export default function VideoResumoDashboard({
     semana,
     turnos,
     mensal,
-    abc,
     avarias,
     pendentes,
     reservados,
     semReserva,
     valorFaturado,
-    saidasCD,
     foraDeLinha,
     paletas,
     recebimentoSemanal,
