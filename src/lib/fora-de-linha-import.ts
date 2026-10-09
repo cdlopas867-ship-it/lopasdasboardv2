@@ -293,7 +293,9 @@ function lerFormatoEstoqueLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
     if (!chave.includes(".")) continue;
 
     const situacao = situacaoMap.get(chave) ?? "";
-    if (!situacao) continue; // só itens cadastrados (EM LINHA ou FORA DE LINHA)
+    /* Itens sem cadastro na aba Linha (NÃO CADASTRADO) são tratados como
+       EM LINHA — não estão marcados como FORA DE LINHA, então pertencem
+       ao estoque em linha. Isso faz o total refletir todo o estoque. */
     const item = num(r[cItem]);
     const mascara = cMascara >= 0 ? str(r[cMascara]) : "";
     const maskNum = mascara.match(/\((\d+)\)/)?.[1] ?? "";
