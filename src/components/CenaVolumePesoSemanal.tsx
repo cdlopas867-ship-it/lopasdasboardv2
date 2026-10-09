@@ -1,51 +1,49 @@
-/* Cena — Relação de volumes e peso do estoque por semana.
-   Agrupa o recebimento diário por semana (seg–dom) e mostra o total de
-   unidades (volume) e toneladas (peso) de cada semana, com o índice
-   (peso ÷ volume × 100) — a densidade média em toneladas por 100 un. */
+/* Cena — Relação de volumes e peso do estoque por dia.
+   Mostra o total de unidades (volume) e toneladas (peso) de cada dia,
+   com o índice (peso ÷ volume × 100) — a densidade em toneladas por 100 un. */
 
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import type { RecebimentoSemanalDia } from "@/components/VideoResumoDashboard";
 
-type Semana = {
+type Dia = {
   iso: string;
   label: string;
+  diaSemana: string;
   volume: number;
   peso: number;
   indice: number;
 };
 
-function agruparSemanas(dias: RecebimentoSemanalDia[]): Semana[] {
-  const map = new Map<string, { label: string; volume: number; peso: number }>();
+const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+function agruparDias(dias: RecebimentoSemanalDia[]): Dia[] {
+  const map = new Map<string, { volume: number; peso: number }>();
   for (const d of dias) {
     if (!d.iso) continue;
     const date = new Date(d.iso + "T12:00:00Z");
     if (isNaN(date.getTime())) continue;
-    const day = date.getUTCDay();
-    const diff = day === 0 ? 6 : day - 1;
-    const monday = new Date(date);
-    monday.setUTCDate(date.getUTCDate() - diff);
-    const key = monday.toISOString().slice(0, 10);
-    const fmt = (dt: Date) =>
-      `${String(dt.getUTCDate()).padStart(2, "0")}/${String(dt.getUTCMonth() + 1).padStart(2, "0")}`;
-    const sunday = new Date(monday);
-    sunday.setUTCDate(monday.getUTCDate() + 6);
-    const label = `${fmt(monday)} – ${fmt(sunday)}`;
-    const atual = map.get(key) ?? { label, volume: 0, peso: 0 };
+    const key = d.iso;
+    const atual = map.get(key) ?? { volume: 0, peso: 0 };
     atual.volume += d.totalQtd ?? 0;
     atual.peso += d.ton ?? 0;
     map.set(key, atual);
   }
-  const semanas = [...map.entries()].map(([iso, v]) => ({
-    iso,
-    label: v.label,
-    volume: v.volume,
-    peso: Math.round(v.peso * 10) / 10,
-    indice: v.volume > 0 ? Math.round((v.peso / v.volume) * 100 * 100) / 100 : 0,
-  }));
-  semanas.sort((a, b) => a.iso.localeCompare(b.iso));
-  return semanas.slice(-8);
+  const resultado = [...map.entries()].map(([iso, v]) => {
+    const date = new Date(iso + "T12:00:00Z");
+    const fmt = `${String(date.getUTCDate()).padStart(2, "0")}/${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+    return {
+      iso,
+      label: fmt,
+      diaSemana: DIAS_SEMANA[date.getUTCDay()] ?? "",
+      volume: v.volume,
+      peso: Math.round(v.peso * 10) / 10,
+      indice: v.volume > 0 ? Math.round((v.peso / v.volume) * 100 * 100) / 100 : 0,
+    };
+  });
+  resultado.sort((a, b) => a.iso.localeCompare(b.iso));
+  return resultado.slice(-14);
 }
 
 export default function CenaVolumePesoSemanal({
@@ -57,19 +55,19 @@ export default function CenaVolumePesoSemanal({
   recebimentoSemanal?: RecebimentoSemanalDia[];
   onPausar?: () => void;
 }) {
-  const semanas = agruparSemanas(recebimentoSemanal ?? []);
-  const temVolume = semanas.some((s) => s.volume > 0);
-  const maxPeso = Math.max(...semanas.map((s) => s.peso), 1);
-  const maxVolume = Math.max(...semanas.map((s) => s.volume), 1);
-  const totPeso = semanas.reduce((s, w) => s + w.peso, 0);
-  const totVolume = semanas.reduce((s, w) => s + w.volume, 0);
+  const dias = agruparDias(recebimentoSemanal ?? []);
+  const temVolume = dias.some((s) => s.volume > 0);
+  const maxPeso = Math.max(...dias.map((s) => s.peso), 1);
+  const maxVolume = Math.max(...dias.map((s) => s.volume), 1);
+  const totPeso = dias.reduce((s, w) => s + w.peso, 0);
+  const totVolume = dias.reduce((s, w) => s + w.volume, 0);
   const indiceGeral = totVolume > 0 ? (totPeso / totVolume) * 100 : 0;
 
-  if (semanas.length === 0) {
+  if (dias.length === 0) {
     return (
       <div className="flex flex-col items-center py-6 text-center">
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-          Volume × Peso · por semana
+          Volume × Peso · por dia
         </p>
         <p className="video-sobe font-serif text-3xl text-white/70">Sem dados de recebimento.</p>
       </div>
@@ -80,11 +78,11 @@ export default function CenaVolumePesoSemanal({
     <div className="w-full">
       <div className="flex items-center gap-2">
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-          Volume × Peso · por semana
+          Volume × Peso · por dia
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto="Relação entre o volume (unidades) e o peso (toneladas) do recebimento do CD, agrupado por semana (seg–dom). O índice = peso ÷ volume × 100 mostra a densidade média em toneladas por 100 unidades — quanto maior, mais pesado é o mix recebido na semana. Fonte: Base Recebimento do Google Drive."
+          texto="Relação entre o volume (unidades) e o peso (toneladas) do recebimento do CD, por dia. O índice = peso ÷ volume × 100 mostra a densidade em toneladas por 100 unidades — quanto maior, mais pesado é o mix recebido no dia. Fonte: Base Recebimento do Google Drive."
         />
       </div>
 
@@ -108,21 +106,23 @@ export default function CenaVolumePesoSemanal({
         )}
       </div>
 
-      {/* Tabela semanal */}
+      {/* Tabela diária */}
       <div className="video-sobe mx-auto mt-4 w-full max-w-3xl overflow-hidden rounded-xl border border-white/15 bg-white/5" style={{ animationDelay: "0.15s" }}>
         <table className="w-full text-left text-[11px] text-white">
           <thead>
             <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
-              <th className="px-3 py-1.5 font-bold">Semana</th>
+              <th className="px-3 py-1.5 font-bold">Dia</th>
               <th className="px-2 py-1.5 text-right font-bold">Volume (un)</th>
               <th className="px-2 py-1.5 text-right font-bold">Peso (t)</th>
               <th className="px-3 py-1.5 text-right font-bold">Índice</th>
             </tr>
           </thead>
           <tbody>
-            {semanas.map((s, i) => (
+            {dias.map((s, i) => (
               <tr key={s.iso} className="border-b border-white/10 last:border-0">
-                <td className="px-3 py-1.5 font-mono text-[10px] font-semibold text-white/85">{s.label}</td>
+                <td className="px-3 py-1.5 font-mono text-[10px] font-semibold text-white/85">
+                  {s.label} <span className="text-white/40">{s.diaSemana}</span>
+                </td>
                 <td className="px-2 py-1.5 text-right">
                   {s.volume > 0 ? (
                     <div className="flex flex-col items-end">
@@ -161,7 +161,7 @@ export default function CenaVolumePesoSemanal({
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-white/20 font-bold">
-              <td className="px-3 py-1.5 text-white/80">Total · {semanas.length} semanas</td>
+              <td className="px-3 py-1.5 text-white/80">Total · {dias.length} dias</td>
               <td className="px-2 py-1.5 text-right font-mono text-[12px] text-white">{temVolume ? fmtInt(totVolume) : "—"}</td>
               <td className="px-2 py-1.5 text-right font-mono text-[12px] text-brand-amber">{fmtBrMax(totPeso, 1)}</td>
               <td className="px-3 py-1.5 text-right font-mono text-[12px] text-white/90">{temVolume ? fmtBrMax(indiceGeral, 2) : "—"}</td>
@@ -171,8 +171,8 @@ export default function CenaVolumePesoSemanal({
       </div>
 
       <p className="mx-auto mt-2 max-w-3xl text-center text-[8px] leading-tight text-white/40">
-        Índice = toneladas ÷ unidades × 100 (densidade em t/100un). Semanas sem volume (—) não têm
-        contagem de unidades no recebimento. Últimas {semanas.length} semanas com recebimento.
+        Índice = toneladas ÷ unidades × 100 (densidade em t/100un). Dias sem volume (—) não têm
+        contagem de unidades no recebimento. Últimos {dias.length} dias com recebimento.
       </p>
     </div>
   );
