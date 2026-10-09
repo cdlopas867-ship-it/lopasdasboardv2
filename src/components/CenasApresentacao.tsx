@@ -14,7 +14,6 @@ import CenaPaletes from "@/components/CenaPaletes";
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 import CenaQlpCd from "@/components/CenaQlpCd";
 import CenaProdutividade from "@/components/CenaProdutividade";
-import CenaVolumePesoSemanal from "@/components/CenaVolumePesoSemanal";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -315,23 +314,18 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 12 — Volume × Peso do estoque por semana (índice %) */}
+      {/* Cena 12 — QLP · CD: lotação de pessoal por classe */}
       {cena === 11 && (
-        <CenaVolumePesoSemanal anim={anim} recebimentoSemanal={recebimentoSemanal} onPausar={onPausar} />
-      )}
-
-      {/* Cena 13 — QLP · CD: lotação de pessoal por classe */}
-      {cena === 12 && (
         <CenaQlpCd anim={anim} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 14 — Produtividade por colaborador e por turma */}
-      {cena === 13 && (
+      {/* Cena 13 — Produtividade por colaborador e por turma */}
+      {cena === 12 && (
         <CenaProdutividade anim={anim} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 15 — encerramento */}
-      {cena === 14 && (
+      {/* Cena 14 — encerramento */}
+      {cena === 13 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
