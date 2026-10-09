@@ -95,7 +95,17 @@ function dataKey(payload: unknown, incluirSync = true): string {
     co: (p["composicoes"] as unknown[])?.length,
     ri2: (p["recebimentoItens"] as unknown[])?.length,
     ce: p["composicoesEm"],
-    od: (p["ocupacaoDetalhes"] as unknown[])?.length,
+    oc: (() => {
+      const o = p["ocupacao"] as { ocupados?: number; livres?: number; bloqueados?: number; total?: number } | undefined;
+      return o ? `${o.ocupados ?? 0}|${o.livres ?? 0}|${o.bloqueados ?? 0}|${o.total ?? 0}` : "";
+    })(),
+    od: (() => {
+      const d = p["ocupacaoDetalhes"] as { cd1?: number; cd2?: number; total?: number }[] | undefined;
+      if (!d?.length) return "0";
+      let s = 0;
+      for (const r of d) s += (r.cd1 ?? 0) + (r.cd2 ?? 0) + (r.total ?? 0);
+      return `${d.length}:${s}`;
+    })(),
     rr: !!p["reservadosResumo"],
     pr: !!p["pendentesResumo"],
     ar: (p["avariasResumo"] as { tipos?: { tipo: string; total: number }[] } | undefined)
