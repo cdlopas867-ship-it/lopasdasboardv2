@@ -15,6 +15,7 @@ import {
   ITENS_FORA_DE_LINHA,
   POSICAO_EM_LINHA,
   POSICAO_FORA_DE_LINHA,
+  POSICAO_NAO_CADASTRADO,
   POSICAO_TOTAL,
   type PosicaoEstoque,
 } from "@/data/fora-de-linha";
@@ -606,12 +607,13 @@ function abaForaDeLinha(wb: Workbook, d: VideoResumoProps): Refs {
   const drive = d.foraDeLinha;
   const emLinha: PosicaoEstoque = drive?.posicaoEmLinha ?? POSICAO_EM_LINHA;
   const foraDeLinha: PosicaoEstoque = drive?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
+  const naoCadastrado: PosicaoEstoque = drive?.posicaoNaoCadastrado ?? POSICAO_NAO_CADASTRADO;
   const total: PosicaoEstoque = drive?.posicaoTotal ?? POSICAO_TOTAL;
 
   linha = secao(ws, linha, "Posição por linha", 10);
   const primeira = linha + 1;
-  const ultima = linha + 2;
-  const linhasPos: Valor[][] = [emLinha, foraDeLinha].map((p) => [
+  const ultima = linha + 3;
+  const linhasPos: Valor[][] = [emLinha, foraDeLinha, naoCadastrado].map((p) => [
     p.grupo,
     p.itens,
     p.saldoFocco,

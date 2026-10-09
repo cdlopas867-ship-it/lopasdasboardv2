@@ -58,17 +58,30 @@ export const POSICAO_FORA_DE_LINHA: PosicaoEstoque = {
   "valorReservado": 263581.08
 };
 
+export const POSICAO_NAO_CADASTRADO: PosicaoEstoque = {
+  "grupo": "NÃO CADASTRADO",
+  "itens": 92,
+  "saldoFocco": 23219,
+  "saldoFull": 0,
+  "reservas": 14065,
+  "disponivel": 9154,
+  "pesoTon": 596.9,
+  "pesoReservadoTon": 361.8,
+  "valorEstoque": 2450741.58,
+  "valorReservado": 1485399.90
+};
+
 export const POSICAO_TOTAL: PosicaoEstoque = {
   "grupo": "TOTAL GERAL",
-  "itens": 693,
-  "saldoFocco": 114622,
+  "itens": 785,
+  "saldoFocco": 137841,
   "saldoFull": 0,
-  "reservas": 63474,
-  "disponivel": 51148,
-  "pesoTon": 3364.3,
-  "pesoReservadoTon": 1973,
-  "valorEstoque": 14288347.98,
-  "valorReservado": 8595340.33
+  "reservas": 77539,
+  "disponivel": 60302,
+  "pesoTon": 3961.2,
+  "pesoReservadoTon": 2334.8,
+  "valorEstoque": 16739089.56,
+  "valorReservado": 10080740.23
 };
 
 export const ITENS_FORA_DE_LINHA: ItemForaDeLinha[] = [

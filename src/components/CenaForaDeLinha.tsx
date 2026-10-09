@@ -17,6 +17,7 @@ export type ForaDeLinhaProp = {
   itens: unknown[];
   posicaoEmLinha: PosicaoEstoque;
   posicaoForaDeLinha: PosicaoEstoque;
+  posicaoNaoCadastrado: PosicaoEstoque;
   posicaoTotal: PosicaoEstoque;
 } | null;
 

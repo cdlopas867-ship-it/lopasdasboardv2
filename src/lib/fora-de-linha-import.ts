@@ -24,14 +24,15 @@ function encontrarHeader(rows: unknown[][], needles: string[]): number {
 function lerResumo(wb: XLSX.WorkBook): {
   emLinha: PosicaoEstoque | null;
   foraDeLinha: PosicaoEstoque | null;
+  naoCadastrado: PosicaoEstoque | null;
   total: PosicaoEstoque | null;
 } {
   const ws = wb.Sheets["Resumo"];
-  if (!ws) return { emLinha: null, foraDeLinha: null, total: null };
+  if (!ws) return { emLinha: null, foraDeLinha: null, naoCadastrado: null, total: null };
 
   const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
   const hi = encontrarHeader(rows, ["GRUPO"]);
-  if (hi < 0) return { emLinha: null, foraDeLinha: null, total: null };
+  if (hi < 0) return { emLinha: null, foraDeLinha: null, naoCadastrado: null, total: null };
 
   const headers = (rows[hi] ?? []).map((c) => str(c).toUpperCase());
   const findCol = (needles: string[]) =>
@@ -62,6 +63,7 @@ function lerResumo(wb: XLSX.WorkBook): {
 
   let emLinha: PosicaoEstoque | null = null;
   let foraDeLinha: PosicaoEstoque | null = null;
+  let naoCadastrado: PosicaoEstoque | null = null;
   let total: PosicaoEstoque | null = null;
 
   for (let i = hi + 1; i < rows.length; i++) {
@@ -70,10 +72,11 @@ function lerResumo(wb: XLSX.WorkBook): {
     const label = str(r[0]).toUpperCase();
     if (label === "EM LINHA") emLinha = parseRow(r);
     else if (label === "FORA DE LINHA") foraDeLinha = parseRow(r);
+    else if (label === "NÃO CADASTRADO" || label === "NAO CADASTRADO") naoCadastrado = parseRow(r);
     else if (label === "TOTAL GERAL" || label === "TOTAL") total = parseRow(r);
   }
 
-  return { emLinha, foraDeLinha, total };
+  return { emLinha, foraDeLinha, naoCadastrado, total };
 }
 
 /* Lê a aba "Fora de Linha" e extrai os itens descontinuados. */
@@ -135,6 +138,7 @@ export type ForaDeLinhaData = {
   itens: ItemForaDeLinha[];
   posicaoEmLinha: PosicaoEstoque;
   posicaoForaDeLinha: PosicaoEstoque;
+  posicaoNaoCadastrado: PosicaoEstoque;
   posicaoTotal: PosicaoEstoque;
 };
 
@@ -191,13 +195,13 @@ function lerFormatoAnalise(wb: XLSX.WorkBook): ForaDeLinhaData | null {
     });
   }
   /* Resumo: linhas "<Situação> | TOTAL" */
-  const pos = { em: vazio("EM LINHA"), fora: vazio("FORA DE LINHA") };
+  const pos = { em: vazio("EM LINHA"), fora: vazio("FORA DE LINHA"), nc: vazio("NÃO CADASTRADO") };
   const nomeRes = wb.SheetNames.find((n) => normH(n) === "RESUMO");
   const wr = nomeRes ? wb.Sheets[nomeRes] : undefined;
   if (wr) {
     for (const r of XLSX.utils.sheet_to_json<unknown[]>(wr, { header: 1, defval: null })) {
       if (normH(r?.[1]) !== "TOTAL") continue;
-      const alvo = normH(r[0]) === "EM LINHA" ? pos.em : normH(r[0]) === "FORA DE LINHA" ? pos.fora : null;
+      const alvo = normH(r[0]) === "EM LINHA" ? pos.em : normH(r[0]) === "FORA DE LINHA" ? pos.fora : normH(r[0]) === "NAO CADASTRADO" ? pos.nc : null;
       if (!alvo) continue;
       alvo.itens = num(r[2]); alvo.saldoFocco = num(r[3]); alvo.pesoTon = num(r[4]);
       alvo.reservas = num(r[5]); alvo.pesoReservadoTon = num(r[6]); alvo.disponivel = alvo.saldoFocco - alvo.reservas;
@@ -211,9 +215,9 @@ function lerFormatoAnalise(wb: XLSX.WorkBook): ForaDeLinhaData | null {
     pos.fora.pesoTon = itens.reduce((s, i) => s + i.pesoKg, 0) / 1000;
     pos.fora.pesoReservadoTon = itens.reduce((s, i) => s + i.pesoReservadoKg, 0) / 1000;
   }
-  const soma = (k: keyof PosicaoEstoque) => (pos.em[k] as number) + (pos.fora[k] as number);
+  const soma = (k: keyof PosicaoEstoque) => (pos.em[k] as number) + (pos.fora[k] as number) + (pos.nc[k] as number);
   const total: PosicaoEstoque = { grupo: "TOTAL GERAL", itens: soma("itens"), saldoFocco: soma("saldoFocco"), saldoFull: 0, reservas: soma("reservas"), disponivel: soma("disponivel"), pesoTon: soma("pesoTon"), pesoReservadoTon: soma("pesoReservadoTon"), valorEstoque: 0, valorReservado: 0 };
-  return { itens, posicaoEmLinha: pos.em, posicaoForaDeLinha: pos.fora, posicaoTotal: total };
+  return { itens, posicaoEmLinha: pos.em, posicaoForaDeLinha: pos.fora, posicaoNaoCadastrado: pos.nc, posicaoTotal: total };
 }
 
 /* Formato "Estoque_EmLinha_x_ForaDeLinha": abas Estoque (itens com SITUAÇÃO vazia),
@@ -286,6 +290,7 @@ function lerFormatoEstoqueLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
   const itens: ItemForaDeLinha[] = [];
   const posEm = vazio("EM LINHA");
   const posFora = vazio("FORA DE LINHA");
+  const posNaoCad = vazio("NÃO CADASTRADO");
 
   for (let i = hiEst + 1; i < rowsEst.length; i++) {
     const r = rowsEst[i];
@@ -305,17 +310,15 @@ function lerFormatoEstoqueLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
     const valorEstoque = custo * saldoFocco;
     const valorReservado = custo * reservas;
 
-    const acc = situacao === "FORA DE LINHA" ? posFora : situacao === "EM LINHA" ? posEm : null;
-    if (acc) {
-      acc.itens++;
-      acc.saldoFocco += saldoFocco;
-      acc.reservas += reservas;
-      acc.disponivel += saldoFocco - reservas;
-      acc.pesoTon += pesoKg / 1000;
-      acc.pesoReservadoTon += pesoUn * reservas / 1000;
-      acc.valorEstoque += valorEstoque;
-      acc.valorReservado += valorReservado;
-    }
+    const acc = situacao === "FORA DE LINHA" ? posFora : situacao === "EM LINHA" ? posEm : posNaoCad;
+    acc.itens++;
+    acc.saldoFocco += saldoFocco;
+    acc.reservas += reservas;
+    acc.disponivel += saldoFocco - reservas;
+    acc.pesoTon += pesoKg / 1000;
+    acc.pesoReservadoTon += pesoUn * reservas / 1000;
+    acc.valorEstoque += valorEstoque;
+    acc.valorReservado += valorReservado;
 
     if (situacao === "FORA DE LINHA") {
       itens.push({
@@ -339,14 +342,14 @@ function lerFormatoEstoqueLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
 
   if (itens.length === 0) return null;
 
-  const soma = (k: keyof PosicaoEstoque) => (posEm[k] as number) + (posFora[k] as number);
+  const soma = (k: keyof PosicaoEstoque) => (posEm[k] as number) + (posFora[k] as number) + (posNaoCad[k] as number);
   const total: PosicaoEstoque = {
     grupo: "TOTAL GERAL", itens: soma("itens"), saldoFocco: soma("saldoFocco"), saldoFull: 0,
     reservas: soma("reservas"), disponivel: soma("disponivel"), pesoTon: soma("pesoTon"),
     pesoReservadoTon: soma("pesoReservadoTon"), valorEstoque: soma("valorEstoque"), valorReservado: soma("valorReservado"),
   };
 
-  return { itens, posicaoEmLinha: posEm, posicaoForaDeLinha: posFora, posicaoTotal: total };
+  return { itens, posicaoEmLinha: posEm, posicaoForaDeLinha: posFora, posicaoNaoCadastrado: posNaoCad, posicaoTotal: total };
 }
 
 /* Preenche valores (custo) usando o custo médio por item da planilha de reservas. */
@@ -365,8 +368,9 @@ export function aplicarCustos(
   const rFora = itens.reduce((s, i) => s + i.valorReservado, 0);
   const fora = { ...fdl.posicaoForaDeLinha, valorEstoque: vFora, valorReservado: rFora };
   const em = { ...fdl.posicaoEmLinha, valorEstoque: fdl.posicaoEmLinha.pesoTon * 1000 * custoMedioGeral, valorReservado: fdl.posicaoEmLinha.pesoReservadoTon * 1000 * custoMedioGeral };
-  const total = { ...fdl.posicaoTotal, valorEstoque: em.valorEstoque + vFora, valorReservado: em.valorReservado + rFora };
-  return { itens, posicaoEmLinha: em, posicaoForaDeLinha: fora, posicaoTotal: total };
+  const nc = { ...fdl.posicaoNaoCadastrado, valorEstoque: fdl.posicaoNaoCadastrado.pesoTon * 1000 * custoMedioGeral, valorReservado: fdl.posicaoNaoCadastrado.pesoReservadoTon * 1000 * custoMedioGeral };
+  const total = { ...fdl.posicaoTotal, valorEstoque: em.valorEstoque + vFora + nc.valorEstoque, valorReservado: em.valorReservado + rFora + nc.valorReservado };
+  return { itens, posicaoEmLinha: em, posicaoForaDeLinha: fora, posicaoNaoCadastrado: nc, posicaoTotal: total };
 }
 
 export function lerForaDeLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
@@ -382,8 +386,9 @@ export function lerForaDeLinha(wb: XLSX.WorkBook): ForaDeLinhaData | null {
 
   return {
     itens: itens ?? [],
-    posicaoEmLinha: resumo.emLinha ?? { grupo: "EM LINHA", itens: 0, saldoFocco: 0, saldoFull: 0, reservas: 0, disponivel: 0, pesoTon: 0, pesoReservadoTon: 0, valorEstoque: 0, valorReservado: 0 },
-    posicaoForaDeLinha: resumo.foraDeLinha ?? { grupo: "FORA DE LINHA", itens: 0, saldoFocco: 0, saldoFull: 0, reservas: 0, disponivel: 0, pesoTon: 0, pesoReservadoTon: 0, valorEstoque: 0, valorReservado: 0 },
-    posicaoTotal: resumo.total ?? { grupo: "TOTAL GERAL", itens: 0, saldoFocco: 0, saldoFull: 0, reservas: 0, disponivel: 0, pesoTon: 0, pesoReservadoTon: 0, valorEstoque: 0, valorReservado: 0 },
+    posicaoEmLinha: resumo.emLinha ?? vazio("EM LINHA"),
+    posicaoForaDeLinha: resumo.foraDeLinha ?? vazio("FORA DE LINHA"),
+    posicaoNaoCadastrado: resumo.naoCadastrado ?? vazio("NÃO CADASTRADO"),
+    posicaoTotal: resumo.total ?? vazio("TOTAL GERAL"),
   };
 }
