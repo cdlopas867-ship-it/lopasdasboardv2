@@ -21,7 +21,7 @@ import {
   type ProdTurma,
 } from "@/data/produtividade";
 import { FICHAS_QLP, type FichaQlp } from "@/data/qlp-fichas";
-import DestaquesProdutividade from "@/components/DestaquesProdutividade";
+import ToneladasMensais from "@/components/ToneladasMensais";
 
 const CORES = ["#00FFCC", "#FFA500", "#7C9CFF", "#FF5FA2"];
 
@@ -96,7 +96,7 @@ export default function CenaProdutividade({
         <QuadroTurmas turmas={turmas} total={tipo.ton} cor={cor} />
       </div>
 
-      <DestaquesProdutividade tipo={tipo} />
+      <ToneladasMensais tipo={tipo} />
 
       <p className="mx-auto mt-3 max-w-4xl text-center text-[8px] leading-tight text-white/40">
         * Produtividade = PESO (kg) somado e convertido em toneladas. O ranking mostra os{" "}

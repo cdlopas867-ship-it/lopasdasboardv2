@@ -35,7 +35,7 @@ export type ProdTipo = {
   colaboradores: ProdColaborador[];
   turmas: ProdTurma[];
   /** tonelagem por mês (PESO kg ÷ 1000, agrupado por mês da coluna DIA) */
-  mensal: ProdMes[];
+  mensal?: ProdMes[];
 };
 
 export const PRODUTIVIDADE = {
@@ -373,6 +373,7 @@ export const PRODUTIVIDADE = {
     },
     {
       id: "movimentacao",
+      mensal: [{ mes: "Jan", ton: 4335.6 }, { mes: "Fev", ton: 3616.6 }, { mes: "Mar", ton: 7518.8 }, { mes: "Abr", ton: 6662.2 }, { mes: "Mai", ton: 7522.6 }, { mes: "Jun", ton: 7052.1 }, { mes: "Jul", ton: 8047.5 }, { mes: "Ago", ton: 6732.4 }, { mes: "Set", ton: 7250.8 }, { mes: "Out", ton: 1481.6 }],
       nome: "Movimentação",
       periodo: "01/04/2026 a 31/08/2026",
       ton: 60219.8,
