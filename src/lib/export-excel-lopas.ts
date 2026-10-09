@@ -984,6 +984,15 @@ function abaPendentes(wb: Workbook, d: VideoResumoProps): Refs {
         linhas,
       ) + 1;
     destacarLinha(ws, ultima + 1, 7);
+
+    /* Destaque âmbar nos lotes em aberto (lotes > 0) */
+    meses.forEach((mes, i) => {
+      if ((mes.lotes ?? 0) > 0) {
+        const celula = ws.getCell(primeira + i, 5);
+        celula.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFC0392B" } };
+        celula.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AMBAR_CLARO } };
+      }
+    });
   } else {
     linha = nota(ws, linha, "Sem série mensal de pendências.", 7) + 1;
   }
