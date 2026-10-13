@@ -5,7 +5,7 @@
    turma) e a produtividade somada por turma. Dados estáticos em
    src/data/produtividade.ts. */
 
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
@@ -28,6 +28,13 @@ const CORES = ["#00FFCC", "#FFA500", "#7C9CFF", "#FF5FA2"];
 /* Linhas exibidas em cada quadro; o restante vira "Outras (n)". */
 const TOPO = 6;
 
+/* Mapa de abreviação de mês → ano-mês (os dados são de 2026). */
+const MES_ISO: Record<string, string> = {
+  Jan: "2026-01", Fev: "2026-02", Mar: "2026-03", Abr: "2026-04",
+  Mai: "2026-05", Jun: "2026-06", Jul: "2026-07", Ago: "2026-08",
+  Set: "2026-09", Out: "2026-10",
+};
+
 export default function CenaProdutividade({
   anim,
   cena,
@@ -40,11 +47,30 @@ export default function CenaProdutividade({
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
   /* Nome do colaborador com a ficha QLP aberta no ranking (linha expandida). */
   const [fichaAberta, setFichaAberta] = useState<string | null>(null);
+  const [prodDe, setProdDe] = useState("");
+  const [prodAte, setProdAte] = useState("");
 
   const tipos = PRODUTIVIDADE.tipos;
   const idx = Math.min(foco, tipos.length - 1);
   const tipo = tipos[idx]!;
   const cor = CORES[idx % CORES.length]!;
+
+  /* Filtra a tonelagem mensal pelo intervalo de datas selecionado. */
+  const mensalFiltrado = useMemo(() => {
+    if (!prodDe && !prodAte) return tipo.mensal ?? [];
+    const de = prodDe?.slice(0, 7) || undefined;
+    const ate = prodAte?.slice(0, 7) || undefined;
+    return (tipo.mensal ?? []).filter((m) => {
+      const iso = MES_ISO[m.mes];
+      if (!iso) return true;
+      if (de && iso < de) return false;
+      if (ate && iso > ate) return false;
+      return true;
+    });
+  }, [tipo.mensal, prodDe, prodAte]);
+
+  const tonFiltrado = mensalFiltrado.reduce((s, m) => s + m.ton, 0);
+  const temFiltro = !!(prodDe || prodAte);
 
   const secoes: SecaoDonut[] = tipos.map((t, i) => ({
     id: t.id,
@@ -70,14 +96,49 @@ export default function CenaProdutividade({
 
       <ToggleSecoes secoes={secoes} foco={idx} onChange={setFoco} />
 
+      {/* Filtro por data — filtra a tonelagem mensal e o total */}
+      <div
+        className="mx-auto mt-2 flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/70"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        <span className="font-bold tracking-widest uppercase text-white/55">Filtrar data</span>
+        <label className="flex items-center gap-1">de
+          <input type="date" value={prodDe} onChange={(e) => { setProdDe(e.target.value); onPausar?.(); }}
+            className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
+        </label>
+        <label className="flex items-center gap-1">até
+          <input type="date" value={prodAte} onChange={(e) => { setProdAte(e.target.value); onPausar?.(); }}
+            className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
+        </label>
+        {temFiltro && (
+          <button type="button" onClick={() => { setProdDe(""); setProdAte(""); }}
+            className="rounded border border-white/20 px-2 py-0.5 text-white/80 hover:bg-white/10">Limpar</button>
+        )}
+        {temFiltro && (
+          <span className="font-bold text-brand-amber">
+            · Peso total: {fmtBrMax(tonFiltrado, 1)} t
+          </span>
+        )}
+      </div>
+
       <div className="mx-auto mt-2 w-full max-w-xs space-y-1.5">
         <div className="flex w-full justify-center">
-          <DestaqueGradiente numero={fmtTonDec(tipo.ton)} rotulo={`toneladas · ${tipo.nome}`} />
+          <DestaqueGradiente numero={fmtTonDec(temFiltro ? tonFiltrado : tipo.ton)} rotulo={`toneladas · ${tipo.nome}`} />
         </div>
+        {temFiltro && (
+          <p className="text-center text-[10px] text-white/50">
+            {prodDe && prodAte
+              ? `${prodDe.slice(8, 10)}/${prodDe.slice(5, 7)} – ${prodAte.slice(8, 10)}/${prodAte.slice(5, 7)}`
+              : prodDe
+                ? `A partir de ${prodDe.slice(8, 10)}/${prodDe.slice(5, 7)}`
+                : `Até ${prodAte.slice(8, 10)}/${prodAte.slice(5, 7)}`}
+          </p>
+        )}
         <p className="text-center text-[10px] text-white/55">
           <span className="font-bold text-white/90">{fmtInt(tipo.pessoas)}</span> colaboradores ·{" "}
           <span className="font-bold text-white/90">{fmtInt(tipo.cx)}</span> caixas · período{" "}
-          {tipo.periodo}
+          {temFiltro ? "filtrado" : tipo.periodo}
         </p>
       </div>
 
@@ -96,7 +157,7 @@ export default function CenaProdutividade({
         <QuadroTurmas turmas={turmas} total={tipo.ton} cor={cor} />
       </div>
 
-      <ToneladasMensais tipo={tipo} />
+      <ToneladasMensais tipo={{ ...tipo, mensal: mensalFiltrado }} />
 
 
       <p className="mx-auto mt-3 max-w-4xl text-center text-[8px] leading-tight text-white/40">
