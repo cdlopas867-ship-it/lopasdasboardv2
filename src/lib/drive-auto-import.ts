@@ -63,6 +63,8 @@ const PLANILHAS_LOCAIS = [
   "public/planilhas/paletes.xlsx",
   "public/planilhas/estoque-em-linha.xlsx",
   "public/planilhas/ocupacao-cd.xlsx",
+  "public/planilhas/estprod.xlsx",
+  "public/planilhas/peso-recebido.xlsx",
 ];
 
 type ArquivoDrive = { id: string; nome: string; modificado?: string | undefined };
@@ -1042,15 +1044,40 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
          (não sobrescreve a ocupação já obtida do Drive, que é mais recente). */
       const ocupacao = extrairOcupacao(wb);
       if (ocupacao && !melhorOcupacao) melhorOcupacao = ocupacao;
+
+      /* Detecta a planilha de produção da semana (PCP 003) — os arquivos
+         locais prevalecem sobre os do Drive (processados por último). */
+      const prod = calcularProducaoSemanal(wb, undefined);
+      if (prod && prod.length > 0) wbProducao = wb;
+
+      /* Detecta a planilha PESO RECEBIDO POR PERÍODO para cruzar com a
+         produção — o arquivo local (mais recente) prevalece sobre o Drive. */
+      const recebidoPorDia = calcularRecebidoPorDia(wb);
+      if (recebidoPorDia && recebidoPorDia.size > (melhorRecebidoPorDia?.size ?? 0)) {
+        melhorRecebidoPorDia = recebidoPorDia;
+      }
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }
   }
 
-  /* Processa a produção da semana agora que os itens de estoque estão disponíveis */
+  /* Processa a produção da semana agora que os itens de estoque estão disponíveis.
+     Os itens são opcionais — a planilha de produção traz PESO PREVISTO/PESO
+     REALIZADO próprios, então o cálculo funciona sem cruzamento de peso unitário. */
   let melhorProducao: ProducaoSemanalDia[] | null = null;
-  if (wbProducao && melhorItens) {
-    melhorProducao = calcularProducaoSemanal(wbProducao, melhorItens, melhorRecebidoPorDia);
+  if (wbProducao) {
+    melhorProducao = calcularProducaoSemanal(wbProducao, melhorItens ?? undefined, melhorRecebidoPorDia);
+    if (melhorProducao) {
+      const tot = melhorProducao.reduce((s, d) => ({
+        prev: s.prev + d.previsto, prod: s.prod + d.produzido, ent: s.ent + d.entregue,
+        tonP: s.tonP + d.tonPrevisto, tonR: s.tonR + d.tonEntregue, ord: s.ord + d.ordens,
+      }), { prev: 0, prod: 0, ent: 0, tonP: 0, tonR: 0, ord: 0 });
+      console.info(
+        `[auto-import] produção: ${tot.ord} ordens · ${tot.prev} un previstas · ${tot.tonP.toFixed(1)} t previstas · ${tot.ent} un recebidas · ${tot.tonR.toFixed(1)} t recebidas (${tot.tonP > 0 ? (tot.tonR / tot.tonP * 100).toFixed(1) : 0}%)`,
+      );
+    }
+  } else {
+    console.warn("[auto-import] produção: nenhuma planilha de produção encontrada");
   }
 
   /* Mescla as avarias de todas as planilhas (base histórica + lançamentos novos).
