@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, DestaqueGradiente, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
-import { semanaAtual, semanaPassada, type ProducaoSemanalDia } from "@/lib/producao-semanal";
+import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 const COR_PRODUZIDO = "#33D953"; // verde
 const COR_RECEBIDO = "#38BDF8"; // azul
@@ -40,52 +40,11 @@ export default function CenaProducaoSemana({
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
 
   const semana = semanaAtual(dias);
-  const semanaRec = semanaPassada(dias);
-
-  /* Garante que a tabela da semana passada mostre todos os dias úteis
-     (seg–sex), mesmo os sem registro na planilha. */
-  const NOMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-  const semanaRecCompleta: ProducaoSemanalDia[] = (() => {
-    if (semanaRec.length === 0) return [];
-    const porIso = new Map(semanaRec.map((d) => [d.iso, d]));
-    const hoje = new Date();
-    const dow = (hoje.getDay() + 6) % 7; // 0 = segunda
-    const seg = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - dow - 7);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    const dias: ProducaoSemanalDia[] = [];
-    for (let i = 0; i < 5; i++) {
-      const dt = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + i);
-      const isoDt = iso(dt);
-      const existente = porIso.get(isoDt);
-      if (existente) {
-        dias.push(existente);
-      } else {
-        dias.push({
-          iso: isoDt,
-          dia: NOMES[dt.getDay()]!,
-          data: `${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}/${String(dt.getFullYear()).slice(2)}`,
-          previsto: 0, produzido: 0, entregue: 0, pendente: 0,
-          tonPrevisto: 0, tonProduzido: 0, tonEntregue: 0, tonPendente: 0,
-          ordens: 0, lotes: 0,
-        });
-      }
-    }
-    return dias;
-  })();
-
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
   const totalRecebido = semana.reduce((s, d) => s + d.entregue, 0);
   const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
   const totalTonRec = semana.reduce((s, d) => s + d.tonEntregue, 0);
   const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
-  // Totais da semana passada (recebido + a receber)
-  const totalPrevistoPassada = semanaRecCompleta.reduce((s, d) => s + d.previsto, 0);
-  const totalRecebidoPassada = semanaRecCompleta.reduce((s, d) => s + d.entregue, 0);
-  const totalTonPrevPassada = semanaRecCompleta.reduce((s, d) => s + d.tonPrevisto, 0);
-  const totalTonRecPassada = semanaRecCompleta.reduce((s, d) => s + d.tonEntregue, 0);
-  const unFaltaPassada = Math.max(0, totalPrevistoPassada - totalRecebidoPassada);
-  const tonFaltaPassada = Math.max(0, totalTonPrevPassada - totalTonRecPassada);
 
   /* Recebido = já chegou ao estoque; Diferença = o que falta receber (previsto − recebido).
      Os % são sobre o peso previsto da semana (base = 100%). */
@@ -256,67 +215,6 @@ export default function CenaProducaoSemana({
           * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. ▲/▼ = variação em % vs dia anterior.
         </p>
       </div>
-
-      {/* Semana passada — recebido × a receber dia a dia */}
-      {semanaRecCompleta.length > 0 && (
-        <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.8s" }}>
-          <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-            Semana Passada · Recebido × A Receber
-          </p>
-          <table className="w-full text-left text-[11px] text-white">
-            <thead>
-              <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest uppercase">
-                <th className="pb-0.5 font-bold text-white/55">Dia</th>
-                <th className="pb-0.5 text-right font-bold" style={{ color: COR_RECEBIDO }}>
-                  Recebido
-                </th>
-                <th className="pb-0.5 text-right font-bold" style={{ color: COR_DIFERENCA }}>
-                  A Receber
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {semanaRecCompleta.map((d, i) => {
-                const ant = semanaRecCompleta[i - 1];
-                const faltaUn = Math.max(0, d.previsto - d.entregue);
-                const faltaTon = Math.max(0, d.tonPrevisto - d.tonEntregue);
-                return (
-                  <tr key={d.iso} className="border-b border-white/10 last:border-0">
-                    <td className="py-0.5 whitespace-nowrap">
-                      <span className="font-semibold text-white/90">{d.dia}</span>{" "}
-                      <span className="text-[9px] text-white/45">{d.data}</span>
-                    </td>
-                    <td className="py-0.5 text-right">
-                      <span className="font-mono font-bold" style={{ color: COR_RECEBIDO }}>
-                        {d.tonEntregue > 0 ? `${fmtBrMax(d.tonEntregue, 1)} t` : "—"}
-                      </span>{" "}
-                      <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
-                      <VariacaoDia atual={d.tonEntregue} anterior={ant?.tonEntregue} />
-                    </td>
-                    <td className="py-0.5 text-right">
-                      <span className="font-mono font-bold" style={{ color: COR_DIFERENCA }}>
-                        {faltaTon > 0 ? `${fmtBrMax(faltaTon, 1)} t` : "—"}
-                      </span>{" "}
-                      <span className="text-[9px] text-white/45">{fmtInt(faltaUn)}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
-                <td className="py-1 text-white">Total</td>
-                <td className="py-1 text-right font-mono text-white">
-                  {fmtBrMax(totalTonRecPassada, 1)} t · {fmtInt(totalRecebidoPassada)} un
-                </td>
-                <td className="py-1 text-right font-mono text-white">
-                  {fmtBrMax(tonFaltaPassada, 1)} t · {fmtInt(unFaltaPassada)} un
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      )}
 
     </div>
   );
