@@ -14,7 +14,6 @@ import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaPaletes from "@/components/CenaPaletes";
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
-import CenaQlpCd from "@/components/CenaQlpCd";
 import CenaProdutividade from "@/components/CenaProdutividade";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
@@ -195,6 +194,11 @@ export default function CenasApresentacao({
               <button type="button" onClick={() => { setPendDe(""); setPendAte(""); }}
                 className="rounded border border-white/20 px-2 py-0.5 text-white/80 hover:bg-white/10">Limpar</button>
             )}
+            {(pendDe || pendAte) && pend && (
+              <span className="font-bold text-brand-amber">
+                · Peso total: {fmtBrMax(pend.totalTon, 1)} t
+              </span>
+            )}
           </div>
           {pend ? (
             <>
@@ -204,6 +208,15 @@ export default function CenasApresentacao({
                   · {fmtInt(pend.itens)} ordens
                 </span>
               </p>
+              {(pendDe || pendAte) && (
+                <p className="video-sobe mt-1 text-sm text-white/50">
+                  {pendDe && pendAte
+                    ? `${pendDe.slice(8, 10)}/${pendDe.slice(5, 7)} – ${pendAte.slice(8, 10)}/${pendAte.slice(5, 7)}`
+                    : pendDe
+                      ? `A partir de ${pendDe.slice(8, 10)}/${pendDe.slice(5, 7)}`
+                      : `Até ${pendAte.slice(8, 10)}/${pendAte.slice(5, 7)}`}
+                </p>
+              )}
               <p className="video-sobe mt-1 text-sm text-white/50">
                 Média mensal: <span className="font-bold text-brand-amber">{fmtBrMax(pend.mediaTon, 1)} t</span>
               </p>
@@ -355,18 +368,13 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 12 — QLP · CD: lotação de pessoal por classe */}
+      {/* Cena 12 — Produtividade por colaborador e por turma */}
       {cena === 11 && (
-        <CenaQlpCd anim={anim} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 13 — Produtividade por colaborador e por turma */}
-      {cena === 12 && (
         <CenaProdutividade anim={anim} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 14 — encerramento */}
-      {cena === 13 && (
+      {/* Cena 13 — encerramento */}
+      {cena === 12 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
