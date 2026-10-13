@@ -200,9 +200,17 @@ export default function CenaProducaoSemana({
                     <VariacaoDia atual={d.tonPrevisto} anterior={ant?.tonPrevisto} />
                   </td>
                   <td className="py-0.5 text-right">
-                    <span className="font-mono font-bold" style={{ color: COR_RECEBIDO }}>
-                      {d.tonEntregue > 0 ? `${fmtBrMax(d.tonEntregue, 1)} t` : "—"}
-                    </span>{" "}
+                    {d.tonEntregue > 0 ? (
+                      <span className="font-mono font-bold" style={{ color: COR_RECEBIDO }}>
+                        {`${fmtBrMax(d.tonEntregue, 1)} t`}
+                      </span>
+                    ) : (
+                      <span className="font-mono font-bold" style={{ color: COR_DIFERENCA }}>
+                        {d.tonPrevisto > 0
+                          ? `${fmtBrMax(d.tonPrevisto - d.tonEntregue, 1)} t`
+                          : "—"}
+                      </span>
+                    )}{" "}
                     <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
                     <VariacaoDia atual={d.tonEntregue} anterior={ant?.tonEntregue} />
                   </td>
