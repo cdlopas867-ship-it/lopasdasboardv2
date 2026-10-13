@@ -977,10 +977,11 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       if (cargAte && (!carregadoAte || cargAte > carregadoAte)) carregadoAte = cargAte;
       if (cargMap && cargMap.size > 0 && !carregadoDriveMap) carregadoDriveMap = cargMap;
 
-      /* Extrai ocupação do CD do relatório WF0126 local — apenas como fallback
-         (não sobrescreve a ocupação já obtida do Drive, que é mais recente). */
+      /* Extrai ocupação do CD do relatório WF0126 local — a planilha local
+         de ocupação (ocupacao-cd.xlsx) é a fonte autoritativa quando existe,
+         sobrescrevendo a ocupação do Drive. */
       const ocupacao = extrairOcupacao(wb);
-      if (ocupacao && !melhorOcupacao) melhorOcupacao = ocupacao;
+      if (ocupacao) melhorOcupacao = ocupacao;
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
     }
