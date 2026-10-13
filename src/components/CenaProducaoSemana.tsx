@@ -226,7 +226,7 @@ export default function CenaProducaoSemana({
                 <span className="text-[9px] text-white/55">{fmtInt(semana.reduce((s, d) => s + d.produzido, 0))}</span>
               </td>
               <td className="py-1 text-right">
-                <span className="font-mono font-bold text-white">{fmtBrMax(totalTonRec, 1)} t</span>{" "}
+                <span className="font-mono font-bold text-white">{fmtBrMax(semana.reduce((s, d) => s + (d.tonEntregue > 0 ? d.tonEntregue : d.tonPrevisto), 0), 1)} t</span>{" "}
                 <span className="text-[9px] text-white/55">{fmtInt(totalRecebido)}</span>
               </td>
             </tr>
