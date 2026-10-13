@@ -517,10 +517,13 @@ type OcupacaoData = { pct: number; ocupados: number; livres: number; bloqueados:
 
 /* Extrai a ocupação do CD de uma planilha. Prioridade:
    1. Aba "Resumo" com seção "Situação" (Livre/Ocupado/Bloqueado/TOTAL) — formato antigo.
-   2. Aba "Resultado" do WF0126 — dados crus (uma linha por endereço) com
-      Livre/Ocupado/Bloqueado; também suporta pivô com linha "--subtotal--".
-   3. Aba "Planilha1" do WF0126 — tabela pivô resumida (fallback; não inclui
-      Bloqueado, então o total pode ser menor que o real). */
+   2. Aba "Planilha1" do WF0126 — tabela pivô oficial (Quantidade + "--subtotal--").
+      É a fonte correta do total de posições: exclui endereços extras (ex.:
+      sétimo andar) que aparecem nos dados crus. Inclui Livre, Ocupado e
+      Bloqueado; o subtotal é a soma dos três.
+   3. Aba "Resultado" do WF0126 — dados crus (uma linha por endereço). O total
+      aqui inclui endereços extras, então pode ser maior que o pivô; usado
+      apenas quando "Planilha1" não está disponível. */
 function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
   /* Formato 1: aba "Resumo" com seção "Situação" */
   const wsResumo = wb.Sheets["Resumo"];
@@ -548,14 +551,62 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
     }
   }
 
-  /* Formato 2: aba "Resultado" do WF0126 — dados crus com uma linha por
-     endereço (Situação, Tipo LA, Endereço). É a fonte mais completa porque
-     inclui as três categorias (Ocupado, Livre, Bloqueado) e cada endereço
-     aparece uma única vez, garantindo que o total seja a soma real de
-     todas as posições. Suporta também o subformato pivô com coluna
-     "Quantidade" — nesse caso, procura uma linha "--subtotal--" para
-     evitar duplicatas (ex.: "Ocupado" pode aparecer duas vezes, sendo a
-     segunda um subconjunto da primeira); sem subtotal, soma as linhas. */
+  /* Formato 2: aba "Planilha1" do WF0126 — tabela pivô oficial com coluna
+     "Quantidade" e linha "--subtotal--". É a fonte correta do total de
+     posições: exclui endereços extras (ex.: sétimo andar) que aparecem nos
+     dados crus. Inclui Livre, Ocupado e Bloqueado; o subtotal é a soma dos
+     três. Lê o Ocupado explícito quando consistente com o subtotal; senão
+     deriva Ocupado = subtotal − livres − bloqueados (evita dupla contagem
+     de linhas de detalhe que repetem o rótulo "Ocupado"). */
+  const wsPlanilha1 = wb.Sheets["Planilha1"];
+  if (wsPlanilha1) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(wsPlanilha1, { header: 1, defval: null });
+    const hi = rows.findIndex((r) =>
+      r?.some((c) => /SITUAÇ/i.test(String(c ?? "").trim())),
+    );
+    if (hi >= 0) {
+      const headers = (rows[hi] ?? []).map((c) => String(c ?? "").toUpperCase().trim());
+      const colSituacao = headers.findIndex((h) => /SITUAÇ/i.test(h));
+      const colQtd = headers.findIndex((h) => /QUANTIDADE/i.test(h));
+      if (colSituacao >= 0 && colQtd >= 0) {
+        let livres = 0, ocupados = 0, bloqueados = 0, subtotalTotal = 0;
+        let hasSubtotal = false, hasOcupado = false;
+        for (let i = hi + 1; i < rows.length; i++) {
+          const r = rows[i] ?? [];
+          const situacao = String(r[colSituacao] ?? "").toUpperCase().trim();
+          if (!situacao) continue;
+          if (situacao.includes("SUBTOTAL")) {
+            subtotalTotal = Number(r[colQtd] ?? 0) || 0;
+            hasSubtotal = true;
+            break;
+          }
+          const qtd = Number(r[colQtd] ?? 0) || 0;
+          if (situacao.includes("LIVRE")) livres += qtd;
+          else if (situacao.includes("BLOQUE")) bloqueados += qtd;
+          else if (situacao.includes("OCUPAD")) {
+            /* Pega só a 1ª linha "Ocupado" — linhas seguintes com o mesmo
+               rótulo são detalhes/subconjuntos, não o total. */
+            if (!hasOcupado) { ocupados = qtd; hasOcupado = true; }
+          }
+        }
+        if (hasSubtotal && subtotalTotal > 0) {
+          /* Ocupado explícito consistente com o subtotal → usa direto. */
+          if (hasOcupado && subtotalTotal === livres + ocupados + bloqueados) {
+            return { pct: ocupados / subtotalTotal, ocupados, livres, bloqueados, total: subtotalTotal };
+          }
+          /* Senão deriva do subtotal para evitar dupla contagem. */
+          const ocup = subtotalTotal - livres - bloqueados;
+          if (ocup >= 0) {
+            return { pct: ocup / subtotalTotal, ocupados: ocup, livres, bloqueados, total: subtotalTotal };
+          }
+        }
+      }
+    }
+  }
+
+  /* Formato 3 (fallback): aba "Resultado" do WF0126 — dados crus (uma linha
+     por endereço). O total inclui endereços extras (ex.: sétimo andar), então
+     pode ser maior que o pivô oficial; usado apenas sem "Planilha1". */
   const wsResultado = wb.Sheets["Resultado"];
   if (wsResultado) {
     const rows = XLSX.utils.sheet_to_json<unknown[]>(wsResultado, { header: 1, defval: null });
@@ -574,9 +625,6 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
           const r = rows[i] ?? [];
           const situacao = String(r[colSituacao] ?? "").toUpperCase().trim();
           if (!situacao) continue;
-          /* Tabela pivô: linha "--subtotal--" traz o total real. As linhas
-             individuais podem ter duplicatas, então usamos o subtotal e
-             recalculamos ocupados = total − livres − bloqueados. */
           if (situacao.includes("SUBTOTAL")) {
             subtotalTotal = Number(r[colQtd] ?? 0) || 0;
             hasSubtotal = true;
@@ -586,11 +634,7 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
             const qtd = Number(r[colQtd] ?? 0) || 0;
             if (situacao.includes("LIVRE")) livres += qtd;
             else if (situacao.includes("BLOQUE")) bloqueados += qtd;
-            /* Ocupado não é somado aqui — será derivado do subtotal para
-               evitar dupla contagem quando há linhas de subconjunto. */
           } else {
-            /* Dados crus (sem coluna Quantidade): conta uma linha por
-               endereço — cada endereço é único, então a soma é exata. */
             if (situacao.includes("OCUPAD")) ocupados++;
             else if (situacao.includes("LIVRE")) livres++;
             else if (situacao.includes("BLOQUE")) bloqueados++;
@@ -603,44 +647,6 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
         const total = ocupados + livres + bloqueados;
         if (total > 0) {
           return { pct: ocupados / total, ocupados, livres, bloqueados, total };
-        }
-      }
-    }
-  }
-
-  /* Formato 3 (fallback): aba "Planilha1" do WF0126 — tabela pivô resumida
-     com coluna "Quantidade" e linha "--subtotal--". Não inclui a categoria
-     "Bloqueado" (bloqueados = 0), por isso o total pode ser menor que o
-     real. Usada apenas quando a aba "Resultado" não está disponível. */
-  const wsPlanilha1 = wb.Sheets["Planilha1"];
-  if (wsPlanilha1) {
-    const rows = XLSX.utils.sheet_to_json<unknown[]>(wsPlanilha1, { header: 1, defval: null });
-    const hi = rows.findIndex((r) =>
-      r?.some((c) => /SITUAÇ/i.test(String(c ?? "").trim())),
-    );
-    if (hi >= 0) {
-      const headers = (rows[hi] ?? []).map((c) => String(c ?? "").toUpperCase().trim());
-      const colSituacao = headers.findIndex((h) => /SITUAÇ/i.test(h));
-      const colQtd = headers.findIndex((h) => /QUANTIDADE/i.test(h));
-      if (colSituacao >= 0 && colQtd >= 0) {
-        let livres = 0, bloqueados = 0, subtotalTotal = 0;
-        let hasSubtotal = false;
-        for (let i = hi + 1; i < rows.length; i++) {
-          const r = rows[i] ?? [];
-          const situacao = String(r[colSituacao] ?? "").toUpperCase().trim();
-          if (!situacao) continue;
-          if (situacao.includes("SUBTOTAL")) {
-            subtotalTotal = Number(r[colQtd] ?? 0) || 0;
-            hasSubtotal = true;
-            break;
-          }
-          const qtd = Number(r[colQtd] ?? 0) || 0;
-          if (situacao.includes("LIVRE")) livres += qtd;
-          else if (situacao.includes("BLOQUE")) bloqueados += qtd;
-        }
-        if (hasSubtotal && subtotalTotal > 0) {
-          const ocupados = subtotalTotal - livres - bloqueados;
-          return { pct: ocupados / subtotalTotal, ocupados, livres, bloqueados, total: subtotalTotal };
         }
       }
     }
