@@ -209,6 +209,15 @@ export default function CenasApresentacao({
                   · {fmtInt(pend.itens)} ordens
                 </span>
               </p>
+              {(pendDe || pendAte) && (
+                <p className="video-sobe mt-1 text-sm text-white/50">
+                  {pendDe && pendAte
+                    ? `${pendDe.slice(8, 10)}/${pendDe.slice(5, 7)} – ${pendAte.slice(8, 10)}/${pendAte.slice(5, 7)}`
+                    : pendDe
+                      ? `A partir de ${pendDe.slice(8, 10)}/${pendDe.slice(5, 7)}`
+                      : `Até ${pendAte.slice(8, 10)}/${pendAte.slice(5, 7)}`}
+                </p>
+              )}
               <p className="video-sobe mt-1 text-sm text-white/50">
                 Média mensal: <span className="font-bold text-brand-amber">{fmtBrMax(pend.mediaTon, 1)} t</span>
               </p>
