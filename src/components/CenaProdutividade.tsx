@@ -11,7 +11,6 @@ import { fmtBrMax, fmtInt, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import {
   ToggleSecoes,
-  DestaqueGradiente,
   useFocoCena,
   type SecaoDonut,
 } from "@/components/cena-interativa";
@@ -96,20 +95,20 @@ export default function CenaProdutividade({
 
       <ToggleSecoes secoes={secoes} foco={idx} onChange={setFoco} />
 
-      {/* Filtro por data — filtra a tonelagem mensal e o total */}
+      {/* Filtro por data — compacto em uma linha */}
       <div
-        className="mx-auto mt-2 flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/70"
+        className="mx-auto mt-2 flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-white/70"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <span className="font-bold tracking-widest uppercase text-white/55">Filtrar data</span>
+        <span className="font-bold tracking-widest uppercase text-white/55">Filtrar</span>
         <label className="flex items-center gap-1">de
           <input type="date" value={prodDe} onChange={(e) => { setProdDe(e.target.value); onPausar?.(); }}
-            className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
+            className="w-[100px] rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
         </label>
         <label className="flex items-center gap-1">até
           <input type="date" value={prodAte} onChange={(e) => { setProdAte(e.target.value); onPausar?.(); }}
-            className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
+            className="w-[100px] rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
         </label>
         {temFiltro && (
           <button type="button" onClick={() => { setProdDe(""); setProdAte(""); }}
@@ -117,17 +116,28 @@ export default function CenaProdutividade({
         )}
         {temFiltro && (
           <span className="font-bold text-brand-amber">
-            · Peso total: {fmtBrMax(tonFiltrado, 1)} t
+            · {fmtBrMax(tonFiltrado, 1)} t
           </span>
         )}
       </div>
 
-      <div className="mx-auto mt-2 w-full max-w-xs space-y-1.5">
-        <div className="flex w-full justify-center">
-          <DestaqueGradiente numero={fmtTonDec(temFiltro ? tonFiltrado : tipo.ton)} rotulo={`toneladas · ${tipo.nome}`} />
-        </div>
+      {/* Destaque — total em toneladas, card grande e centralizado */}
+      <div
+        className="video-sobe mx-auto mt-2.5 flex w-full max-w-sm flex-col items-center justify-center gap-1 rounded-2xl border px-6 py-4 text-center"
+        style={{
+          borderColor: `${cor}44`,
+          background: `linear-gradient(130deg, ${cor}22, ${cor}11)`,
+          boxShadow: `0 10px 24px ${cor}1A`,
+        }}
+      >
+        <p className="font-serif text-4xl font-bold leading-none text-white" style={{ textShadow: `0 0 16px ${cor}33` }}>
+          {fmtTonDec(temFiltro ? tonFiltrado : tipo.ton)}
+        </p>
+        <p className="text-xs font-bold tracking-widest uppercase" style={{ color: `${cor}cc` }}>
+          toneladas · {tipo.nome}
+        </p>
         {temFiltro && (
-          <p className="text-center text-[10px] text-white/50">
+          <p className="text-[10px] text-white/50">
             {prodDe && prodAte
               ? `${prodDe.slice(8, 10)}/${prodDe.slice(5, 7)} – ${prodAte.slice(8, 10)}/${prodAte.slice(5, 7)}`
               : prodDe
@@ -135,14 +145,15 @@ export default function CenaProdutividade({
                 : `Até ${prodAte.slice(8, 10)}/${prodAte.slice(5, 7)}`}
           </p>
         )}
-        <p className="text-center text-[10px] text-white/55">
+        <p className="text-[10px] text-white/55">
           <span className="font-bold text-white/90">{fmtInt(tipo.pessoas)}</span> colaboradores ·{" "}
           <span className="font-bold text-white/90">{fmtInt(tipo.cx)}</span> caixas · período{" "}
           {temFiltro ? "filtrado" : tipo.periodo}
         </p>
       </div>
 
-      <div className="mx-auto mt-3 grid w-full max-w-4xl grid-cols-1 gap-3 sm:grid-cols-2">
+      {/* Quadros empilhados verticalmente — melhor leitura no mobile */}
+      <div className="mx-auto mt-3 grid w-full max-w-md grid-cols-1 gap-3">
         <QuadroColaboradores
           colabs={colabs}
           total={tipo.ton}
