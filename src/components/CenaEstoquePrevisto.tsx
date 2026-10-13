@@ -1,5 +1,5 @@
-/* Cena Estoque × Em Linha — donut interativo com toggle Estoque / Em Linha.
-   Mostra a proporção do peso que está em linha de produção vs fora de linha.
+/* Cena Estoque · Em Linha × Fora de Linha — donut interativo com toggle.
+   Mostra a proporção do peso do estoque que está em linha vs fora de linha.
    Inclui breakdown por categoria (Guarda-Roupas, Salas, Complementos). */
 
 import { cn } from "@/lib/utils";
@@ -57,7 +57,7 @@ export default function CenaEstoquePrevisto({
   const pctEstoque = pesoTotal > 0 ? (pesoFora / pesoTotal) * 100 : 0;
 
   const secoes: SecaoDonut[] = [
-    { id: "estoque", label: "estoque", cor: COR_ESTOQUE, pct: pctEstoque },
+    { id: "fora", label: "fora de linha", cor: COR_ESTOQUE, pct: pctEstoque },
     { id: "emLinha", label: "em linha", cor: COR_EM_LINHA, pct: pctEmLinha },
   ];
 
@@ -85,7 +85,7 @@ export default function CenaEstoquePrevisto({
     <div className="flex w-full flex-col items-center">
       <div className="flex items-center gap-2">
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-          Estoque × Em Linha
+          Estoque · Em Linha × Fora de Linha
         </p>
         <InfoTooltip
           onOpen={onPausar}

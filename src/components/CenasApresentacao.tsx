@@ -99,7 +99,7 @@ export default function CenasApresentacao({
 
   return (
     <>
-      {/* Cena 1 — Estoque × Previsto (donut interativo com toggle) */}
+      {/* Cena 1 — Estoque · Em Linha × Fora de Linha (donut interativo com toggle) */}
       {cena === 0 && resumo && (
         <CenaEstoquePrevisto anim={anim} resumo={resumo} valorFaturado={valorFaturado} unidades={unidades} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
       )}
@@ -108,7 +108,7 @@ export default function CenasApresentacao({
       {cena === 0 && !resumo && (
         <div className="flex flex-col items-center py-6 text-center">
           <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-            Estoque × Previsto
+            Estoque · Em Linha × Fora de Linha
           </p>
           <p className="video-sobe font-serif text-3xl text-white/70">
             Sem dados de estoque.
