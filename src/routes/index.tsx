@@ -43,7 +43,9 @@ function DashboardHome() {
         ?? p["avariasResumo"] as VideoAvarias | undefined ?? null,
     );
     const pendentesCalc = p["pendentesResumo"] as VideoPendentes | undefined ?? calcularPendentesResumo(p["pendentes"] as PendenteProducao[] | undefined);
-    const pendentes = pendentesCalc ?? PENDENTES_RESUMO_FIXO;
+    const pendBase = pendentesCalc ?? PENDENTES_RESUMO_FIXO;
+    const pendRegs = p["pendentes"] as PendenteProducao[] | undefined;
+    const pendentes = pendBase && pendRegs?.length ? { ...pendBase, registros: pendRegs } : pendBase;
     /* Mescla os meses fixos (jan–abr) com os meses vindos do sync (mai–set).
        O carregado de jan–abr vem da planilha do usuário (valores-fixos);
        o recebido vem do sync (Base Recebimento do Drive) quando disponível. */

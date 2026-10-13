@@ -88,8 +88,7 @@ function criarAba(wb: Workbook, nome: string, larguras: number[]): Worksheet {
   larguras.forEach((largura, i) => {
     ws.getColumn(i + 1).width = largura;
   });
-  ws.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
-  ws.pageMargins = { left: 0.5, right: 0.5, top: 0.7, bottom: 0.5, header: 0.3, footer: 0.3 };
+  ws.pageSetup = { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.5, right: 0.5, top: 0.7, bottom: 0.5, header: 0.3, footer: 0.3 } };
   ws.headerFooter = { oddFooter: '&LLOPAS · CD&P&DTHR-Painel de Estoque' };
   return ws;
 }
