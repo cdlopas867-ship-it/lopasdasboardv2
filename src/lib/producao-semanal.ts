@@ -274,6 +274,20 @@ export function calcularProducaoSemanal(
       dia.tonPendente = Math.max(0, dia.tonPrevisto - dia.tonProduzido);
     }
 
+    /* Cria entradas para datas que têm recebimento mas não produção,
+       para que a semana passada tenha dados de recebido. */
+    if (recebidoPorDia) {
+      for (const [iso, rec] of recebidoPorDia) {
+        if (!porDia.has(iso) && rec.peso > 0) {
+          porDia.set(iso, {
+            previsto: 0, produzido: 0, entregue: rec.qtd, pendente: 0,
+            tonPrevisto: 0, tonProduzido: 0, tonEntregue: rec.peso / 1000, tonPendente: 0,
+            ordens: new Set<string>(), lotes: new Set<string>(), linhas: [],
+          });
+        }
+      }
+    }
+
     if (porDia.size === 0) continue;
 
     const dias: ProducaoSemanalDia[] = [...porDia.entries()]
