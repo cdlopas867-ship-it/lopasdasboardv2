@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, DestaqueGradiente, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
-import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
+import { semanaAtual, semanaPassada, type ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 const COR_PRODUZIDO = "#33D953"; // verde
 const COR_RECEBIDO = "#38BDF8"; // azul
@@ -40,10 +40,11 @@ export default function CenaProducaoSemana({
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
 
   const semana = semanaAtual(dias);
+  const semanaRec = semanaPassada(dias);
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
-  const totalRecebido = semana.reduce((s, d) => s + d.entregue, 0);
+  const totalRecebido = semanaRec.reduce((s, d) => s + d.entregue, 0);
   const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
-  const totalTonRec = semana.reduce((s, d) => s + d.tonEntregue, 0);
+  const totalTonRec = semanaRec.reduce((s, d) => s + d.tonEntregue, 0);
   const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
 
   /* Recebido = já chegou ao estoque; Diferença = o que falta receber (previsto − recebido).
@@ -63,6 +64,13 @@ export default function CenaProducaoSemana({
     { rotulo: "Diferença", cor: COR_DIFERENCA, un: unFalta, ton: tonFalta, pct: pctDiferenca, idx: 1 },
   ];
 
+  // Mapa de dia-da-semana → recebido da semana passada (para alinhar com o dia da semana)
+  const recPorDiaSemana = new Map<number, ProducaoSemanalDia>();
+  for (const d of semanaRec) {
+    const dow = new Date(`${d.iso}T12:00:00Z`).getUTCDay();
+    recPorDiaSemana.set(dow, d);
+  }
+
   const focoSecao = secoes[foco] ?? secoes[0]!;
   const focoLinha = linhas[foco]!;
 
@@ -72,7 +80,7 @@ export default function CenaProducaoSemana({
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Produção da Semana
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Recebido = o que já chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). Diferença = o que falta receber (peso previsto da semana − recebido). Os % são sobre o peso previsto da semana (PESO PREVISTO). Peso em toneladas. Fonte: sistema Focco." />
+        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Recebido = o que chegou ao estoque na SEMANA PASSADA (planilha PESO RECEBIDO POR PERÍODO). Diferença = peso previsto da semana − recebido. Os % são sobre o peso previsto da semana. Peso em toneladas. Fonte: sistema Focco." />
       </div>
 
       <DonutInterativo
@@ -162,7 +170,7 @@ export default function CenaProducaoSemana({
           </tfoot>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Recebido: já chegou ao estoque. Diferença: o que falta receber (peso previsto da semana − recebido). % sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.
+          * Recebido: chegou ao estoque na semana passada. Diferença: peso previsto da semana − recebido. % sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.
         </p>
       </div>
 
@@ -186,6 +194,11 @@ export default function CenaProducaoSemana({
           <tbody>
             {semana.map((d, i) => {
               const ant = semana[i - 1];
+              const dow = new Date(`${d.iso}T12:00:00Z`).getUTCDay();
+              const rec = recPorDiaSemana.get(dow);
+              const antRec = i > 0
+                ? recPorDiaSemana.get(new Date(`${semana[i - 1]!.iso}T12:00:00Z`).getUTCDay())
+                : undefined;
               return (
                 <tr key={d.iso} className="border-b border-white/10 last:border-0">
                   <td className="py-0.5 whitespace-nowrap">
@@ -201,10 +214,10 @@ export default function CenaProducaoSemana({
                   </td>
                   <td className="py-0.5 text-right">
                     <span className="font-mono font-bold" style={{ color: COR_RECEBIDO }}>
-                      {d.tonEntregue > 0 ? `${fmtBrMax(d.tonEntregue, 1)} t` : "—"}
+                      {rec && rec.tonEntregue > 0 ? `${fmtBrMax(rec.tonEntregue, 1)} t` : "—"}
                     </span>{" "}
-                    <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
-                    <VariacaoDia atual={d.tonEntregue} anterior={ant?.tonEntregue} />
+                    <span className="text-[9px] text-white/45">{rec ? fmtInt(rec.entregue) : 0}</span>
+                    <VariacaoDia atual={rec?.tonEntregue ?? 0} anterior={antRec?.tonEntregue} />
                   </td>
                 </tr>
               );
@@ -212,7 +225,7 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. ▲/▼ = variação em % da tonelagem vs dia anterior.
+          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO) da semana atual; Recebido = semana passada. ▲/▼ = variação em % vs dia anterior.
         </p>
       </div>
 

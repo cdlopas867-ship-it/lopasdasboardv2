@@ -322,3 +322,27 @@ export function semanaAtual(dias: ProducaoSemanalDia[] | undefined): ProducaoSem
   const daSemana = lista.filter((d) => d.iso >= ini && d.iso <= fim);
   return daSemana.length > 0 ? daSemana : lista.slice(-7);
 }
+
+/* Seleciona os dias da semana passada (seg–dom da semana anterior à atual).
+   Cai para os 7 dias anteriores aos últimos 7 quando a planilha não cobre
+   a semana passada. */
+export function semanaPassada(dias: ProducaoSemanalDia[] | undefined): ProducaoSemanalDia[] {
+  const lista = dias ?? [];
+  if (lista.length === 0) return [];
+  const hoje = new Date();
+  const dow = (hoje.getDay() + 6) % 7; // 0 = segunda-feira
+  const seg = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - dow - 7);
+  const dom = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + 6);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const ini = iso(seg);
+  const fim = iso(dom);
+  const daSemana = lista.filter((d) => d.iso >= ini && d.iso <= fim);
+  if (daSemana.length > 0) return daSemana;
+  // fallback: 7 dias antes dos últimos 7
+  const ultimos7 = lista.slice(-7);
+  if (ultimos7.length === 0) return [];
+  const limite = ultimos7[0]!.iso;
+  const anteriores = lista.filter((d) => d.iso < limite).slice(-7);
+  return anteriores.length > 0 ? anteriores : ultimos7;
+}
