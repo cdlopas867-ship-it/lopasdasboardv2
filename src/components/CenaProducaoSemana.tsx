@@ -42,10 +42,13 @@ export default function CenaProducaoSemana({
   const semana = semanaAtual(dias);
   const semanaRec = semanaPassada(dias);
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
-  const totalRecebido = semanaRec.reduce((s, d) => s + d.entregue, 0);
+  const totalRecebido = semana.reduce((s, d) => s + d.entregue, 0);
   const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
-  const totalTonRec = semanaRec.reduce((s, d) => s + d.tonEntregue, 0);
+  const totalTonRec = semana.reduce((s, d) => s + d.tonEntregue, 0);
   const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
+  // Totais da semana passada (recebido)
+  const totalRecebidoPassada = semanaRec.reduce((s, d) => s + d.entregue, 0);
+  const totalTonRecPassada = semanaRec.reduce((s, d) => s + d.tonEntregue, 0);
 
   /* Recebido = já chegou ao estoque; Diferença = o que falta receber (previsto − recebido).
      Os % são sobre o peso previsto da semana (base = 100%). */
@@ -64,13 +67,6 @@ export default function CenaProducaoSemana({
     { rotulo: "Diferença", cor: COR_DIFERENCA, un: unFalta, ton: tonFalta, pct: pctDiferenca, idx: 1 },
   ];
 
-  // Mapa de dia-da-semana → recebido da semana passada (para alinhar com o dia da semana)
-  const recPorDiaSemana = new Map<number, ProducaoSemanalDia>();
-  for (const d of semanaRec) {
-    const dow = new Date(`${d.iso}T12:00:00Z`).getUTCDay();
-    recPorDiaSemana.set(dow, d);
-  }
-
   const focoSecao = secoes[foco] ?? secoes[0]!;
   const focoLinha = linhas[foco]!;
 
@@ -80,7 +76,7 @@ export default function CenaProducaoSemana({
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Produção da Semana
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Recebido = o que chegou ao estoque na SEMANA PASSADA (planilha PESO RECEBIDO POR PERÍODO). Diferença = peso previsto da semana − recebido. Os % são sobre o peso previsto da semana. Peso em toneladas. Fonte: sistema Focco." />
+        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Recebido = o que já chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). Diferença = o que falta receber (peso previsto da semana − recebido). Os % são sobre o peso previsto da semana (PESO PREVISTO). Peso em toneladas. Fonte: sistema Focco." />
       </div>
 
       <DonutInterativo
@@ -170,7 +166,7 @@ export default function CenaProducaoSemana({
           </tfoot>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Recebido: chegou ao estoque na semana passada. Diferença: peso previsto da semana − recebido. % sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.
+          * Recebido: já chegou ao estoque. Diferença: o que falta receber (peso previsto da semana − recebido). % sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.
         </p>
       </div>
 
@@ -194,11 +190,6 @@ export default function CenaProducaoSemana({
           <tbody>
             {semana.map((d, i) => {
               const ant = semana[i - 1];
-              const dow = new Date(`${d.iso}T12:00:00Z`).getUTCDay();
-              const rec = recPorDiaSemana.get(dow);
-              const antRec = i > 0
-                ? recPorDiaSemana.get(new Date(`${semana[i - 1]!.iso}T12:00:00Z`).getUTCDay())
-                : undefined;
               return (
                 <tr key={d.iso} className="border-b border-white/10 last:border-0">
                   <td className="py-0.5 whitespace-nowrap">
@@ -214,10 +205,10 @@ export default function CenaProducaoSemana({
                   </td>
                   <td className="py-0.5 text-right">
                     <span className="font-mono font-bold" style={{ color: COR_RECEBIDO }}>
-                      {rec && rec.tonEntregue > 0 ? `${fmtBrMax(rec.tonEntregue, 1)} t` : "—"}
+                      {d.tonEntregue > 0 ? `${fmtBrMax(d.tonEntregue, 1)} t` : "—"}
                     </span>{" "}
-                    <span className="text-[9px] text-white/45">{rec ? fmtInt(rec.entregue) : 0}</span>
-                    <VariacaoDia atual={rec?.tonEntregue ?? 0} anterior={antRec?.tonEntregue} />
+                    <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
+                    <VariacaoDia atual={d.tonEntregue} anterior={ant?.tonEntregue} />
                   </td>
                 </tr>
               );
@@ -225,9 +216,56 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO) da semana atual; Recebido = semana passada. ▲/▼ = variação em % vs dia anterior.
+          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. ▲/▼ = variação em % vs dia anterior.
         </p>
       </div>
+
+      {/* Semana passada — recebido dia a dia */}
+      {semanaRec.length > 0 && (
+        <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.8s" }}>
+          <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+            Recebido · Semana Passada
+          </p>
+          <table className="w-full text-left text-[11px] text-white">
+            <thead>
+              <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest uppercase">
+                <th className="pb-0.5 font-bold text-white/55">Dia</th>
+                <th className="pb-0.5 text-right font-bold" style={{ color: COR_RECEBIDO }}>
+                  Recebido
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {semanaRec.map((d, i) => {
+                const ant = semanaRec[i - 1];
+                return (
+                  <tr key={d.iso} className="border-b border-white/10 last:border-0">
+                    <td className="py-0.5 whitespace-nowrap">
+                      <span className="font-semibold text-white/90">{d.dia}</span>{" "}
+                      <span className="text-[9px] text-white/45">{d.data}</span>
+                    </td>
+                    <td className="py-0.5 text-right">
+                      <span className="font-mono font-bold" style={{ color: COR_RECEBIDO }}>
+                        {d.tonEntregue > 0 ? `${fmtBrMax(d.tonEntregue, 1)} t` : "—"}
+                      </span>{" "}
+                      <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
+                      <VariacaoDia atual={d.tonEntregue} anterior={ant?.tonEntregue} />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+                <td className="py-1 text-white">Total</td>
+                <td className="py-1 text-right font-mono text-white">
+                  {fmtBrMax(totalTonRecPassada, 1)} t · {fmtInt(totalRecebidoPassada)} un
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
 
     </div>
   );
