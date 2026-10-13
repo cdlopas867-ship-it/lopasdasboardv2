@@ -46,9 +46,13 @@ export default function CenaProducaoSemana({
   const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
   const totalTonRec = semana.reduce((s, d) => s + d.tonEntregue, 0);
   const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
-  // Totais da semana passada (recebido)
+  // Totais da semana passada (recebido + a receber)
+  const totalPrevistoPassada = semanaRec.reduce((s, d) => s + d.previsto, 0);
   const totalRecebidoPassada = semanaRec.reduce((s, d) => s + d.entregue, 0);
+  const totalTonPrevPassada = semanaRec.reduce((s, d) => s + d.tonPrevisto, 0);
   const totalTonRecPassada = semanaRec.reduce((s, d) => s + d.tonEntregue, 0);
+  const unFaltaPassada = Math.max(0, totalPrevistoPassada - totalRecebidoPassada);
+  const tonFaltaPassada = Math.max(0, totalTonPrevPassada - totalTonRecPassada);
 
   /* Recebido = já chegou ao estoque; Diferença = o que falta receber (previsto − recebido).
      Os % são sobre o peso previsto da semana (base = 100%). */
@@ -220,11 +224,11 @@ export default function CenaProducaoSemana({
         </p>
       </div>
 
-      {/* Semana passada — recebido dia a dia */}
+      {/* Semana passada — recebido × a receber dia a dia */}
       {semanaRec.length > 0 && (
         <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.8s" }}>
           <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-            Recebido · Semana Passada
+            Semana Passada · Recebido × A Receber
           </p>
           <table className="w-full text-left text-[11px] text-white">
             <thead>
@@ -233,11 +237,16 @@ export default function CenaProducaoSemana({
                 <th className="pb-0.5 text-right font-bold" style={{ color: COR_RECEBIDO }}>
                   Recebido
                 </th>
+                <th className="pb-0.5 text-right font-bold" style={{ color: COR_DIFERENCA }}>
+                  A Receber
+                </th>
               </tr>
             </thead>
             <tbody>
               {semanaRec.map((d, i) => {
                 const ant = semanaRec[i - 1];
+                const faltaUn = Math.max(0, d.previsto - d.entregue);
+                const faltaTon = Math.max(0, d.tonPrevisto - d.tonEntregue);
                 return (
                   <tr key={d.iso} className="border-b border-white/10 last:border-0">
                     <td className="py-0.5 whitespace-nowrap">
@@ -251,6 +260,12 @@ export default function CenaProducaoSemana({
                       <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
                       <VariacaoDia atual={d.tonEntregue} anterior={ant?.tonEntregue} />
                     </td>
+                    <td className="py-0.5 text-right">
+                      <span className="font-mono font-bold" style={{ color: COR_DIFERENCA }}>
+                        {faltaTon > 0 ? `${fmtBrMax(faltaTon, 1)} t` : "—"}
+                      </span>{" "}
+                      <span className="text-[9px] text-white/45">{fmtInt(faltaUn)}</span>
+                    </td>
                   </tr>
                 );
               })}
@@ -260,6 +275,9 @@ export default function CenaProducaoSemana({
                 <td className="py-1 text-white">Total</td>
                 <td className="py-1 text-right font-mono text-white">
                   {fmtBrMax(totalTonRecPassada, 1)} t · {fmtInt(totalRecebidoPassada)} un
+                </td>
+                <td className="py-1 text-right font-mono text-white">
+                  {fmtBrMax(tonFaltaPassada, 1)} t · {fmtInt(unFaltaPassada)} un
                 </td>
               </tr>
             </tfoot>
