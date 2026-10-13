@@ -41,16 +41,49 @@ export default function CenaProducaoSemana({
 
   const semana = semanaAtual(dias);
   const semanaRec = semanaPassada(dias);
+
+  /* Garante que a tabela da semana passada mostre todos os dias úteis
+     (seg–sex), mesmo os sem registro na planilha. */
+  const NOMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const semanaRecCompleta: ProducaoSemanalDia[] = (() => {
+    if (semanaRec.length === 0) return [];
+    const porIso = new Map(semanaRec.map((d) => [d.iso, d]));
+    const hoje = new Date();
+    const dow = (hoje.getDay() + 6) % 7; // 0 = segunda
+    const seg = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - dow - 7);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const dias: ProducaoSemanalDia[] = [];
+    for (let i = 0; i < 5; i++) {
+      const dt = new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + i);
+      const isoDt = iso(dt);
+      const existente = porIso.get(isoDt);
+      if (existente) {
+        dias.push(existente);
+      } else {
+        dias.push({
+          iso: isoDt,
+          dia: NOMES[dt.getDay()]!,
+          data: `${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}/${String(dt.getFullYear()).slice(2)}`,
+          previsto: 0, produzido: 0, entregue: 0, pendente: 0,
+          tonPrevisto: 0, tonProduzido: 0, tonEntregue: 0, tonPendente: 0,
+          ordens: 0, lotes: 0,
+        });
+      }
+    }
+    return dias;
+  })();
+
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
   const totalRecebido = semana.reduce((s, d) => s + d.entregue, 0);
   const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
   const totalTonRec = semana.reduce((s, d) => s + d.tonEntregue, 0);
   const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
   // Totais da semana passada (recebido + a receber)
-  const totalPrevistoPassada = semanaRec.reduce((s, d) => s + d.previsto, 0);
-  const totalRecebidoPassada = semanaRec.reduce((s, d) => s + d.entregue, 0);
-  const totalTonPrevPassada = semanaRec.reduce((s, d) => s + d.tonPrevisto, 0);
-  const totalTonRecPassada = semanaRec.reduce((s, d) => s + d.tonEntregue, 0);
+  const totalPrevistoPassada = semanaRecCompleta.reduce((s, d) => s + d.previsto, 0);
+  const totalRecebidoPassada = semanaRecCompleta.reduce((s, d) => s + d.entregue, 0);
+  const totalTonPrevPassada = semanaRecCompleta.reduce((s, d) => s + d.tonPrevisto, 0);
+  const totalTonRecPassada = semanaRecCompleta.reduce((s, d) => s + d.tonEntregue, 0);
   const unFaltaPassada = Math.max(0, totalPrevistoPassada - totalRecebidoPassada);
   const tonFaltaPassada = Math.max(0, totalTonPrevPassada - totalTonRecPassada);
 
@@ -225,7 +258,7 @@ export default function CenaProducaoSemana({
       </div>
 
       {/* Semana passada — recebido × a receber dia a dia */}
-      {semanaRec.length > 0 && (
+      {semanaRecCompleta.length > 0 && (
         <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.8s" }}>
           <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
             Semana Passada · Recebido × A Receber
@@ -243,8 +276,8 @@ export default function CenaProducaoSemana({
               </tr>
             </thead>
             <tbody>
-              {semanaRec.map((d, i) => {
-                const ant = semanaRec[i - 1];
+              {semanaRecCompleta.map((d, i) => {
+                const ant = semanaRecCompleta[i - 1];
                 const faltaUn = Math.max(0, d.previsto - d.entregue);
                 const faltaTon = Math.max(0, d.tonPrevisto - d.tonEntregue);
                 return (
