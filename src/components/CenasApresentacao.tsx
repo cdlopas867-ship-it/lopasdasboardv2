@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt, fmtMoeda, fmtPct, fmtPeso } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
+import { calcularPendentesResumo } from "@/lib/pendentes-resumo";
+import type { PendenteProducao } from "@/lib/pendentes";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
@@ -97,6 +99,26 @@ export default function CenasApresentacao({
   const listaMes = (mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0);
   const totRecebido = listaMes.reduce((s, m) => s + m.recebido, 0);
 
+  /* Filtro por data das pendências (DT FINAL entre "de" e "até") */
+  const [pendDe, setPendDe] = useState("");
+  const [pendAte, setPendAte] = useState("");
+  const pend = useMemo(() => {
+    if (!pendentes || (!pendDe && !pendAte)) return pendentes;
+    const dentro = (d?: string) => !!d && (!pendDe || d >= pendDe) && (!pendAte || d <= pendAte);
+    const regs = pendentes.registros as PendenteProducao[] | undefined;
+    if (regs?.length) return calcularPendentesResumo(regs.filter((r) => dentro(r.dtFinal)));
+    const meses = pendentes.meses.filter((m) => dentro(m.dtFinal));
+    if (!meses.length) return null;
+    const totalTon = meses.reduce((s, m) => s + m.ton, 0);
+    return {
+      ...pendentes,
+      itens: meses.reduce((s, m) => s + m.itens, 0),
+      totalTon,
+      mediaTon: totalTon / meses.length,
+      meses: meses.map((m) => ({ ...m, pct: totalTon > 0 ? (m.ton / totalTon) * 100 : 0 })),
+    };
+  }, [pendentes, pendDe, pendAte]);
+
   return (
     <>
       {/* Cena 1 — Estoque × Previsto (donut interativo com toggle) */}
@@ -155,21 +177,40 @@ export default function CenasApresentacao({
             </p>
             <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Saúde da produção = toneladas recebidas no estoque ÷ (recebidas + pendentes). Toneladas recebidas vêm do recebimento do CD. Crítico = ordens com data final 3 meses ou mais antes do mês atual. No prazo = ordens com até 2 meses de atraso, mês atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
           </div>
-          {pendentes ? (
+          <div
+            className="video-sobe mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/70"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <span className="font-bold tracking-widest uppercase text-white/55">Filtrar data final</span>
+            <label className="flex items-center gap-1">de
+              <input type="date" value={pendDe} onChange={(e) => { setPendDe(e.target.value); onPausar?.(); }}
+                className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
+            </label>
+            <label className="flex items-center gap-1">até
+              <input type="date" value={pendAte} onChange={(e) => { setPendAte(e.target.value); onPausar?.(); }}
+                className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
+            </label>
+            {(pendDe || pendAte) && (
+              <button type="button" onClick={() => { setPendDe(""); setPendAte(""); }}
+                className="rounded border border-white/20 px-2 py-0.5 text-white/80 hover:bg-white/10">Limpar</button>
+            )}
+          </div>
+          {pend ? (
             <>
               <p className="video-sobe mt-3 font-serif text-3xl text-white sm:text-5xl">
-                {fmtBrMax(pendentes.totalTon, 1)} t{" "}
+                {fmtBrMax(pend.totalTon, 1)} t{" "}
                 <span className="text-base text-white/60 sm:text-lg">
-                  · {fmtInt(pendentes.itens)} ordens
+                  · {fmtInt(pend.itens)} ordens
                 </span>
               </p>
               <p className="video-sobe mt-1 text-sm text-white/50">
-                Média mensal: <span className="font-bold text-brand-amber">{fmtBrMax(pendentes.mediaTon, 1)} t</span>
+                Média mensal: <span className="font-bold text-brand-amber">{fmtBrMax(pend.mediaTon, 1)} t</span>
               </p>
 
               {/* Saúde da produção — toneladas pendentes × recebidas no estoque */}
               {(() => {
-                const pendente = pendentes.totalTon;
+                const pendente = pend.totalTon;
                 const produzido = totRecebido;
                 const total = pendente + produzido;
                 const saudePct = total > 0 ? (produzido / total) * 100 : 0;
@@ -225,14 +266,14 @@ export default function CenasApresentacao({
               })()}
 
               {/* Detalhe por mês — tonelagem, %, data final, lotes e ordens */}
-              {pendentes.meses?.length > 0 && (
+              {pend.meses?.length > 0 && (
                 <div className="mt-4">
                   <p className="mb-2 text-[10px] font-bold tracking-[0.3em] text-white/50 uppercase">
                     Por mês
                   </p>
                   <div className="space-y-2">
-                    {pendentes.meses.map((m, i) => {
-                      const maxMes = Math.max(...pendentes.meses.map((x) => x.ton), 1);
+                    {pend.meses.map((m, i) => {
+                      const maxMes = Math.max(...pend.meses.map((x) => x.ton), 1);
                       return (
                         <div
                           key={m.mes}
@@ -275,7 +316,7 @@ export default function CenasApresentacao({
             </>
           ) : (
             <p className="video-sobe mt-8 font-serif text-3xl text-white/70">
-              Nenhuma pendência de produção.
+              {pendDe || pendAte ? "Nenhuma pendência nesse período." : "Nenhuma pendência de produção."}
             </p>
           )}
         </div>
