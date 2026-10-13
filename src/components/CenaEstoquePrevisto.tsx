@@ -11,6 +11,7 @@ import { POSICAO_EM_LINHA, POSICAO_TOTAL, POSICAO_FORA_DE_LINHA, type PosicaoEst
 
 const COR_ESTOQUE = "#00FFCC";
 const COR_EM_LINHA = "#38BDF8";
+const COR_TOTAL = "#F5A623";
 
 type ResumoEstoque = { valor: number; previsto: number; ton: number; saldo: number; itens: number };
 
@@ -59,23 +60,22 @@ export default function CenaEstoquePrevisto({
   const secoes: SecaoDonut[] = [
     { id: "fora", label: "fora de linha", cor: COR_ESTOQUE, pct: pctEstoque },
     { id: "emLinha", label: "em linha", cor: COR_EM_LINHA, pct: pctEmLinha },
+    { id: "total", label: "estoque total", cor: COR_TOTAL, pct: 100 },
   ];
 
-  /* Linhas base do resumo (estoque fora de linha ou em linha) */
-  const linhasBase =
-    foco === 0
-      ? [
-          { rotulo: "Peso fora de linha", valor: `${fmtTonDec(pesoFora)}`, destaque: true },
-          { rotulo: "Itens", valor: fmtInt(posFora.itens) },
-          { rotulo: "Saldo", valor: fmtInt(posFora.saldoFocco) },
-          { rotulo: "Valor", valor: fmtMoeda(posFora.valorEstoque) },
-        ]
-      : [
-          { rotulo: "Peso em linha", valor: `${fmtTonDec(pesoEmLinha)}`, destaque: true },
-          { rotulo: "Itens", valor: fmtInt(posEmLinha.itens) },
-          { rotulo: "Saldo", valor: fmtInt(posEmLinha.saldoFocco) },
-          { rotulo: "Valor", valor: fmtMoeda(posEmLinha.valorEstoque) },
-        ];
+  /* Posição ativa conforme o foco: fora de linha, em linha ou total */
+  const posAtivo = foco === 0 ? posFora : foco === 1 ? posEmLinha : posTotal;
+  const pctAtivo = foco === 0 ? pctEstoque : foco === 1 ? pctEmLinha : 100;
+  const rotuloAtivo = foco === 0 ? "fora de linha" : foco === 1 ? "em linha" : "estoque total";
+  const corAtiva = foco === 0 ? COR_ESTOQUE : foco === 1 ? COR_EM_LINHA : COR_TOTAL;
+
+  /* Linhas base do resumo (fora de linha, em linha ou estoque total) */
+  const linhasBase = [
+    { rotulo: `Peso ${rotuloAtivo}`, valor: `${fmtTonDec(foco === 2 ? pesoTotal : foco === 0 ? pesoFora : pesoEmLinha)}`, destaque: true },
+    { rotulo: "Itens", valor: fmtInt(posAtivo.itens) },
+    { rotulo: "Saldo", valor: fmtInt(posAtivo.saldoFocco) },
+    { rotulo: "Valor", valor: fmtMoeda(posAtivo.valorEstoque) },
+  ];
 
   /* Breakdown por categoria */
   const cats = (unidades ?? []).filter((u) => u.stats?.length);
@@ -104,8 +104,8 @@ export default function CenaEstoquePrevisto({
       {/* Resumo rápido da seção ativa — destaque em gradiente */}
       <div className="mt-2 flex w-full justify-center">
         <DestaqueGradiente
-          numero={`${fmtBrMax(foco === 0 ? pctEstoque : pctEmLinha, 1)}%`}
-          rotulo={foco === 0 ? " fora de linha" : " em linha"}
+          numero={`${fmtBrMax(pctAtivo, 1)}%`}
+          rotulo={` ${rotuloAtivo}`}
         />
       </div>
 
@@ -146,7 +146,7 @@ export default function CenaEstoquePrevisto({
                     <tr key={i} className="border-b border-white/10 last:border-0">
                       <td className="py-0.5">
                         <span className="text-white/80">{u.nome}</span>
-                        <span className="ml-1.5 text-[9px] font-bold" style={{ color: foco === 0 ? COR_ESTOQUE : COR_EM_LINHA }}>
+                        <span className="ml-1.5 text-[9px] font-bold" style={{ color: corAtiva }}>
                           {fmtBrMax(u.share, 1)}%
                         </span>
                       </td>
