@@ -101,7 +101,7 @@ export default function CenasApresentacao({
     <>
       {/* Cena 1 — Estoque × Previsto (donut interativo com toggle) */}
       {cena === 0 && resumo && (
-        <CenaEstoquePrevisto anim={anim} resumo={resumo} valorFaturado={valorFaturado} unidades={unidades} cena={cena} onPausar={onPausar} />
+        <CenaEstoquePrevisto anim={anim} resumo={resumo} valorFaturado={valorFaturado} unidades={unidades} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
       )}
 
       {/* Cena 1 fallback — sem dados de resumo */}
