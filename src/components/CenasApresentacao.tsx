@@ -195,6 +195,11 @@ export default function CenasApresentacao({
               <button type="button" onClick={() => { setPendDe(""); setPendAte(""); }}
                 className="rounded border border-white/20 px-2 py-0.5 text-white/80 hover:bg-white/10">Limpar</button>
             )}
+            {(pendDe || pendAte) && pend && (
+              <span className="font-bold text-brand-amber">
+                · Peso total: {fmtBrMax(pend.totalTon, 1)} t
+              </span>
+            )}
           </div>
           {pend ? (
             <>
