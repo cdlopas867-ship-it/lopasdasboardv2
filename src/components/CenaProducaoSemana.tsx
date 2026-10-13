@@ -218,6 +218,19 @@ export default function CenaProducaoSemana({
               );
             })}
           </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1 text-white">Total</td>
+              <td className="py-1 text-right">
+                <span className="font-mono font-bold text-white">{fmtBrMax(totalTonPrev, 1)} t</span>{" "}
+                <span className="text-[9px] text-white/55">{fmtInt(semana.reduce((s, d) => s + d.produzido, 0))}</span>
+              </td>
+              <td className="py-1 text-right">
+                <span className="font-mono font-bold text-white">{fmtBrMax(totalTonRec, 1)} t</span>{" "}
+                <span className="text-[9px] text-white/55">{fmtInt(totalRecebido)}</span>
+              </td>
+            </tr>
+          </tfoot>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
           * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. ▲/▼ = variação em % vs dia anterior.
