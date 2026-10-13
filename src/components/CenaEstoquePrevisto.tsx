@@ -59,10 +59,11 @@ export default function CenaEstoquePrevisto({
   const secoes: SecaoDonut[] = [
     { id: "emLinha", label: "em linha", cor: COR_EM_LINHA, pct: pctEmLinha },
     { id: "foraDeLinha", label: "fora de linha", cor: COR_FORA, pct: pctFora },
+    { id: "total", label: "total", cor: "#FFFFFF", pct: 100 },
   ];
 
-  /* Posição ativa (em linha ou fora de linha) */
-  const posicaoAtiva: PosicaoEstoque = foco === 0 ? posicaoEmLinha : posicaoFora;
+  /* Posição ativa (em linha, fora de linha ou total) */
+  const posicaoAtiva: PosicaoEstoque = foco === 0 ? posicaoEmLinha : foco === 1 ? posicaoFora : posicaoTotal;
 
   /* Linhas do resumo da seção ativa */
   const linhasBase = [
@@ -104,14 +105,14 @@ export default function CenaEstoquePrevisto({
       <div className="mt-2 flex w-full justify-center">
         <DestaqueGradiente
           numero={fmtBrMax(posicaoAtiva.pesoTon, 1)}
-          rotulo={foco === 0 ? " t em linha" : " t fora de linha"}
+          rotulo={foco === 0 ? " t em linha" : foco === 1 ? " t fora de linha" : " t total"}
         />
       </div>
 
       {/* Tabela de detalhes da seção ativa */}
       <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-          {foco === 0 ? "Em linha" : "Fora de linha"}
+          {foco === 0 ? "Em linha" : foco === 1 ? "Fora de linha" : "Total"}
         </p>
         <table className="w-full text-left text-[11px] text-white">
           <thead>
@@ -218,7 +219,7 @@ export default function CenaEstoquePrevisto({
       )}
 
       <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-        * Ocupação: tonelagem em linha ÷ tonelagem total × 100. {fmtBrMax(pctEmLinha, 1)}% em linha · {fmtBrMax(pctFora, 1)}% fora de linha. Clique no gráfico para alternar.
+        * Ocupação: tonelagem em linha ÷ tonelagem total × 100. {fmtBrMax(pctEmLinha, 1)}% em linha · {fmtBrMax(pctFora, 1)}% fora de linha · total {fmtBrMax(totalTon, 1)} t. Clique no gráfico para alternar.
       </p>
 
     </div>
