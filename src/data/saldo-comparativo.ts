@@ -71,11 +71,11 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     saldo: 190638.05
   },
   reservados: {
-    qtd: 76763,
-    saldo: 207259.71,
-    pctSaldo: 37,
+    qtd: 76860,
+    saldo: 149580,
+    pctSaldo: 51.4,
     ton: 2395.2,
-    valor: 9889916.55
+    valor: 9891312.67
   },
   comparativo: {
     itensEmComum: 589,
