@@ -15,6 +15,8 @@ import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaPaletes from "@/components/CenaPaletes";
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 import CenaProdutividade from "@/components/CenaProdutividade";
+import CenaSaldoComparativo from "@/components/CenaSaldoComparativo";
+import type { SaldoComparativo } from "@/data/saldo-comparativo";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -61,6 +63,7 @@ type Props = {
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
+  saldoComparativo?: SaldoComparativo | null | undefined;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
   onExportarExcel?: (() => void) | undefined;
@@ -87,6 +90,7 @@ export default function CenasApresentacao({
   recebimentoSemanal,
   producaoSemanal,
   resumo,
+  saldoComparativo,
   onReiniciar,
   onGerarRelatorio,
   onExportarExcel,
@@ -373,8 +377,13 @@ export default function CenasApresentacao({
         <CenaProdutividade anim={anim} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 13 — encerramento */}
+      {/* Cena 13 — Controle de saldo Full × Focco com reservados */}
       {cena === 12 && (
+        <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} />
+      )}
+
+      {/* Cena 14 — encerramento */}
+      {cena === 13 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
