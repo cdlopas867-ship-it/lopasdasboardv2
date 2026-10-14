@@ -27,7 +27,7 @@ services:
       - |
         npm i -g bun &&
         bun install --frozen-lockfile &&
-        exec npx vite dev --port 3000 --host 0.0.0.0
+        exec ./node_modules/.bin/vite dev --port 3000 --host 0.0.0.0
     healthcheck:
       test:
         - "CMD-SHELL"

@@ -63,12 +63,25 @@ export function isRequestAborted(error: unknown): boolean {
   return false;
 }
 
+/* O servidor de dev (plugin do TanStack/nitro) registra o caso abortado já
+   formatado como string — "[ssr] erro não tratado:\nError: aborted\n at …" —
+   então o valor não é um Error e `isRequestAborted` não o alcança. Sem isso,
+   toda requisição que morre no teardown do stack (recriação/restart do container,
+   reload do preview) volta a poluir o log como erro. O teste é o mesmo:
+   a linha do erro é exatamente "aborted". */
+export function isAbortedLogText(value: unknown): boolean {
+  return (
+    typeof value === "string" &&
+    /(?:^|\n)\s*(?:AbortError|Error): aborted\s*(?:\n|$)/.test(value)
+  );
+}
+
 // Wrap console.error so errors logged by any layer — including h3's internal
 // unhandled-error logging, which this file cannot hook directly — are both
 // recorded for consumeLastCapturedError and expanded before serialization.
 const originalConsoleError = console.error.bind(console);
 console.error = (...args: unknown[]) => {
-  if (args.some(isRequestAborted)) return;
+  if (args.some((arg) => isRequestAborted(arg) || isAbortedLogText(arg))) return;
   const expanded = args.map((arg) => {
     if (!isErrorLike(arg)) return arg;
     record(arg);
