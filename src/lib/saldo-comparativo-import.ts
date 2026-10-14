@@ -13,6 +13,10 @@
  * Os dois lados são cruzados pelo código completo do item: os que existem nos
  * dois sistemas são comparados pelo saldo, os demais viram alertas.
  *
+ * A tonelagem de cada situação (Exato / Diferença / Só Full) é o peso dos itens
+ * daquela situação na posição do Full (PESO LIQ TOTAL). O relatório do Focco
+ * não traz peso, então "Só Focco" fica sem tonelagem.
+ *
  * As linhas chegam já lidas da workbook (array de arrays) porque o XLSX é
  * importado em drive-auto-import.ts, onde funciona sob o SSR do Vite.
  */
@@ -90,12 +94,13 @@ export function calcularSaldoComparativo(
 ): SaldoComparativo | null {
   if (!itensFull.length || itensFocco.size === 0) return null;
 
-  const fullMap = new Map<string, { saldo: number; desc: string; valor: number }>();
+  const fullMap = new Map<string, { saldo: number; desc: string; valor: number; peso: number }>();
   for (const it of itensFull) {
     if (!it.item) continue;
     const chave = chaveItem(it.item, it.mascara);
-    const atual = fullMap.get(chave) ?? { saldo: 0, desc: it.desc, valor: 0 };
+    const atual = fullMap.get(chave) ?? { saldo: 0, desc: it.desc, valor: 0, peso: 0 };
     atual.saldo += it.saldo;
+    atual.peso += it.peso;
     atual.valor += it.valor > 0 ? it.valor : it.saldo * it.custo;
     if (!atual.desc) atual.desc = it.desc;
     fullMap.set(chave, atual);
@@ -107,20 +112,26 @@ export function calcularSaldoComparativo(
   let itensSoFocco = 0;
   let qtdExata = 0;
   let qtdDiferenca = 0;
+  let pesoExato = 0;
+  let pesoDiferenca = 0;
+  let pesoSoFull = 0;
   const diferencas: DiferencaSaldo[] = [];
 
   for (const [chave, f] of fullMap) {
     const fo = itensFocco.get(chave);
     if (!fo) {
       itensSoFull++;
+      pesoSoFull += f.peso;
       continue;
     }
     itensEmComum++;
     const diff = f.saldo - fo.saldo;
     if (diff === 0) {
       qtdExata++;
+      pesoExato += f.peso;
     } else {
       qtdDiferenca++;
+      pesoDiferenca += f.peso;
       diferencas.push({ item: chave, desc: f.desc, full: f.saldo, focco: fo.saldo, diff });
     }
   }
@@ -145,6 +156,9 @@ export function calcularSaldoComparativo(
       qtdExata,
       qtdDiferenca,
       pctAcuracia: itensEmComum > 0 ? +((qtdExata / itensEmComum) * 100).toFixed(1) : 0,
+      tonExato: +(pesoExato / 1000).toFixed(1),
+      tonDiferenca: +(pesoDiferenca / 1000).toFixed(1),
+      tonSoFull: +(pesoSoFull / 1000).toFixed(1),
     },
     alertas: {
       soFull: itensSoFull,

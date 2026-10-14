@@ -4,7 +4,7 @@
    e alertas das divergências. */
 
 import { cn } from "@/lib/utils";
-import { fmtInt, fmtMi, fmtBrMax, fmtMoeda } from "@/lib/format";
+import { fmtInt, fmtMi, fmtBrMax, fmtMoeda, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import { SALDO_COMPARATIVO, type SaldoComparativo } from "@/data/saldo-comparativo";
@@ -40,12 +40,15 @@ export default function CenaSaldoComparativo({
     { id: "diferenca", label: "diferença", cor: COR_DIFERENCA, pct: pct(c.qtdDiferenca) },
   ];
 
-  const linhas = [
-    { idx: 0, cor: COR_EXATO, rotulo: "Exato", itens: c.qtdExata, pct: pct(c.qtdExata) },
-    { idx: 1, cor: COR_DIFERENCA, rotulo: "Diferença", itens: c.qtdDiferenca, pct: pct(c.qtdDiferenca) },
-    { idx: 2, cor: COR_SO_FULL, rotulo: "Só Full", itens: c.itensSoFull, pct: pct(c.itensSoFull) },
-    { idx: 3, cor: COR_SO_FOCCO, rotulo: "Só Focco", itens: c.itensSoFocco, pct: pct(c.itensSoFocco) },
+  /* Tonelagem por situação: peso dos itens na posição do Full. O relatório do
+     Focco não traz peso, então "Só Focco" fica sem tonelagem. */
+  const linhas: { idx: number; cor: string; rotulo: string; itens: number; pct: number; ton: number | null }[] = [
+    { idx: 0, cor: COR_EXATO, rotulo: "Exato", itens: c.qtdExata, pct: pct(c.qtdExata), ton: c.tonExato },
+    { idx: 1, cor: COR_DIFERENCA, rotulo: "Diferença", itens: c.qtdDiferenca, pct: pct(c.qtdDiferenca), ton: c.tonDiferenca },
+    { idx: 2, cor: COR_SO_FULL, rotulo: "Só Full", itens: c.itensSoFull, pct: pct(c.itensSoFull), ton: c.tonSoFull },
+    { idx: 3, cor: COR_SO_FOCCO, rotulo: "Só Focco", itens: c.itensSoFocco, pct: pct(c.itensSoFocco), ton: null },
   ];
+  const tonTotal = c.tonExato + c.tonDiferenca + c.tonSoFull;
 
   const saldoTotal = d.full.saldo + d.focco.saldo;
   const pctFull = saldoTotal > 0 ? (d.full.saldo / saldoTotal) * 100 : 0;
@@ -90,6 +93,7 @@ export default function CenaSaldoComparativo({
             <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
               <th className="pb-0.5 font-bold">Situação</th>
               <th className="pb-0.5 text-right font-bold">Itens</th>
+              <th className="pb-0.5 text-right font-bold">Toneladas</th>
               <th className="pb-0.5 text-right font-bold">%</th>
             </tr>
           </thead>
@@ -108,6 +112,9 @@ export default function CenaSaldoComparativo({
                   <td className="py-0.5 text-right font-mono font-semibold" style={ativo ? { color: l.cor } : undefined}>
                     {fmtInt(l.itens)}
                   </td>
+                  <td className="py-0.5 text-right font-mono font-semibold" style={ativo ? { color: l.cor } : undefined}>
+                    {l.ton == null ? "—" : fmtTonDec(l.ton)}
+                  </td>
                   <td className="py-0.5 text-right font-mono font-bold" style={ativo ? { color: l.cor } : undefined}>
                     {fmtBrMax(l.pct, 1)}%
                   </td>
@@ -117,6 +124,7 @@ export default function CenaSaldoComparativo({
             <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
               <td className="py-1 text-white">Total de itens</td>
               <td className="py-1 text-right font-mono text-white">{fmtInt(totalItens)}</td>
+              <td className="py-1 text-right font-mono text-white">{fmtTonDec(tonTotal)}</td>
               <td className="py-1 text-right font-mono text-white">100%</td>
             </tr>
           </tbody>
@@ -124,6 +132,9 @@ export default function CenaSaldoComparativo({
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
           * Acuracidade nos {fmtInt(c.itensEmComum)} itens em comum:{" "}
           <span className="font-bold text-white/70">{fmtBrMax(c.pctAcuracia, 1)}%</span> com saldo exatamente igual.
+        </p>
+        <p className="mt-1 text-[8px] leading-tight text-white/40">
+          * Toneladas pelo peso da posição do Full; o relatório do Focco não traz peso, por isso "só Focco" fica sem tonelagem.
         </p>
       </div>
 

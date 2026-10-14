@@ -43,6 +43,12 @@ export type SaldoComparativo = {
     qtdExata: number;
     qtdDiferenca: number;
     pctAcuracia: number;
+    /* Tonelagem dos itens de cada situação, pelo peso da posição do Full
+       (PESO LIQ TOTAL). O relatório do Focco não traz peso, então os itens
+       "só Focco" ficam sem tonelagem. */
+    tonExato: number;
+    tonDiferenca: number;
+    tonSoFull: number;
   };
   alertas: {
     soFull: number;
@@ -69,7 +75,10 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     itensSoFocco: 68,
     qtdExata: 171,
     qtdDiferenca: 418,
-    pctAcuracia: 29
+    pctAcuracia: 29,
+    tonExato: 224.1,
+    tonDiferenca: 3761.4,
+    tonSoFull: 2.2
   },
   alertas: {
     soFull: 23,
