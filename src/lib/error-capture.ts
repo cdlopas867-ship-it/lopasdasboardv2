@@ -49,11 +49,26 @@ function isErrorLike(value: unknown): value is Error {
   return value instanceof Error;
 }
 
+/* O navegador, o proxy do preview e o HMR podem encerrar uma requisição
+   enquanto o SSR ainda está montando a resposta. O Node representa esse fluxo
+   normal com `Error: aborted`; registrá-lo como erro não tratado vira um falso
+   500 nos logs. Isso não esconde erros de aplicação: somente desconexões cujo
+   erro/cause inteiro é explicitamente "aborted" são ignoradas. */
+export function isRequestAborted(error: unknown): boolean {
+  let current: unknown = error;
+  for (let depth = 0; depth < CAUSE_DEPTH_LIMIT && current instanceof Error; depth++) {
+    if (current.name === "AbortError" || current.message.trim().toLowerCase() === "aborted") return true;
+    current = current.cause;
+  }
+  return false;
+}
+
 // Wrap console.error so errors logged by any layer — including h3's internal
 // unhandled-error logging, which this file cannot hook directly — are both
 // recorded for consumeLastCapturedError and expanded before serialization.
 const originalConsoleError = console.error.bind(console);
 console.error = (...args: unknown[]) => {
+  if (args.some(isRequestAborted)) return;
   const expanded = args.map((arg) => {
     if (!isErrorLike(arg)) return arg;
     record(arg);

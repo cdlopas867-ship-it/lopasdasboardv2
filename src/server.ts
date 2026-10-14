@@ -1,5 +1,5 @@
 import "./lib/error-capture";
-import { consumeLastCapturedError, describeError } from "./lib/error-capture";
+import { consumeLastCapturedError, describeError, isRequestAborted } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
 /* O servidor principal precisa ser leve e compatível com o runtime do Lovable.
@@ -45,6 +45,12 @@ function statusFromError(error: unknown): number {
 }
 
 function errorResponse(error: unknown): Response {
+  /* Cliente desconectado: não há resposta para entregar e isso não é um 500
+     da aplicação (acontece, por exemplo, quando o preview recarrega no HMR). */
+  if (isRequestAborted(error)) {
+    return new Response(null, { status: 499 });
+  }
+
   const detail = consumeLastCapturedError() ?? error;
   console.error("[server] falha ao processar requisição:\n" + describeError(detail));
   return new Response(renderErrorPage(), {
