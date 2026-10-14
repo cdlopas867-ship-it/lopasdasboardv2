@@ -1,10 +1,10 @@
 /* Cena Controle de Saldo — Full (FullSoft, posição de estoque) × Focco (ERP,
-   estoque 001 · relatório WF0112 - Estoques), com os reservados da carteira
-   comercial. Mesmo formato das outras cenas: donut interativo + botões, card
-   com o % do foco, tabela Legenda, indicadores e alertas das divergências. */
+   estoque 001 · relatório WF0112 - Estoques). Mesmo formato das outras cenas:
+   donut interativo + botões, card com o % do foco, tabela Legenda, indicadores
+   e alertas das divergências. */
 
 import { cn } from "@/lib/utils";
-import { fmtInt, fmtMi, fmtBrMax, fmtMoeda, fmtTonDec } from "@/lib/format";
+import { fmtInt, fmtMi, fmtBrMax, fmtMoeda } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import { SALDO_COMPARATIVO, type SaldoComparativo } from "@/data/saldo-comparativo";
@@ -50,7 +50,6 @@ export default function CenaSaldoComparativo({
   const saldoTotal = d.full.saldo + d.focco.saldo;
   const pctFull = saldoTotal > 0 ? (d.full.saldo / saldoTotal) * 100 : 0;
   const pctFocco = saldoTotal > 0 ? (d.focco.saldo / saldoTotal) * 100 : 0;
-  const reservados = d.reservados;
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -60,7 +59,7 @@ export default function CenaSaldoComparativo({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto={`Controle de saldo entre o Full (posição de estoque do CD no FullSoft) e o Focco (ERP, estoque 001 — relatório WF0112 - Estoques, considerando apenas os volumes — descrição começando por VOL — nos endereços do CD: as linhas do fornecedor ASTEC e as peças soltas ficam de fora). O cruzamento é pelo código do item: itens com o mesmo código nos dois sistemas são comparados pelo saldo. Acuracidade = itens com saldo exatamente igual ÷ itens em comum. Itens que só existem em um sistema viram alertas (o Focco controla também peças e componentes que o FullSoft não controla). Reservados: quantidade reservada da carteira comercial (COMERCIAL 024) e sua participação no saldo. Data-base: ${d.dataBase}. Clique para alternar.`}
+          texto={`Controle de saldo entre o Full (posição de estoque do CD no FullSoft) e o Focco (ERP, estoque 001 — relatório WF0112 - Estoques, considerando apenas os volumes — descrição começando por VOL — em qualquer endereço, inclusive os da ASTEC: as peças soltas ficam de fora). O cruzamento é pelo código do item: itens com o mesmo código nos dois sistemas são comparados pelo saldo. Acuracidade = itens com saldo exatamente igual ÷ itens em comum. Itens que só existem em um sistema viram alertas (o Focco controla também peças e componentes que o FullSoft não controla). Data-base: ${d.dataBase}. Clique para alternar.`}
         />
       </div>
 
@@ -158,27 +157,8 @@ export default function CenaSaldoComparativo({
         </div>
       </div>
 
-      {/* Reservados — carteira comercial sobre o saldo do estoque */}
-      <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.7s" }}>
-        <p className="mb-1 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">Reservados</p>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="rounded-xl border p-2 text-center" style={{ borderColor: `${COR_RESERVADO}44`, background: `${COR_RESERVADO}0F` }}>
-            <p className="font-serif text-base sm:text-lg" style={{ color: COR_RESERVADO }}>{fmtInt(reservados.qtd)}</p>
-            <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">un reservadas</p>
-          </div>
-          <div className="rounded-xl border p-2 text-center" style={{ borderColor: `${COR_RESERVADO}44`, background: `${COR_RESERVADO}0F` }}>
-            <p className="font-serif text-base sm:text-lg" style={{ color: COR_RESERVADO }}>{fmtBrMax(reservados.pctSaldo, 1)}%</p>
-            <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">do saldo</p>
-          </div>
-          <div className="rounded-xl border p-2 text-center" style={{ borderColor: `${COR_RESERVADO}44`, background: `${COR_RESERVADO}0F` }}>
-            <p className="font-serif text-base sm:text-lg" style={{ color: COR_RESERVADO }}>{fmtTonDec(reservados.ton)}</p>
-            <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">ton · {fmtMi(reservados.valor)}</p>
-          </div>
-        </div>
-      </div>
-
       {/* Alertas — itens sem par no outro sistema e saldo total divergente */}
-      <div className="video-sobe mt-3 flex w-full max-w-sm mx-auto items-center gap-2" style={{ animationDelay: "0.8s" }}>
+      <div className="video-sobe mt-3 flex w-full max-w-sm mx-auto items-center gap-2" style={{ animationDelay: "0.7s" }}>
         <div className="flex-1 rounded-lg border border-red-500/25 bg-red-500/5 px-2.5 py-1.5 text-center">
           <p className="font-mono text-sm font-bold text-red-400">{fmtInt(d.alertas.soFull)}</p>
           <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">só full</p>
@@ -197,7 +177,7 @@ export default function CenaSaldoComparativo({
       </div>
 
       {/* Maiores divergências — itens com saldo diferente nos dois sistemas */}
-      <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.9s" }}>
+      <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.8s" }}>
         <p className="mb-1 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
           Maiores divergências
         </p>

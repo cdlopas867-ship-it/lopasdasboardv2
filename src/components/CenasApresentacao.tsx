@@ -377,7 +377,7 @@ export default function CenasApresentacao({
         <CenaProdutividade anim={anim} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 13 — Controle de saldo Full × Focco com reservados */}
+      {/* Cena 13 — Controle de saldo Full × Focco */}
       {cena === 12 && (
         <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} />
       )}

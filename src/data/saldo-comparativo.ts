@@ -10,19 +10,18 @@
  *
  * O cruzamento é pelo código completo: itens com o mesmo código nos dois
  * sistemas são comparados pelo saldo; os que existem em apenas um lado viram
- * alertas. Do relatório do Focco entra apenas o estoque do **CD**: as linhas
- * com endereço fora do CD (a ASTEC, fornecedor de ferragens) ficam de fora —
- * com elas o saldo do Focco ficava inflado em ~3,1 mil itens que não estão no
- * CD — e só entram itens de **volume** (descrição começando por "VOL"); o
- * restante são peças e componentes soltos. A acuracidade é a parcela dos itens
- * em comum com saldo exatamente igual.
+ * alertas. Do relatório do Focco entram só os itens de **volume** (descrição
+ * começando por "VOL"), em qualquer endereço — inclusive os da ASTEC,
+ * fornecedor de ferragens, que também guarda volumes e por isso conta no saldo
+ * e no peso; o restante são peças e componentes soltos. A acuracidade é a
+ * parcela dos itens em comum com saldo exatamente igual.
  *
  * Os valores abaixo são o FALLBACK estático (data-base 14/10/2026). Em execução
  * o painel usa o comparativo calculado pelo drive-auto-import a partir das
  * planilhas da pasta do Drive (src/lib/saldo-comparativo-import.ts). Para
- * atualizar o fallback, reextrair as três planilhas da pasta (ST QUARTA,
- * WF0112 - Estoques e RESERVAS QUARTAS) com um script Node que use o xlsx do
- * container e regravar este arquivo.
+ * atualizar o fallback, reextrair as duas planilhas da pasta (ST QUARTA e
+ * WF0112 - Estoques) com um script Node que use o xlsx do container e regravar
+ * este arquivo.
  */
 
 export type DiferencaSaldo = {
@@ -33,19 +32,10 @@ export type DiferencaSaldo = {
   diff: number;
 };
 
-export type SaldoReservado = {
-  qtd: number;
-  saldo: number;
-  pctSaldo: number;
-  ton: number;
-  valor: number;
-};
-
 export type SaldoComparativo = {
   dataBase: string;
   full: { itens: number; saldo: number; valor: number };
   focco: { itens: number; saldo: number };
-  reservados: SaldoReservado;
   comparativo: {
     itensEmComum: number;
     itensSoFull: number;
@@ -70,28 +60,21 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     valor: 17061917.77
   },
   focco: {
-    itens: 656,
-    saldo: 134303
-  },
-  reservados: {
-    qtd: 76860,
-    saldo: 149580,
-    pctSaldo: 51.4,
-    ton: 2395.2,
-    valor: 9891312.67
+    itens: 657,
+    saldo: 134304
   },
   comparativo: {
-    itensEmComum: 588,
-    itensSoFull: 24,
+    itensEmComum: 589,
+    itensSoFull: 23,
     itensSoFocco: 68,
-    qtdExata: 170,
+    qtdExata: 171,
     qtdDiferenca: 418,
-    pctAcuracia: 28.9
+    pctAcuracia: 29
   },
   alertas: {
-    soFull: 24,
+    soFull: 23,
     soFocco: 68,
-    diferencaTotal: 1822
+    diferencaTotal: 1821
   },
   topDiferencas: [
     {
@@ -103,14 +86,14 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     },
     {
       item: "72596",
-      desc: "VOL CX ESPELHO C/4 ESP 900X235X3 C/8 SUP CROMADO 0,960X0,2",
+      desc: "VOL CX ESPELHO C/4 ESP 900X235X3 C/8 SUP CROMADO 0,960X0,295X0,046",
       full: 1974,
       focco: 1404,
       diff: 570
     },
     {
       item: "72594.12814",
-      desc: "VOL CX GR 8 PTS EASY SLIM/ANDARA TAMPO/LATERAL 2,430X0,460",
+      desc: "VOL CX GR 8 PTS EASY SLIM/ANDARA TAMPO/LATERAL 2,430X0,460X0,128",
       full: 1840,
       focco: 1372,
       diff: 468
@@ -145,7 +128,7 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     },
     {
       item: "72595.12820",
-      desc: "VOL CX GR 8 PTS EASY SLIM/ANDARA SOFT PORTAS/COSTAS 1,950X",
+      desc: "VOL CX GR 8 PTS EASY SLIM/ANDARA SOFT PORTAS/COSTAS 1,950X0,600X0,096",
       full: 971,
       focco: 822,
       diff: 149
@@ -159,7 +142,7 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     },
     {
       item: "74198.31905",
-      desc: "VOL CX MESA DE CABECEIRA C/3 GAV BAIAO 2021 0,665X0,385X0,",
+      desc: "VOL CX MESA DE CABECEIRA C/3 GAV BAIAO 2021 0,665X0,385X0,140",
       full: 349,
       focco: 237,
       diff: 112

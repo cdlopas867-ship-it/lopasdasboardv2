@@ -1186,15 +1186,13 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     }
   }
 
-  /* Comparativo de saldo Full (posição de estoque) × Focco (relatório WF0112),
-     com os reservados da carteira comercial no mesmo bloco. */
+  /* Comparativo de saldo Full (posição de estoque) × Focco (relatório WF0112). */
   let saldoComparativo: SaldoComparativo | null = null;
   if (melhorItens && itensFocco) {
     saldoComparativo = calcularSaldoComparativo(
       melhorItens,
       itensFocco,
       melhorResumo.data || new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }),
-      melhorReservados,
     );
     if (saldoComparativo) {
       console.info(

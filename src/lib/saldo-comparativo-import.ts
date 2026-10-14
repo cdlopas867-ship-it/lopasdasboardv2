@@ -5,21 +5,19 @@
  * Focco = relatório "WF0112 - Estoques" (aba Resultado), colunas
  *         Item / Descrição / Endereço / Qtd. Atual. Como o relatório traz uma
  *         linha por endereço, as quantidades são somadas por código.
- *         Entra apenas o estoque do CD: as linhas de endereços que não são do
- *         CD (hoje só a ASTEC, fornecedor de ferragens) ficam fora (ver
- *         ENDERECOS_FORA_DO_CD) e só entram itens de volume, com descrição
- *         começando por "VOL" (ver isVolume).
+ *         Entra só itens de volume, com descrição começando por "VOL" (ver
+ *         isVolume) — em qualquer endereço, inclusive os da ASTEC (fornecedor
+ *         de ferragens), que também guarda volumes e por isso entra no saldo
+ *         e no peso da comparação.
  *
  * Os dois lados são cruzados pelo código completo do item: os que existem nos
- * dois sistemas são comparados pelo saldo, os demais viram alertas. As reservas
- * da carteira comercial (COMERCIAL 024) entram como bloco próprio.
+ * dois sistemas são comparados pelo saldo, os demais viram alertas.
  *
  * As linhas chegam já lidas da workbook (array de arrays) porque o XLSX é
  * importado em drive-auto-import.ts, onde funciona sob o SSR do Vite.
  */
 
 import type { ItemEstoque } from "./base-estoque";
-import type { Reservados } from "./reservados";
 import type { DiferencaSaldo, SaldoComparativo } from "@/data/saldo-comparativo";
 
 const num = (v: unknown) => (typeof v === "number" ? v : Number(v ?? 0) || 0);
@@ -42,12 +40,6 @@ function chaveItem(item: string, mascara: string): string {
 }
 
 const LIMITE_DIFERENCAS = 12;
-
-/* Endereços que NÃO são estoque do CD. A ASTEC (fornecedor de ferragens) guarda
-   os itens no próprio endereço e o Focco devolve essas linhas no mesmo relatório
-   WF0112; somadas, inflavam o saldo do Focco com ~3,1 mil itens que não estão no
-   CD. A comparação considera apenas o estoque do CD. */
-const ENDERECOS_FORA_DO_CD = ["ASTEC"];
 
 /* Só itens de volume entram na comparação: a posição do CD é em volumes
    (descrição começando por "VOL"), enquanto o relatório do Focco traz também
@@ -73,7 +65,6 @@ export function lerItensFocco(rows: unknown[][]): Map<string, { saldo: number; d
   const cItem = h.indexOf("ITEM");
   const cDesc = h.findIndex((x) => x.startsWith("DESC"));
   const cQtd = h.findIndex((x) => x.includes("QTD") && x.includes("ATUAL"));
-  const cEnd = h.findIndex((x) => x.includes("ENDERECO"));
   if (cItem < 0 || cQtd < 0 || cDesc < 0) return null;
 
   const mapa = new Map<string, { saldo: number; desc: string }>();
@@ -81,13 +72,8 @@ export function lerItensFocco(rows: unknown[][]): Map<string, { saldo: number; d
     if (!r) continue;
     const chave = str(r[cItem]);
     if (!chave) continue;
-    /* Só itens de volume (descrição começando por "VOL"). */
+    /* Só itens de volume (descrição começando por "VOL"), em qualquer endereço. */
     if (!isVolume(str(r[cDesc]))) continue;
-    /* Só o estoque do CD: ignora endereços fora do CD (ex.: ASTEC-1-1). */
-    if (cEnd >= 0) {
-      const endereco = norm(r[cEnd]).split(" ")[0] ?? "";
-      if (ENDERECOS_FORA_DO_CD.includes(endereco)) continue;
-    }
     const atual = mapa.get(chave) ?? { saldo: 0, desc: cDesc >= 0 ? str(r[cDesc]) : "" };
     atual.saldo += num(r[cQtd]);
     if (!atual.desc) atual.desc = cDesc >= 0 ? str(r[cDesc]) : "";
@@ -101,7 +87,6 @@ export function calcularSaldoComparativo(
   itensFull: ItemEstoque[],
   itensFocco: Map<string, { saldo: number; desc: string }>,
   dataBase: string,
-  reservados?: Reservados | null,
 ): SaldoComparativo | null {
   if (!itensFull.length || itensFocco.size === 0) return null;
 
@@ -153,13 +138,6 @@ export function calcularSaldoComparativo(
     dataBase,
     full: { itens: fullMap.size, saldo: fullSaldo, valor: +fullValor.toFixed(2) },
     focco: { itens: itensFocco.size, saldo: +foccoSaldo.toFixed(2) },
-    reservados: {
-      qtd: +(reservados?.totalQtd ?? 0).toFixed(2),
-      saldo: +(reservados?.totalSaldo ?? 0).toFixed(2),
-      pctSaldo: +(reservados?.pctQtd ?? 0).toFixed(1),
-      ton: +(reservados?.totalTon ?? 0).toFixed(1),
-      valor: +(reservados?.totalValor ?? 0).toFixed(2),
-    },
     comparativo: {
       itensEmComum,
       itensSoFull,
