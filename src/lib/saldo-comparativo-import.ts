@@ -14,9 +14,11 @@
  * Os dois lados são cruzados pelo código completo do item: os que existem nos
  * dois sistemas são comparados pelo saldo, os demais viram alertas.
  *
- * A tonelagem de cada situação (Exato / Diferença / Só Focco) é o peso dos itens
- * daquela situação na posição do Focco (PESO LIQ TOTAL). O relatório do Full
- * não traz peso, então "Só Full" fica sem tonelagem.
+ * A tonelagem vem em dois lados: a do Focco é o peso dos itens daquela situação
+ * na posição 001 (PESO LIQ TOTAL); a do Full é a quantidade do relatório WF0112
+ * × o PESO LIQ UN do item na posição do Focco (o relatório do Full não traz
+ * peso). A posição lista também os itens zerados, o que dá peso aos itens que
+ * só existem no Full.
  *
  * As linhas chegam já lidas da workbook (array de arrays) porque o XLSX é
  * importado em drive-auto-import.ts, onde funciona sob o SSR do Vite.
@@ -89,10 +91,42 @@ export function lerItensFull(
   return mapa.size > 0 ? mapa : null;
 }
 
-/* Monta o comparativo Full × Focco a partir dos itens dos dois sistemas. */
+/* Peso unitário (kg por volume) de cada item da posição do Focco. A posição
+   traz o PESO LIQ UN de todos os itens, inclusive dos zerados — é a única
+   fonte de peso dos itens que só existem no relatório do Full. */
+export function lerPesosPosicao(rows: unknown[][]): Map<string, number> | null {
+  const hi = rows.findIndex((r) => {
+    const h = (r ?? []).map(norm);
+    return h.includes("ITEM") && h.includes("SALDO") && h.some((x) => x.startsWith("PESO") && x.includes("UN"));
+  });
+  if (hi < 0) return null;
+
+  const h = (rows[hi] ?? []).map(norm);
+  const cItem = h.indexOf("ITEM");
+  const cMasc = h.findIndex((x) => x.startsWith("MASCARA"));
+  const cPesoUn = h.findIndex((x) => x.startsWith("PESO") && x.includes("UN"));
+  if (cItem < 0 || cPesoUn < 0) return null;
+
+  const pesos = new Map<string, number>();
+  for (const r of rows.slice(hi + 1)) {
+    if (!r) continue;
+    const item = str(r[cItem]);
+    if (!item) continue;
+    const pesoUn = num(r[cPesoUn]);
+    if (pesoUn <= 0) continue;
+    const chave = chaveItem(item, cMasc >= 0 ? str(r[cMasc]) : "");
+    if (!pesos.has(chave)) pesos.set(chave, pesoUn);
+  }
+  return pesos.size > 0 ? pesos : null;
+}
+
+/* Monta o comparativo Full × Focco a partir dos itens dos dois sistemas.
+   `pesosPosicao` é o PESO LIQ UN por item da posição do Focco, usado para
+   pesar a quantidade do Full (o relatório dele não traz peso). */
 export function calcularSaldoComparativo(
   itensFocco: ItemEstoque[],
   itensFull: Map<string, { saldo: number; desc: string }>,
+  pesosPosicao: Map<string, number>,
   dataBase: string,
 ): SaldoComparativo | null {
   if (!itensFocco.length || itensFull.size === 0) return null;
@@ -118,7 +152,13 @@ export function calcularSaldoComparativo(
   let pesoExato = 0;
   let pesoDiferenca = 0;
   let pesoSoFocco = 0;
+  let pesoFullExato = 0;
+  let pesoFullDiferenca = 0;
+  let pesoFullSoFull = 0;
   const diferencas: DiferencaSaldo[] = [];
+
+  /* Peso do item na posição do Focco — aplicado à quantidade do Full. */
+  const pesoUn = (chave: string) => pesosPosicao.get(chave) ?? 0;
 
   for (const [chave, f] of foccoMap) {
     const fu = itensFull.get(chave);
@@ -129,17 +169,22 @@ export function calcularSaldoComparativo(
     }
     itensEmComum++;
     const diff = f.saldo - fu.saldo;
+    const pesoFull = fu.saldo * pesoUn(chave);
     if (diff === 0) {
       qtdExata++;
       pesoExato += f.peso;
+      pesoFullExato += pesoFull;
     } else {
       qtdDiferenca++;
       pesoDiferenca += f.peso;
+      pesoFullDiferenca += pesoFull;
       diferencas.push({ item: chave, desc: f.desc, full: fu.saldo, focco: f.saldo, diff });
     }
   }
-  for (const chave of itensFull.keys()) {
-    if (!foccoMap.has(chave)) itensSoFull++;
+  for (const [chave, fu] of itensFull) {
+    if (foccoMap.has(chave)) continue;
+    itensSoFull++;
+    pesoFullSoFull += fu.saldo * pesoUn(chave);
   }
 
   diferencas.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
@@ -162,6 +207,9 @@ export function calcularSaldoComparativo(
       tonExato: +(pesoExato / 1000).toFixed(1),
       tonDiferenca: +(pesoDiferenca / 1000).toFixed(1),
       tonSoFocco: +(pesoSoFocco / 1000).toFixed(1),
+      tonFullExato: +(pesoFullExato / 1000).toFixed(1),
+      tonFullDiferenca: +(pesoFullDiferenca / 1000).toFixed(1),
+      tonFullSoFull: +(pesoFullSoFull / 1000).toFixed(1),
     },
     alertas: {
       soFull: itensSoFull,

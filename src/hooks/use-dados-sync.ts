@@ -116,10 +116,19 @@ function dataKey(payload: unknown, incluirSync = true): string {
       const sc = p["saldoComparativo"] as {
         full?: { saldo?: number };
         focco?: { saldo?: number };
-        comparativo?: { qtdExata?: number; qtdDiferenca?: number; tonExato?: number; tonDiferenca?: number; tonSoFocco?: number };
+        comparativo?: {
+          qtdExata?: number;
+          qtdDiferenca?: number;
+          tonExato?: number;
+          tonDiferenca?: number;
+          tonSoFocco?: number;
+          tonFullExato?: number;
+          tonFullDiferenca?: number;
+          tonFullSoFull?: number;
+        };
       } | undefined;
       return sc
-        ? `${sc.full?.saldo ?? 0}|${sc.focco?.saldo ?? 0}|${sc.comparativo?.qtdExata ?? 0}|${sc.comparativo?.qtdDiferenca ?? 0}|${sc.comparativo?.tonExato ?? 0}|${sc.comparativo?.tonDiferenca ?? 0}|${sc.comparativo?.tonSoFocco ?? 0}`
+        ? `${sc.full?.saldo ?? 0}|${sc.focco?.saldo ?? 0}|${sc.comparativo?.qtdExata ?? 0}|${sc.comparativo?.qtdDiferenca ?? 0}|${sc.comparativo?.tonExato ?? 0}|${sc.comparativo?.tonDiferenca ?? 0}|${sc.comparativo?.tonSoFocco ?? 0}|${sc.comparativo?.tonFullExato ?? 0}|${sc.comparativo?.tonFullDiferenca ?? 0}|${sc.comparativo?.tonFullSoFull ?? 0}`
         : "";
     })(),
     fl: (() => {

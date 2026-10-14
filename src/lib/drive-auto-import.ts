@@ -26,7 +26,7 @@ import { existsSync, readFileSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
 import { lerForaDeLinha, aplicarCustos, rebuildForaDeLinhaFromItens } from "./fora-de-linha-import";
-import { lerItensFull, calcularSaldoComparativo } from "./saldo-comparativo-import";
+import { lerItensFull, lerPesosPosicao, calcularSaldoComparativo } from "./saldo-comparativo-import";
 
 /* Planilha analise-estoque não traz custo: usa o custo médio da planilha de reservas. */
 function comCustos(
@@ -824,6 +824,9 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorItens: ItemEstoque[] | null = null;
   let melhorItensMod: Date | undefined;
   let itensFull: Map<string, { saldo: number; desc: string }> | null = null;
+  /* Peso unitário (PESO LIQ UN) dos itens da posição do Focco — usado para
+     pesar a quantidade do Full, que não traz peso no relatório. */
+  let pesosPosicao: Map<string, number> | null = null;
   let melhorUnidadesResumo: UnidadeResumo[] | null = null;
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
   let melhorFdlMod = 0;
@@ -896,11 +899,15 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       for (const nome of wb.SheetNames) {
         const ws = wb.Sheets[nome];
         if (!ws) continue;
-        const full = lerItensFull(XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null }));
+        const linhas = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
+        const full = lerItensFull(linhas);
         if (full) {
           itensFull = full;
-          break;
+          continue;
         }
+        /* A posição do Focco traz o PESO LIQ UN de cada item — inclusive dos
+           zerados, que só existem no relatório do Full. */
+        if (!pesosPosicao) pesosPosicao = lerPesosPosicao(linhas);
       }
 
       /* Extrai dados por unidade (Guarda-Roupas, Complementos, Salas) da aba Resumo */
@@ -1192,6 +1199,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     saldoComparativo = calcularSaldoComparativo(
       melhorItens,
       itensFull,
+      pesosPosicao ?? new Map<string, number>(),
       melhorResumo.data || new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }),
     );
     if (saldoComparativo) {
