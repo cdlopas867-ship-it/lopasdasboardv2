@@ -1,7 +1,7 @@
-/* Cena Controle de Saldo — Full (FullSoft, posição de estoque) × Focco (ERP,
-   estoque 001 · relatório WF0112 - Estoques). Mesmo formato das outras cenas:
-   donut interativo + botões, card com o % do foco, tabela Legenda, indicadores
-   e alertas das divergências. */
+/* Cena Controle de Saldo — Full (WMS FullSoft, estoque 112 · relatório WF0112 -
+   Estoques) × Focco (ERP, estoque 001 · posição de estoque). Mesmo formato das
+   outras cenas: donut interativo + botões, card com o % do foco, tabela Legenda,
+   indicadores e alertas das divergências. */
 
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtMi, fmtBrMax, fmtMoeda, fmtTonDec } from "@/lib/format";
@@ -40,15 +40,15 @@ export default function CenaSaldoComparativo({
     { id: "diferenca", label: "diferença", cor: COR_DIFERENCA, pct: pct(c.qtdDiferenca) },
   ];
 
-  /* Tonelagem por situação: peso dos itens na posição do Full. O relatório do
-     Focco não traz peso, então "Só Focco" fica sem tonelagem. */
+  /* Tonelagem por situação: peso dos itens na posição do Focco. O relatório do
+     Full não traz peso, então "Só Full" fica sem tonelagem. */
   const linhas: { idx: number; cor: string; rotulo: string; itens: number; pct: number; ton: number | null }[] = [
     { idx: 0, cor: COR_EXATO, rotulo: "Exato", itens: c.qtdExata, pct: pct(c.qtdExata), ton: c.tonExato },
     { idx: 1, cor: COR_DIFERENCA, rotulo: "Diferença", itens: c.qtdDiferenca, pct: pct(c.qtdDiferenca), ton: c.tonDiferenca },
-    { idx: 2, cor: COR_SO_FULL, rotulo: "Só Full", itens: c.itensSoFull, pct: pct(c.itensSoFull), ton: c.tonSoFull },
-    { idx: 3, cor: COR_SO_FOCCO, rotulo: "Só Focco", itens: c.itensSoFocco, pct: pct(c.itensSoFocco), ton: null },
+    { idx: 2, cor: COR_SO_FULL, rotulo: "Só Full", itens: c.itensSoFull, pct: pct(c.itensSoFull), ton: null },
+    { idx: 3, cor: COR_SO_FOCCO, rotulo: "Só Focco", itens: c.itensSoFocco, pct: pct(c.itensSoFocco), ton: c.tonSoFocco },
   ];
-  const tonTotal = c.tonExato + c.tonDiferenca + c.tonSoFull;
+  const tonTotal = c.tonExato + c.tonDiferenca + c.tonSoFocco;
 
   const saldoTotal = d.full.saldo + d.focco.saldo;
   const pctFull = saldoTotal > 0 ? (d.full.saldo / saldoTotal) * 100 : 0;
@@ -62,7 +62,7 @@ export default function CenaSaldoComparativo({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto={`Controle de saldo entre o Full (posição de estoque do CD no FullSoft) e o Focco (ERP, estoque 001 — relatório WF0112 - Estoques, considerando apenas os volumes — descrição começando por VOL — em qualquer endereço, inclusive os da ASTEC: as peças soltas ficam de fora). O cruzamento é pelo código do item: itens com o mesmo código nos dois sistemas são comparados pelo saldo. Acuracidade = itens com saldo exatamente igual ÷ itens em comum. Itens que só existem em um sistema viram alertas (o Focco controla também peças e componentes que o FullSoft não controla). Data-base: ${d.dataBase}. Clique para alternar.`}
+          texto={`Controle de saldo entre o Full (WMS do CD, FullSoft, estoque 112 — relatório WF0112 - Estoques, considerando apenas os volumes — descrição começando por VOL — em qualquer endereço, inclusive os da ASTEC: as peças soltas ficam de fora) e o Focco (ERP, estoque 001 — posição de estoque do CD). O cruzamento é pelo código do item: itens com o mesmo código nos dois sistemas são comparados pelo saldo. Acuracidade = itens com saldo exatamente igual ÷ itens em comum. Itens que só existem em um sistema viram alertas (o relatório do Full lista também peças e componentes que não estão na posição do Focco). Data-base: ${d.dataBase}. Clique para alternar.`}
         />
       </div>
 
@@ -134,18 +134,16 @@ export default function CenaSaldoComparativo({
           <span className="font-bold text-white/70">{fmtBrMax(c.pctAcuracia, 1)}%</span> com saldo exatamente igual.
         </p>
         <p className="mt-1 text-[8px] leading-tight text-white/40">
-          * Toneladas pelo peso da posição do Full; o relatório do Focco não traz peso, por isso "só Focco" fica sem tonelagem.
+          * Toneladas pelo peso da posição do Focco; o relatório do Full não traz peso, por isso "só Full" fica sem tonelagem.
         </p>
       </div>
 
       {/* Indicadores dos dois sistemas — saldo e participação */}
       <div className="video-sobe mt-3 grid w-full max-w-sm mx-auto grid-cols-2 gap-2" style={{ animationDelay: "0.6s" }}>
         <div className="rounded-xl border border-white/15 bg-white/5 p-2.5">
-          <p className="text-[8px] font-bold tracking-[0.25em] text-white/50 uppercase">Full · FullSoft</p>
+          <p className="text-[8px] font-bold tracking-[0.25em] text-white/50 uppercase">Full · Estoque 112</p>
           <p className="mt-1 font-serif text-lg text-white sm:text-xl">{fmtInt(d.full.saldo)}</p>
-          <p className="text-[10px] text-white/50">
-            {fmtInt(d.full.itens)} itens · {fmtMi(d.full.valor)}
-          </p>
+          <p className="text-[10px] text-white/50">{fmtInt(d.full.itens)} itens</p>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full"
@@ -155,9 +153,11 @@ export default function CenaSaldoComparativo({
           <p className="mt-0.5 text-right font-mono text-[9px] text-white/60">{fmtBrMax(pctFull, 1)}% do saldo</p>
         </div>
         <div className="rounded-xl border border-white/15 bg-white/5 p-2.5">
-          <p className="text-[8px] font-bold tracking-[0.25em] text-white/50 uppercase">Focco · ERP 001</p>
+          <p className="text-[8px] font-bold tracking-[0.25em] text-white/50 uppercase">Focco · Estoque 001</p>
           <p className="mt-1 font-serif text-lg text-white sm:text-xl">{fmtInt(d.focco.saldo)}</p>
-          <p className="text-[10px] text-white/50">{fmtInt(d.focco.itens)} itens</p>
+          <p className="text-[10px] text-white/50">
+            {fmtInt(d.focco.itens)} itens · {fmtMi(d.focco.valor)}
+          </p>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full"
@@ -208,8 +208,8 @@ export default function CenaSaldoComparativo({
           ))}
         </div>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          Full = posição de estoque (FullSoft) · Focco = ERP estoque 001 (WF0112) · Saldo geral:{" "}
-          {fmtMoeda(d.alertas.diferencaTotal)} de diferença. Data-base: {d.dataBase}.
+          Full = WMS FullSoft, estoque 112 (relatório WF0112 - Estoques) · Focco = ERP, estoque 001 (posição de estoque) · Saldo
+          geral: {fmtMoeda(d.alertas.diferencaTotal)} de diferença. Data-base: {d.dataBase}.
         </p>
       </div>
     </div>

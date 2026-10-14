@@ -1,21 +1,22 @@
 /* Importação e comparação de saldo entre Full (FullSoft) e Focco (ERP).
  *
- * Full  = itens da posição de estoque do CD (lerItensEstoque), com a chave
- *         código + máscara (ex.: "2194.16652").
- * Focco = relatório "WF0112 - Estoques" (aba Resultado), colunas
- *         Item / Descrição / Endereço / Qtd. Atual. Como o relatório traz uma
- *         linha por endereço, as quantidades são somadas por código.
- *         Entra só itens de volume, com descrição começando por "VOL" (ver
- *         isVolume) — em qualquer endereço, inclusive os da ASTEC (fornecedor
- *         de ferragens), que também guarda volumes e por isso entra no saldo
- *         e no peso da comparação.
+ * Full  = relatório "WF0112 - Estoques" (aba Resultado) do FullSoft — o WMS do
+ *         CD (estoque 112) —, colunas Item / Descrição / Endereço / Qtd. Atual.
+ *         Como o relatório traz uma linha por endereço, as quantidades são
+ *         somadas por código. Entra só itens de volume, com descrição começando
+ *         por "VOL" (ver isVolume) — em qualquer endereço, inclusive os da ASTEC
+ *         (fornecedor de ferragens), que também guarda volumes e por isso entra
+ *         no saldo da comparação.
+ * Focco = itens da posição de estoque 001 (lerItensEstoque) do ERP Focco —
+ *         planilha "ESTOQUE 001 - POSIÇÃO DE ESTOQUE" —, com a chave código +
+ *         máscara (ex.: "2194.16652").
  *
  * Os dois lados são cruzados pelo código completo do item: os que existem nos
  * dois sistemas são comparados pelo saldo, os demais viram alertas.
  *
- * A tonelagem de cada situação (Exato / Diferença / Só Full) é o peso dos itens
- * daquela situação na posição do Full (PESO LIQ TOTAL). O relatório do Focco
- * não traz peso, então "Só Focco" fica sem tonelagem.
+ * A tonelagem de cada situação (Exato / Diferença / Só Focco) é o peso dos itens
+ * daquela situação na posição do Focco (PESO LIQ TOTAL). O relatório do Full
+ * não traz peso, então "Só Full" fica sem tonelagem.
  *
  * As linhas chegam já lidas da workbook (array de arrays) porque o XLSX é
  * importado em drive-auto-import.ts, onde funciona sob o SSR do Vite.
@@ -37,7 +38,7 @@ function norm(v: unknown): string {
     .trim();
 }
 
-/* Chave do item no Full: código + número da máscara (ex.: 2194 + "(16652)…"). */
+/* Chave do item no Focco: código + número da máscara (ex.: 2194 + "(16652)…"). */
 function chaveItem(item: string, mascara: string): string {
   const maskNum = mascara.match(/\((\d+)\)/)?.[1] ?? "";
   return maskNum ? `${item}.${maskNum}` : item;
@@ -46,15 +47,17 @@ function chaveItem(item: string, mascara: string): string {
 const LIMITE_DIFERENCAS = 12;
 
 /* Só itens de volume entram na comparação: a posição do CD é em volumes
-   (descrição começando por "VOL"), enquanto o relatório do Focco traz também
+   (descrição começando por "VOL"), enquanto o relatório do Full traz também
    peças e componentes soltos (e linhas de rodapé do relatório) que não
    correspondem a volume nenhum. */
 const isVolume = (desc: string) => /^VOL/.test(desc.toUpperCase());
 
-/* Lê o relatório WF0112 - Estoques e devolve o saldo por código de item.
-   Só reconhece a aba que tem Item + Endereço + Qtd. Atual, para não confundir
-   com as outras planilhas da pasta do Drive. */
-export function lerItensFocco(rows: unknown[][]): Map<string, { saldo: number; desc: string }> | null {
+/* Lê o relatório WF0112 - Estoques (FullSoft) e devolve o saldo por código de
+   item. Só reconhece a aba que tem Item + Endereço + Qtd. Atual, para não
+   confundir com as outras planilhas da pasta do Drive. */
+export function lerItensFull(
+  rows: unknown[][],
+): Map<string, { saldo: number; desc: string }> | null {
   const hi = rows.findIndex((r) => {
     const h = (r ?? []).map(norm);
     return (
@@ -88,24 +91,24 @@ export function lerItensFocco(rows: unknown[][]): Map<string, { saldo: number; d
 
 /* Monta o comparativo Full × Focco a partir dos itens dos dois sistemas. */
 export function calcularSaldoComparativo(
-  itensFull: ItemEstoque[],
-  itensFocco: Map<string, { saldo: number; desc: string }>,
+  itensFocco: ItemEstoque[],
+  itensFull: Map<string, { saldo: number; desc: string }>,
   dataBase: string,
 ): SaldoComparativo | null {
-  if (!itensFull.length || itensFocco.size === 0) return null;
+  if (!itensFocco.length || itensFull.size === 0) return null;
 
-  const fullMap = new Map<string, { saldo: number; desc: string; valor: number; peso: number }>();
-  for (const it of itensFull) {
+  const foccoMap = new Map<string, { saldo: number; desc: string; valor: number; peso: number }>();
+  for (const it of itensFocco) {
     if (!it.item) continue;
     const chave = chaveItem(it.item, it.mascara);
-    const atual = fullMap.get(chave) ?? { saldo: 0, desc: it.desc, valor: 0, peso: 0 };
+    const atual = foccoMap.get(chave) ?? { saldo: 0, desc: it.desc, valor: 0, peso: 0 };
     atual.saldo += it.saldo;
     atual.peso += it.peso;
     atual.valor += it.valor > 0 ? it.valor : it.saldo * it.custo;
     if (!atual.desc) atual.desc = it.desc;
-    fullMap.set(chave, atual);
+    foccoMap.set(chave, atual);
   }
-  if (fullMap.size === 0) return null;
+  if (foccoMap.size === 0) return null;
 
   let itensEmComum = 0;
   let itensSoFull = 0;
@@ -114,41 +117,41 @@ export function calcularSaldoComparativo(
   let qtdDiferenca = 0;
   let pesoExato = 0;
   let pesoDiferenca = 0;
-  let pesoSoFull = 0;
+  let pesoSoFocco = 0;
   const diferencas: DiferencaSaldo[] = [];
 
-  for (const [chave, f] of fullMap) {
-    const fo = itensFocco.get(chave);
-    if (!fo) {
-      itensSoFull++;
-      pesoSoFull += f.peso;
+  for (const [chave, f] of foccoMap) {
+    const fu = itensFull.get(chave);
+    if (!fu) {
+      itensSoFocco++;
+      pesoSoFocco += f.peso;
       continue;
     }
     itensEmComum++;
-    const diff = f.saldo - fo.saldo;
+    const diff = f.saldo - fu.saldo;
     if (diff === 0) {
       qtdExata++;
       pesoExato += f.peso;
     } else {
       qtdDiferenca++;
       pesoDiferenca += f.peso;
-      diferencas.push({ item: chave, desc: f.desc, full: f.saldo, focco: fo.saldo, diff });
+      diferencas.push({ item: chave, desc: f.desc, full: fu.saldo, focco: f.saldo, diff });
     }
   }
-  for (const chave of itensFocco.keys()) {
-    if (!fullMap.has(chave)) itensSoFocco++;
+  for (const chave of itensFull.keys()) {
+    if (!foccoMap.has(chave)) itensSoFull++;
   }
 
   diferencas.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
 
-  const fullSaldo = [...fullMap.values()].reduce((s, v) => s + v.saldo, 0);
-  const fullValor = [...fullMap.values()].reduce((s, v) => s + v.valor, 0);
-  const foccoSaldo = [...itensFocco.values()].reduce((s, v) => s + v.saldo, 0);
+  const foccoSaldo = [...foccoMap.values()].reduce((s, v) => s + v.saldo, 0);
+  const foccoValor = [...foccoMap.values()].reduce((s, v) => s + v.valor, 0);
+  const fullSaldo = [...itensFull.values()].reduce((s, v) => s + v.saldo, 0);
 
   return {
     dataBase,
-    full: { itens: fullMap.size, saldo: fullSaldo, valor: +fullValor.toFixed(2) },
-    focco: { itens: itensFocco.size, saldo: +foccoSaldo.toFixed(2) },
+    full: { itens: itensFull.size, saldo: +fullSaldo.toFixed(2) },
+    focco: { itens: foccoMap.size, saldo: foccoSaldo, valor: +foccoValor.toFixed(2) },
     comparativo: {
       itensEmComum,
       itensSoFull,
@@ -158,12 +161,12 @@ export function calcularSaldoComparativo(
       pctAcuracia: itensEmComum > 0 ? +((qtdExata / itensEmComum) * 100).toFixed(1) : 0,
       tonExato: +(pesoExato / 1000).toFixed(1),
       tonDiferenca: +(pesoDiferenca / 1000).toFixed(1),
-      tonSoFull: +(pesoSoFull / 1000).toFixed(1),
+      tonSoFocco: +(pesoSoFocco / 1000).toFixed(1),
     },
     alertas: {
       soFull: itensSoFull,
       soFocco: itensSoFocco,
-      diferencaTotal: +(fullSaldo - foccoSaldo).toFixed(2),
+      diferencaTotal: +(foccoSaldo - fullSaldo).toFixed(2),
     },
     topDiferencas: diferencas.slice(0, LIMITE_DIFERENCAS),
   };

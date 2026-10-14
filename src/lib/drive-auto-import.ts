@@ -26,7 +26,7 @@ import { existsSync, readFileSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
 import { lerForaDeLinha, aplicarCustos, rebuildForaDeLinhaFromItens } from "./fora-de-linha-import";
-import { lerItensFocco, calcularSaldoComparativo } from "./saldo-comparativo-import";
+import { lerItensFull, calcularSaldoComparativo } from "./saldo-comparativo-import";
 
 /* Planilha analise-estoque não traz custo: usa o custo médio da planilha de reservas. */
 function comCustos(
@@ -823,7 +823,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorRecebimento: ReturnType<typeof calcularRecebimento> | null = null;
   let melhorItens: ItemEstoque[] | null = null;
   let melhorItensMod: Date | undefined;
-  let itensFocco: Map<string, { saldo: number; desc: string }> | null = null;
+  let itensFull: Map<string, { saldo: number; desc: string }> | null = null;
   let melhorUnidadesResumo: UnidadeResumo[] | null = null;
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
   let melhorFdlMod = 0;
@@ -890,15 +890,15 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         melhorItensMod = parseModificado(arq.modificado ?? "");
       }
 
-      /* Extrai o saldo do Focco (relatório WF0112 - Estoques) para o
-         comparativo Full × Focco. O sheet_to_json é feito aqui, onde o XLSX
-         funciona sob o SSR, e as linhas vão para lerItensFocco. */
+      /* Extrai o saldo do Full (relatório WF0112 - Estoques, do WMS FullSoft)
+         para o comparativo Full × Focco. O sheet_to_json é feito aqui, onde o
+         XLSX funciona sob o SSR, e as linhas vão para lerItensFull. */
       for (const nome of wb.SheetNames) {
         const ws = wb.Sheets[nome];
         if (!ws) continue;
-        const focco = lerItensFocco(XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null }));
-        if (focco) {
-          itensFocco = focco;
+        const full = lerItensFull(XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null }));
+        if (full) {
+          itensFull = full;
           break;
         }
       }
@@ -1186,18 +1186,18 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     }
   }
 
-  /* Comparativo de saldo Full (posição de estoque) × Focco (relatório WF0112). */
+  /* Comparativo de saldo Full (relatório WF0112, do FullSoft) × Focco (posição de estoque 001). */
   let saldoComparativo: SaldoComparativo | null = null;
-  if (melhorItens && itensFocco) {
+  if (melhorItens && itensFull) {
     saldoComparativo = calcularSaldoComparativo(
       melhorItens,
-      itensFocco,
+      itensFull,
       melhorResumo.data || new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }),
     );
     if (saldoComparativo) {
       console.info(
         `[auto-import] saldo Full × Focco: ${fmtInt(saldoComparativo.full.itens)} × ${fmtInt(saldoComparativo.focco.itens)} itens · ` +
-          `acuracidade ${saldoComparativo.comparativo.pctAcuracia}% · só Focco ${fmtInt(saldoComparativo.alertas.soFocco)}`,
+          `acuracidade ${saldoComparativo.comparativo.pctAcuracia}% · só Full ${fmtInt(saldoComparativo.alertas.soFull)}`,
       );
     }
   }
