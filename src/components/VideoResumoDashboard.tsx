@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
+import type { SaldoComparativo } from "@/data/saldo-comparativo";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 import ResumoBg from "./ResumoBg";
@@ -103,6 +104,7 @@ type Props = {
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
+  saldoComparativo?: SaldoComparativo | null;
   sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   onFechar?: () => void;
   onLogout?: () => void;
@@ -125,6 +127,7 @@ export default function VideoResumoDashboard({
   valorFaturado,
   foraDeLinha,
   resumo,
+  saldoComparativo,
   paletas,
   recebimentoSemanal,
   producaoSemanal,
@@ -212,6 +215,7 @@ export default function VideoResumoDashboard({
     recebimentoSemanal,
     producaoSemanal,
     resumo,
+    saldoComparativo,
     sincronizacao,
   };
 
@@ -246,6 +250,7 @@ export default function VideoResumoDashboard({
     recebimentoSemanal,
     producaoSemanal,
     resumo,
+    saldoComparativo,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
     onExportarExcel: exportarExcel,

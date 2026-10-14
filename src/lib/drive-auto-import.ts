@@ -26,6 +26,7 @@ import { existsSync, readFileSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
 import { lerForaDeLinha, aplicarCustos, rebuildForaDeLinhaFromItens } from "./fora-de-linha-import";
+import { lerItensFocco, calcularSaldoComparativo } from "./saldo-comparativo-import";
 
 /* Planilha analise-estoque não traz custo: usa o custo médio da planilha de reservas. */
 function comCustos(
@@ -897,6 +898,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorPaletes: ReturnType<typeof lerPaletes> | null = null;
   let wbProducao: XLSX.WorkBook | null = null;
   let melhorRecebidoPorDia: Map<string, { qtd: number; peso: number }> | null = null;
+  let itensFocco: Map<string, { saldo: number; desc: string }> | null = null;
 
   for (const arq of arquivos) {
     try {
@@ -955,6 +957,11 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         melhorItens = itensEstoque;
         melhorItensMod = parseModificado(arq.modificado ?? "");
       }
+
+      /* Extrai itens do Focco (WF0112 - Estoques, aba Resultado) para o
+         comparativo Full × Focco. */
+      const focco = lerItensFocco(wb);
+      if (focco && focco.size > (itensFocco?.size ?? 0)) itensFocco = focco;
 
       /* Extrai dados por unidade (Guarda-Roupas, Complementos, Salas) da aba Resumo */
       const unidadesResumo = extrairUnidadesResumo(wb);
@@ -1322,6 +1329,18 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         }
       : {}),
     ...(melhorProducao ? { producaoSemanal: melhorProducao } : {}),
+    ...(() => {
+      /* Comparativo Full × Focco — calculado a partir dos itens do Drive
+         (Full = lerItensEstoque, Focco = WF0112). A data-base vem do resumo
+         ou da data de modificação do arquivo de itens. */
+      if (!melhorItens || !itensFocco) return {};
+      const dataBase = melhorResumo?.data
+        || (melhorItensMod
+          ? `${String(melhorItensMod.getDate()).padStart(2, "0")}/${String(melhorItensMod.getMonth() + 1).padStart(2, "0")}/${melhorItensMod.getFullYear()}`
+          : new Date().toLocaleDateString("pt-BR"));
+      const comp = calcularSaldoComparativo(melhorItens, itensFocco, dataBase);
+      return comp ? { saldoComparativo: comp } : {};
+    })(),
     ...(kpisRecomputed.length > 0 ? { kpis: kpisRecomputed } : {}),
     ...(unidadesRecomputed.length > 0 ? { unidades: unidadesRecomputed } : {}),
     ...(() => {

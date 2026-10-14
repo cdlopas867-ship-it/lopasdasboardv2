@@ -38,6 +38,7 @@ import type {
   RecebimentoSemanalDia,
 } from "./VideoResumoDashboard";
 import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
+import type { SaldoComparativo } from "@/data/saldo-comparativo";
 
 /* Cenas da apresentação — conteúdo de cada slide, isolado em um componente
    para permitir renderizar também a cópia da cena que sai na transição suave. */
@@ -61,6 +62,7 @@ type Props = {
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
+  saldoComparativo?: SaldoComparativo | null;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
   onExportarExcel?: (() => void) | undefined;
@@ -87,6 +89,7 @@ export default function CenasApresentacao({
   recebimentoSemanal,
   producaoSemanal,
   resumo,
+  saldoComparativo,
   onReiniciar,
   onGerarRelatorio,
   onExportarExcel,
@@ -327,7 +330,7 @@ export default function CenasApresentacao({
 
       {/* Cena 14 — Controle de Saldo Full × Focco */}
       {cena === 13 && (
-        <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} />
+        <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} />
       )}
 
       {/* Cena 15 — encerramento */}

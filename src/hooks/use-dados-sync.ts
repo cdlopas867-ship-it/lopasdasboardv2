@@ -112,6 +112,10 @@ function dataKey(payload: unknown, incluirSync = true): string {
       ?.tipos?.map(({ tipo, total }) => [tipo, total]),
     me: (p["mensal"] as unknown[])?.length,
     ps: prodSig(p["producaoSemanal"] as unknown[] | undefined),
+    sc: (() => {
+      const sc = p["saldoComparativo"] as { full?: { saldo?: number }; focco?: { saldo?: number }; comparativo?: { qtdExata?: number; qtdDiferenca?: number } } | undefined;
+      return sc ? `${sc.full?.saldo ?? 0}|${sc.focco?.saldo ?? 0}|${sc.comparativo?.qtdExata ?? 0}|${sc.comparativo?.qtdDiferenca ?? 0}` : "";
+    })(),
     fl: (() => {
       const f = p["foraDeLinha"] as { importadoEm?: string; itens?: unknown[]; posicaoTotal?: { pesoTon?: number } } | undefined;
       return f ? `${f.importadoEm ?? ""}|${f.itens?.length ?? 0}|${f.posicaoTotal?.pesoTon ?? 0}` : "";

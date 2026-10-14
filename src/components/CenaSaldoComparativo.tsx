@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { fmtInt, fmtBrMax, fmtMoeda } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
-import { SALDO_COMPARATIVO } from "@/data/saldo-comparativo";
+import { SALDO_COMPARATIVO, type SaldoComparativo } from "@/data/saldo-comparativo";
 
 const COR_MATCH = "#22c55e";
 const COR_DIFF = "#f97316";
@@ -17,13 +17,15 @@ export default function CenaSaldoComparativo({
   anim,
   cena,
   onPausar,
+  saldoComparativo,
 }: {
   anim: boolean;
   cena: number;
   onPausar?: () => void;
+  saldoComparativo?: SaldoComparativo | null;
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
-  const d = SALDO_COMPARATIVO;
+  const d = saldoComparativo ?? SALDO_COMPARATIVO;
 
   const totalItens = d.comparativo.itensEmComum + d.comparativo.itensSoFull + d.comparativo.itensSoFocco;
   const pctMatch = totalItens > 0 ? (d.comparativo.qtdExata / totalItens) * 100 : 0;
