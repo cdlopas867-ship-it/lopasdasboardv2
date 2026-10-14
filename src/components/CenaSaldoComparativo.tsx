@@ -60,7 +60,7 @@ export default function CenaSaldoComparativo({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto={`Controle de saldo entre o Full (posição de estoque do CD no FullSoft) e o Focco (ERP, estoque 001 — relatório WF0112 - Estoques, considerando apenas os endereços do CD: as linhas do fornecedor ASTEC ficam de fora). O cruzamento é pelo código do item: itens com o mesmo código nos dois sistemas são comparados pelo saldo. Acuracidade = itens com saldo exatamente igual ÷ itens em comum. Itens que só existem em um sistema viram alertas (o Focco controla também peças e componentes que o FullSoft não controla). Reservados: quantidade reservada da carteira comercial (COMERCIAL 024) e sua participação no saldo. Data-base: ${d.dataBase}. Clique para alternar.`}
+          texto={`Controle de saldo entre o Full (posição de estoque do CD no FullSoft) e o Focco (ERP, estoque 001 — relatório WF0112 - Estoques, considerando apenas os volumes — descrição começando por VOL — nos endereços do CD: as linhas do fornecedor ASTEC e as peças soltas ficam de fora). O cruzamento é pelo código do item: itens com o mesmo código nos dois sistemas são comparados pelo saldo. Acuracidade = itens com saldo exatamente igual ÷ itens em comum. Itens que só existem em um sistema viram alertas (o Focco controla também peças e componentes que o FullSoft não controla). Reservados: quantidade reservada da carteira comercial (COMERCIAL 024) e sua participação no saldo. Data-base: ${d.dataBase}. Clique para alternar.`}
         />
       </div>
 

@@ -7,7 +7,8 @@
  *         linha por endereço, as quantidades são somadas por código.
  *         Entra apenas o estoque do CD: as linhas de endereços que não são do
  *         CD (hoje só a ASTEC, fornecedor de ferragens) ficam fora (ver
- *         ENDERECOS_FORA_DO_CD).
+ *         ENDERECOS_FORA_DO_CD) e só entram itens de volume, com descrição
+ *         começando por "VOL" (ver isVolume).
  *
  * Os dois lados são cruzados pelo código completo do item: os que existem nos
  * dois sistemas são comparados pelo saldo, os demais viram alertas. As reservas
@@ -48,6 +49,12 @@ const LIMITE_DIFERENCAS = 12;
    CD. A comparação considera apenas o estoque do CD. */
 const ENDERECOS_FORA_DO_CD = ["ASTEC"];
 
+/* Só itens de volume entram na comparação: a posição do CD é em volumes
+   (descrição começando por "VOL"), enquanto o relatório do Focco traz também
+   peças e componentes soltos (e linhas de rodapé do relatório) que não
+   correspondem a volume nenhum. */
+const isVolume = (desc: string) => /^VOL/.test(desc.toUpperCase());
+
 /* Lê o relatório WF0112 - Estoques e devolve o saldo por código de item.
    Só reconhece a aba que tem Item + Endereço + Qtd. Atual, para não confundir
    com as outras planilhas da pasta do Drive. */
@@ -67,13 +74,15 @@ export function lerItensFocco(rows: unknown[][]): Map<string, { saldo: number; d
   const cDesc = h.findIndex((x) => x.startsWith("DESC"));
   const cQtd = h.findIndex((x) => x.includes("QTD") && x.includes("ATUAL"));
   const cEnd = h.findIndex((x) => x.includes("ENDERECO"));
-  if (cItem < 0 || cQtd < 0) return null;
+  if (cItem < 0 || cQtd < 0 || cDesc < 0) return null;
 
   const mapa = new Map<string, { saldo: number; desc: string }>();
   for (const r of rows.slice(hi + 1)) {
     if (!r) continue;
     const chave = str(r[cItem]);
     if (!chave) continue;
+    /* Só itens de volume (descrição começando por "VOL"). */
+    if (!isVolume(str(r[cDesc]))) continue;
     /* Só o estoque do CD: ignora endereços fora do CD (ex.: ASTEC-1-1). */
     if (cEnd >= 0) {
       const endereco = norm(r[cEnd]).split(" ")[0] ?? "";

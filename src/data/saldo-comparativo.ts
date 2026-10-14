@@ -13,7 +13,9 @@
  * alertas. Do relatório do Focco entra apenas o estoque do **CD**: as linhas
  * com endereço fora do CD (a ASTEC, fornecedor de ferragens) ficam de fora —
  * com elas o saldo do Focco ficava inflado em ~3,1 mil itens que não estão no
- * CD. A acuracidade é a parcela dos itens em comum com saldo exatamente igual.
+ * CD — e só entram itens de **volume** (descrição começando por "VOL"); o
+ * restante são peças e componentes soltos. A acuracidade é a parcela dos itens
+ * em comum com saldo exatamente igual.
  *
  * Os valores abaixo são o FALLBACK estático (data-base 14/10/2026). Em execução
  * o painel usa o comparativo calculado pelo drive-auto-import a partir das
@@ -68,8 +70,8 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     valor: 17061917.77
   },
   focco: {
-    itens: 668,
-    saldo: 134411
+    itens: 656,
+    saldo: 134303
   },
   reservados: {
     qtd: 76860,
@@ -81,15 +83,15 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
   comparativo: {
     itensEmComum: 588,
     itensSoFull: 24,
-    itensSoFocco: 80,
+    itensSoFocco: 68,
     qtdExata: 170,
     qtdDiferenca: 418,
     pctAcuracia: 28.9
   },
   alertas: {
     soFull: 24,
-    soFocco: 80,
-    diferencaTotal: 1714
+    soFocco: 68,
+    diferencaTotal: 1822
   },
   topDiferencas: [
     {
