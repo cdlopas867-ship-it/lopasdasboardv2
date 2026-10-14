@@ -11,17 +11,15 @@
  * sistemas são comparados pelo saldo; os que só existem em um lado viram
  * alertas. */
 
-import * as XLSX from "xlsx";
 import type { ItemEstoque } from "./base-estoque";
 import type { SaldoComparativo, DiferencaSaldo } from "@/data/saldo-comparativo";
 
-/* Lê os itens do Focco (WF0112) de uma workbook.
+/* Lê os itens do Focco (WF0112) a partir das linhas já parseadas da aba
+   "Resultado". Recebe as rows (array de arrays) em vez de uma workbook para
+   evitar importar XLSX neste módulo — o XLSX já é importado em
+   drive-auto-import.ts, onde funciona corretamente sob SSR do Vite.
    Retorna um mapa: código base → { saldo, desc }. */
-export function lerItensFocco(wb: XLSX.WorkBook): Map<string, { saldo: number; desc: string }> | null {
-  const ws = wb.Sheets["Resultado"];
-  if (!ws) return null;
-
-  const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
+export function lerItensFocco(rows: unknown[][]): Map<string, { saldo: number; desc: string }> | null {
   const hi = rows.findIndex((r) =>
     r && r.some((c) => String(c ?? "").toUpperCase().trim() === "ITEM"),
   );

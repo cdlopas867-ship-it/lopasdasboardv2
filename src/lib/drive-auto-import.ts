@@ -959,9 +959,14 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       }
 
       /* Extrai itens do Focco (WF0112 - Estoques, aba Resultado) para o
-         comparativo Full × Focco. */
-      const focco = lerItensFocco(wb);
-      if (focco && focco.size > (itensFocco?.size ?? 0)) itensFocco = focco;
+         comparativo Full × Focco. O sheet_to_json é feito aqui (onde XLSX
+         funciona sob SSR) e as rows são passadas para lerItensFocco. */
+      const wsFocco = wb.Sheets["Resultado"];
+      if (wsFocco) {
+        const foccoRows = XLSX.utils.sheet_to_json<unknown[]>(wsFocco, { header: 1, defval: null });
+        const focco = lerItensFocco(foccoRows);
+        if (focco && focco.size > (itensFocco?.size ?? 0)) itensFocco = focco;
+      }
 
       /* Extrai dados por unidade (Guarda-Roupas, Complementos, Salas) da aba Resumo */
       const unidadesResumo = extrairUnidadesResumo(wb);
