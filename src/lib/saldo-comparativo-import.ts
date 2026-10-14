@@ -5,6 +5,9 @@
  * Focco = relatório "WF0112 - Estoques" (aba Resultado), colunas
  *         Item / Descrição / Endereço / Qtd. Atual. Como o relatório traz uma
  *         linha por endereço, as quantidades são somadas por código.
+ *         Entra apenas o estoque do CD: as linhas de endereços que não são do
+ *         CD (hoje só a ASTEC, fornecedor de ferragens) ficam fora (ver
+ *         ENDERECOS_FORA_DO_CD).
  *
  * Os dois lados são cruzados pelo código completo do item: os que existem nos
  * dois sistemas são comparados pelo saldo, os demais viram alertas. As reservas
@@ -39,6 +42,12 @@ function chaveItem(item: string, mascara: string): string {
 
 const LIMITE_DIFERENCAS = 12;
 
+/* Endereços que NÃO são estoque do CD. A ASTEC (fornecedor de ferragens) guarda
+   os itens no próprio endereço e o Focco devolve essas linhas no mesmo relatório
+   WF0112; somadas, inflavam o saldo do Focco com ~3,1 mil itens que não estão no
+   CD. A comparação considera apenas o estoque do CD. */
+const ENDERECOS_FORA_DO_CD = ["ASTEC"];
+
 /* Lê o relatório WF0112 - Estoques e devolve o saldo por código de item.
    Só reconhece a aba que tem Item + Endereço + Qtd. Atual, para não confundir
    com as outras planilhas da pasta do Drive. */
@@ -57,6 +66,7 @@ export function lerItensFocco(rows: unknown[][]): Map<string, { saldo: number; d
   const cItem = h.indexOf("ITEM");
   const cDesc = h.findIndex((x) => x.startsWith("DESC"));
   const cQtd = h.findIndex((x) => x.includes("QTD") && x.includes("ATUAL"));
+  const cEnd = h.findIndex((x) => x.includes("ENDERECO"));
   if (cItem < 0 || cQtd < 0) return null;
 
   const mapa = new Map<string, { saldo: number; desc: string }>();
@@ -64,6 +74,11 @@ export function lerItensFocco(rows: unknown[][]): Map<string, { saldo: number; d
     if (!r) continue;
     const chave = str(r[cItem]);
     if (!chave) continue;
+    /* Só o estoque do CD: ignora endereços fora do CD (ex.: ASTEC-1-1). */
+    if (cEnd >= 0) {
+      const endereco = norm(r[cEnd]).split(" ")[0] ?? "";
+      if (ENDERECOS_FORA_DO_CD.includes(endereco)) continue;
+    }
     const atual = mapa.get(chave) ?? { saldo: 0, desc: cDesc >= 0 ? str(r[cDesc]) : "" };
     atual.saldo += num(r[cQtd]);
     if (!atual.desc) atual.desc = cDesc >= 0 ? str(r[cDesc]) : "";

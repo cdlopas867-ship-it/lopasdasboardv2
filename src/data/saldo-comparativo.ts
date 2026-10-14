@@ -10,9 +10,10 @@
  *
  * O cruzamento é pelo código completo: itens com o mesmo código nos dois
  * sistemas são comparados pelo saldo; os que existem em apenas um lado viram
- * alertas (o Focco controla também itens que o FullSoft não controla — peças e
- * componentes). A acuracidade é a parcela dos itens em comum com saldo
- * exatamente igual.
+ * alertas. Do relatório do Focco entra apenas o estoque do **CD**: as linhas
+ * com endereço fora do CD (a ASTEC, fornecedor de ferragens) ficam de fora —
+ * com elas o saldo do Focco ficava inflado em ~3,1 mil itens que não estão no
+ * CD. A acuracidade é a parcela dos itens em comum com saldo exatamente igual.
  *
  * Os valores abaixo são o FALLBACK estático (data-base 14/10/2026). Em execução
  * o painel usa o comparativo calculado pelo drive-auto-import a partir das
@@ -67,8 +68,8 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     valor: 17061917.77
   },
   focco: {
-    itens: 3770,
-    saldo: 190638.05
+    itens: 668,
+    saldo: 134411
   },
   reservados: {
     qtd: 76860,
@@ -78,17 +79,17 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     valor: 9891312.67
   },
   comparativo: {
-    itensEmComum: 589,
-    itensSoFull: 23,
-    itensSoFocco: 3181,
-    qtdExata: 171,
+    itensEmComum: 588,
+    itensSoFull: 24,
+    itensSoFocco: 80,
+    qtdExata: 170,
     qtdDiferenca: 418,
-    pctAcuracia: 29
+    pctAcuracia: 28.9
   },
   alertas: {
-    soFull: 23,
-    soFocco: 3181,
-    diferencaTotal: -54513.05
+    soFull: 24,
+    soFocco: 80,
+    diferencaTotal: 1714
   },
   topDiferencas: [
     {
