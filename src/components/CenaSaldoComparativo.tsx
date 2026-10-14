@@ -33,11 +33,11 @@ export default function CenaSaldoComparativo({
   const totalItens = c.itensEmComum + c.itensSoFull + c.itensSoFocco;
   const pct = (n: number) => (totalItens > 0 ? (n / totalItens) * 100 : 0);
 
+  /* Donut e botões cobrem só os dois estados comparáveis (exato × diferença);
+     "só Full" e "só Focco" continuam na Legenda e nos alertas. */
   const secoes: SecaoDonut[] = [
     { id: "exato", label: "exato", cor: COR_EXATO, pct: pct(c.qtdExata) },
     { id: "diferenca", label: "diferença", cor: COR_DIFERENCA, pct: pct(c.qtdDiferenca) },
-    { id: "soFull", label: "só full", cor: COR_SO_FULL, pct: pct(c.itensSoFull) },
-    { id: "soFocco", label: "só focco", cor: COR_SO_FOCCO, pct: pct(c.itensSoFocco) },
   ];
 
   const linhas = [
@@ -77,11 +77,7 @@ export default function CenaSaldoComparativo({
         texto={
           foco === 0
             ? `${fmtBrMax(pct(c.qtdExata), 1)}% exato · ${fmtInt(c.qtdExata)} itens`
-            : foco === 1
-              ? `${fmtBrMax(pct(c.qtdDiferenca), 1)}% com diferença · ${fmtInt(c.qtdDiferenca)} itens`
-              : foco === 2
-                ? `${fmtInt(c.itensSoFull)} itens só no Full`
-                : `${fmtInt(c.itensSoFocco)} itens só no Focco`
+            : `${fmtBrMax(pct(c.qtdDiferenca), 1)}% com diferença · ${fmtInt(c.qtdDiferenca)} itens`
         }
       />
 
