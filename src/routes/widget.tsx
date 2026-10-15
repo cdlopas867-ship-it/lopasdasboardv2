@@ -46,6 +46,10 @@ const C = {
   accent: "#609af8",
 };
 
+/* Tamanho compacto da janela PWA (flyout) */
+const WIDGET_W = 380;
+const WIDGET_H = 460;
+
 /* ── Widget ───────────────────────────────────────────────────────── */
 
 function WidgetDesempenho() {
@@ -63,8 +67,11 @@ function WidgetConteudo() {
   const [instalado, setInstalado] = useState(false);
 
   useEffect(() => {
-    if (window.matchMedia("(display-mode: standalone)").matches) {
+    const emPWA = window.matchMedia("(display-mode: standalone)").matches;
+    if (emPWA) {
       setInstalado(true);
+      // Redimensiona a janela do PWA para o tamanho compacto (flyout)
+      window.resizeTo(WIDGET_W, WIDGET_H);
       return;
     }
     const onPrompt = (e: Event) => {
@@ -74,6 +81,7 @@ function WidgetConteudo() {
     const onInstalled = () => {
       setInstalado(true);
       setInstalavel(null);
+      window.resizeTo(WIDGET_W, WIDGET_H);
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
@@ -112,9 +120,9 @@ function WidgetConteudo() {
   const pctDisponivel = pesoTon > 0 ? Math.round((pesoDisponivel / pesoTon) * 100) : 0;
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-[#0a0a0a] p-4">
+    <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-[#0a0a0a] p-0 sm:p-4">
       <div
-        className="flex w-full max-w-sm flex-col gap-3 rounded-2xl p-4 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.9)]"
+        className="flex h-full w-full flex-col gap-3 rounded-none p-4 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.9)] sm:h-auto sm:max-w-sm sm:rounded-2xl"
         style={{ background: C.panel, border: `1px solid ${C.panelEdge}` }}
       >
         {/* cabeçalho */}
