@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ForaDeLinhaRouteImport } from './routes/fora-de-linha'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ViagensRouteImport } from './routes/viagens'
+import { Route as WidgetRouteImport } from './routes/widget'
 import { Route as ApiAutoImportRouteImport } from './routes/api/auto-import'
 import { Route as ApiCarregamentoRouteImport } from './routes/api/carregamento'
 import { Route as ApiCarregamentoMensalRouteImport } from './routes/api/carregamento-mensal'
@@ -42,6 +43,11 @@ const LoginRoute = LoginRouteImport.update({
 const ViagensRoute = ViagensRouteImport.update({
   id: '/viagens',
   path: '/viagens',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WidgetRoute = WidgetRouteImport.update({
+  id: '/widget',
+  path: '/widget',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAutoImportRoute = ApiAutoImportRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
+  '/widget': typeof WidgetRoute
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
+  '/widget': typeof WidgetRoute
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
   '/viagens': typeof ViagensRoute
+  '/widget': typeof WidgetRoute
   '/api/auto-import': typeof ApiAutoImportRoute
   '/api/carregamento': typeof ApiCarregamentoRoute
   '/api/carregamento-mensal': typeof ApiCarregamentoMensalRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/fora-de-linha'
     | '/login'
     | '/viagens'
+    | '/widget'
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/fora-de-linha'
     | '/login'
     | '/viagens'
+    | '/widget'
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/fora-de-linha'
     | '/login'
     | '/viagens'
+    | '/widget'
     | '/api/auto-import'
     | '/api/carregamento'
     | '/api/carregamento-mensal'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   ForaDeLinhaRoute: typeof ForaDeLinhaRoute
   LoginRoute: typeof LoginRoute
   ViagensRoute: typeof ViagensRoute
+  WidgetRoute: typeof WidgetRoute
   ApiAutoImportRoute: typeof ApiAutoImportRoute
   ApiCarregamentoRoute: typeof ApiCarregamentoRoute
   ApiCarregamentoMensalRoute: typeof ApiCarregamentoMensalRoute
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/viagens'
       fullPath: '/viagens'
       preLoaderRoute: typeof ViagensRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/widget': {
+      id: '/widget'
+      path: '/widget'
+      fullPath: '/widget'
+      preLoaderRoute: typeof WidgetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auto-import': {
@@ -320,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForaDeLinhaRoute: ForaDeLinhaRoute,
   LoginRoute: LoginRoute,
   ViagensRoute: ViagensRoute,
+  WidgetRoute: WidgetRoute,
   ApiAutoImportRoute: ApiAutoImportRoute,
   ApiCarregamentoRoute: ApiCarregamentoRoute,
   ApiCarregamentoMensalRoute: ApiCarregamentoMensalRoute,

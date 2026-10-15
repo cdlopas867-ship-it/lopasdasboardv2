@@ -1,0 +1,32 @@
+{
+  "name": "Lopas · Desempenho",
+  "short_name": "Desempenho",
+  "description": "Widget de desempenho do CD Lopas — peso do estoque, valor previsto e reservas em linha e fora de linha.",
+  "start_url": "/widget",
+  "scope": "/widget",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#0a1306",
+  "theme_color": "#0c1408",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

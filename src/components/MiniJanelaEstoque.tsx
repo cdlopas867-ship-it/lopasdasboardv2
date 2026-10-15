@@ -73,7 +73,9 @@ export default function MiniJanelaEstoque({ pesoTon, valor, itens, atualizadoEm 
       {/* rodapé */}
       <div className="flex items-center justify-between px-3.5 pb-2.5 text-[9px] text-white/35">
         <span className="tracking-wide">{itens != null ? `${itens} itens` : ""}</span>
-        <span className="tracking-wide">Atualizado {atualizadoEm ?? "—"}</span>
+        <a href="/widget" target="_blank" rel="noopener" className="tracking-wide text-[#00FFCC]/60 underline transition hover:text-[#00FFCC]">
+          Abrir widget ↗
+        </a>
       </div>
 
       {/* faixa que "passa" — sinaliza ao vivo */}
