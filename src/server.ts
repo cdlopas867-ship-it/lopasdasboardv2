@@ -36,6 +36,18 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
+/* Cliente cortou a conexão (aba fechada, navegação/reload): a requisição não
+   interessa mais, então não é falha do app nem log de erro. Detecta pelo erro
+   capturado (o h3 embala o "aborted" em um HTTPError 500) e pelo sinal da
+   própria requisição. */
+function isAborted(error: unknown, request: Request): boolean {
+  return isAbortedRequest(error) || request.signal?.aborted === true;
+}
+
+function abortedResponse(): Response {
+  return new Response(null, { status: 499 });
+}
+
 function statusFromError(error: unknown): number {
   if (error && typeof error === "object" && "statusCode" in error) {
     const status = Number((error as { statusCode?: unknown }).statusCode);
@@ -44,9 +56,9 @@ function statusFromError(error: unknown): number {
   return 500;
 }
 
-function errorResponse(error: unknown): Response {
-  const detail = consumeLastCapturedError() ?? error;
-  console.error("[server] falha ao processar requisição:\n" + describeError(detail));
+function errorResponse(error: unknown, detail?: unknown): Response {
+  const reason = detail ?? consumeLastCapturedError() ?? error;
+  console.error("[server] falha ao processar requisição:\n" + describeError(reason));
   return new Response(renderErrorPage(), {
     status: statusFromError(error),
     headers: {
@@ -70,7 +82,9 @@ export default {
         try {
           const payload = JSON.parse(body) as { unhandled?: unknown; error?: unknown };
           if (payload.unhandled === true || payload.error === true) {
-            return errorResponse(new Error(`Resposta SSR não tratada: ${body}`));
+            const captured = consumeLastCapturedError();
+            if (isAborted(captured, request)) return abortedResponse();
+            return errorResponse(new Error(`Resposta SSR não tratada: ${body}`), captured);
           }
         } catch {
           /* corpo não JSON — devolve a resposta original */
@@ -78,8 +92,7 @@ export default {
       }
       return response;
     } catch (error) {
-      /* Requisição cancelada pelo cliente (aborted/ECONNRESET): não é falha do app. */
-      if (isAbortedRequest(error)) return new Response(null, { status: 499 });
+      if (isAborted(error, request)) return abortedResponse();
 
       return errorResponse(error);
     }

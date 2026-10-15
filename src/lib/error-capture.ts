@@ -58,14 +58,25 @@ export function isAbortedRequest(error: unknown): boolean {
   let current: unknown = error;
 
   for (let depth = 0; current != null && depth < CAUSE_DEPTH; depth++) {
-    if (current instanceof Error) {
-      /* "aborted" é o message do ConnResetException que o Node cria quando o
-         cliente corta a conexão. Um ECONNRESET de serviço externo (Supabase,
-         Drive) tem outra mensagem — esse continua sendo registrado como erro. */
-      if (current.message === "aborted" || current.name === "AbortError") return true;
-      if ((current as { code?: unknown }).code === "ABORT_ERR") return true;
-    }
-    current = (current as { cause?: unknown }).cause;
+    if (typeof current === "string") return current.trim() === "aborted";
+    if (typeof current !== "object") return false;
+
+    /* Duck typing em vez de `instanceof Error`: o h3 embala a falha em um
+       HTTPError (status 500, stack copiado) antes de ela chegar até nós. */
+    const { name, message, code, cause } = current as {
+      name?: unknown;
+      message?: unknown;
+      code?: unknown;
+      cause?: unknown;
+    };
+
+    /* "aborted" é o message do ConnResetException que o Node cria quando o
+       cliente corta a conexão. Um ECONNRESET de serviço externo (Supabase,
+       Drive) tem outra mensagem — esse continua sendo registrado como erro. */
+    if (message === "aborted" || name === "AbortError") return true;
+    if (code === "ABORT_ERR" || code === "ERR_STREAM_PREMATURE_CLOSE") return true;
+
+    current = cause;
   }
   return false;
 }
@@ -75,12 +86,34 @@ export function isAbortedRequest(error: unknown): boolean {
 // recorded for consumeLastCapturedError and expanded before serialization.
 const originalConsoleError = console.error.bind(console);
 console.error = (...args: unknown[]) => {
-  const expanded = args.map((arg) => {
-    if (!isErrorLike(arg)) return arg;
+  const expanded: unknown[] = [];
+  let aborted = false;
+
+  for (const arg of args) {
+    if (!isErrorLike(arg)) {
+      expanded.push(arg);
+      continue;
+    }
+    /* Registra antes de decidir imprimir: quem consome (server.ts) precisa
+       reconhecer a requisição abortada mesmo que ela não vá para o log. */
     record(arg);
-    return describeError(arg);
-  });
-  originalConsoleError(...expanded);
+    /* Aborto do cliente não é falha do app — nem o do h3 ("unhandled")
+       interessa aqui, então o log fica limpo. */
+    if (isAbortedRequest(arg)) {
+      aborted = true;
+      continue;
+    }
+    expanded.push(describeError(arg));
+  }
+
+  /* Aborto do cliente: descarta também os objetos de contexto que o h3/srvx
+     anexam ao log (`{ cause: { req, handler } }`) — não há o que registrar. */
+  const toPrint = aborted
+    ? expanded.filter((arg) => typeof arg !== "object" || arg === null)
+    : expanded;
+
+  if (toPrint.length === 0) return;
+  originalConsoleError(...toPrint);
 };
 
 if (typeof globalThis.addEventListener === "function") {
