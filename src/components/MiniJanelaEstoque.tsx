@@ -23,7 +23,7 @@ export default function MiniJanelaEstoque({ pesoTon, valor, itens, atualizadoEm 
         className="fixed bottom-4 right-4 z-[130] hidden md:flex items-center gap-2 rounded-full border border-[#00FFCC]/30 bg-[#0c1408]/90 px-4 py-2.5 text-[11px] font-bold tracking-widest text-white/80 uppercase shadow-[0_0_20px_-4px_rgba(0,255,204,0.4)] backdrop-blur-md transition hover:border-[#00FFCC]/50 hover:bg-[#0c1408]/95"
       >
         <span className="size-2 animate-pulse rounded-full bg-[#00FFCC] shadow-[0_0_8px_#00FFCC]" />
-        Estoque
+        Desempenho
       </button>
     );
   }
@@ -35,7 +35,7 @@ export default function MiniJanelaEstoque({ pesoTon, valor, itens, atualizadoEm 
         <div className="absolute inset-0 bg-gradient-to-r from-[#00FFCC]/8 via-transparent to-transparent" />
         <div className="relative flex items-center gap-2">
           <span className="size-2 animate-pulse rounded-full bg-[#00FFCC] shadow-[0_0_8px_#00FFCC]" />
-          <span className="text-[10px] font-bold tracking-[0.22em] text-white/80 uppercase">Estoque CD Lopas</span>
+          <span className="text-[10px] font-bold tracking-[0.22em] text-white/80 uppercase">Desempenho</span>
         </div>
         <button
           type="button"
