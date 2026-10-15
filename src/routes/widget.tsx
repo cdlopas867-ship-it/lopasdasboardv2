@@ -3,8 +3,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
-import { POSICAO_EM_LINHA, POSICAO_FORA_DE_LINHA } from "@/data/fora-de-linha";
-import { fmtTonDec, fmtMi, fmtInt } from "@/lib/format";
+import { POSICAO_EM_LINHA, POSICAO_FORA_DE_LINHA, POSICAO_TOTAL } from "@/data/fora-de-linha";
+import { fmtTonDec } from "@/lib/format";
 
 type Painel = typeof initialSyncData & Record<string, unknown>;
 
@@ -24,10 +24,11 @@ export const Route = createFileRoute("/widget")({
 /* ── Tipos do payload ─────────────────────────────────────────────── */
 
 type Resumo = { ton?: number; valor?: number; previsto?: number; saldo?: number; itens?: number };
-type Posicao = { reservas?: number };
+type Posicao = { reservas?: number; pesoReservadoTon?: number };
 type ForaDeLinha = {
   posicaoEmLinha?: Posicao;
   posicaoForaDeLinha?: Posicao;
+  posicaoTotal?: Posicao;
 } | null;
 
 /* ── Widget ───────────────────────────────────────────────────────── */
@@ -72,9 +73,10 @@ function WidgetConteudo() {
   const foraDeLinha = (p["foraDeLinha"] ?? null) as ForaDeLinha;
 
   const pesoTon = resumo.ton ?? 0;
-  const valorPrevisto = resumo.previsto ?? 0;
-  const reservasEmLinha = foraDeLinha?.posicaoEmLinha?.reservas ?? POSICAO_EM_LINHA.reservas;
-  const reservasForaLinha = foraDeLinha?.posicaoForaDeLinha?.reservas ?? POSICAO_FORA_DE_LINHA.reservas;
+  const pesoReservadoEmLinha = foraDeLinha?.posicaoEmLinha?.pesoReservadoTon ?? POSICAO_EM_LINHA.pesoReservadoTon;
+  const pesoReservadoForaLinha = foraDeLinha?.posicaoForaDeLinha?.pesoReservadoTon ?? POSICAO_FORA_DE_LINHA.pesoReservadoTon;
+  const pesoReservadoTotal = foraDeLinha?.posicaoTotal?.pesoReservadoTon ?? POSICAO_TOTAL.pesoReservadoTon;
+  const pesoDisponivel = pesoTon - pesoReservadoTotal;
 
   const atualizadoEm = (p["sincronizacao"] as { em?: string } | undefined)?.em
     ? new Date((p["sincronizacao"] as { em: string }).em).toLocaleString("pt-BR", {
@@ -117,10 +119,10 @@ function WidgetConteudo() {
       {/* métricas */}
       <main className="flex flex-1 flex-col gap-3 px-4 py-4">
         <Metrica rotulo="Peso do Estoque" valor={fmtTonDec(pesoTon)} destaque />
-        <Metrica rotulo="Valor Previsto" valor={fmtMi(valorPrevisto)} destaque />
+        <Metrica rotulo="Peso Disponível" valor={fmtTonDec(pesoDisponivel)} destaque />
         <div className="grid grid-cols-2 gap-3">
-          <Metrica rotulo="Reservado em Linha" valor={fmtInt(reservasEmLinha)} compacta />
-          <Metrica rotulo="Reservado Fora de Linha" valor={fmtInt(reservasForaLinha)} compacta />
+          <Metrica rotulo="Peso Reserv. em Linha" valor={fmtTonDec(pesoReservadoEmLinha)} compacta />
+          <Metrica rotulo="Peso Reserv. Fora de Linha" valor={fmtTonDec(pesoReservadoForaLinha)} compacta />
         </div>
       </main>
 
