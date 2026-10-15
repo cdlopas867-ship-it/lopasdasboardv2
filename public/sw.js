@@ -1,5 +1,5 @@
 // Service worker mínimo — permite a instalação como PWA
-const CACHE = "lopas-cd-v3";
+const CACHE = "lopas-cd-v4";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

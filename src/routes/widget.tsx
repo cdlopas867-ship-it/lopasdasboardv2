@@ -29,6 +29,13 @@ function WidgetEstoque() {
     if (main) main.remove();
   }, []);
 
+  // Registra o service worker — sem ele o navegador não oferece instalar o widget
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
   // Ao abrir como PWA instalada, força a janela no tamanho do widget (só o card)
   useEffect(() => {
     const W = 360;
@@ -40,7 +47,12 @@ function WidgetEstoque() {
 
   if (!pronto) return null;
   if (!autenticado) return <TelaLogin onLogin={login} />;
-  return <Card />;
+  return (
+    <>
+      <Card />
+      <BotaoInstalar />
+    </>
+  );
 }
 
 /* ── Card principal — estilo Apple Stocks widget ───────────────────── */
@@ -176,6 +188,43 @@ function GraficoLinha({ serie, positiva }: { serie: number[]; positiva: boolean 
         vectorEffect="non-scaling-stroke"
       />
     </svg>
+  );
+}
+
+/* ── Botão de instalação da PWA do widget ───────────────────────────── */
+
+function BotaoInstalar() {
+  const [deferred, setDeferred] = useState<{ prompt: () => Promise<void> } | null>(null);
+  const [instalado, setInstalado] = useState(false);
+
+  useEffect(() => {
+    // Já está como PWA instalada — não mostra o botão
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setInstalado(true);
+      return;
+    }
+    const onBefore = (e: Event) => {
+      e.preventDefault();
+      setDeferred(e as { prompt: () => Promise<void> });
+    };
+    window.addEventListener("beforeinstallprompt", onBefore);
+    return () => window.removeEventListener("beforeinstallprompt", onBefore);
+  }, []);
+
+  if (instalado || !deferred) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        await deferred.prompt();
+        setDeferred(null);
+        setInstalado(true);
+      }}
+      className="fixed bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/20 bg-[#1c1c1e] px-4 py-1.5 text-[11px] font-semibold text-white/70 shadow-lg"
+    >
+      ⬇ Instalar widget
+    </button>
   );
 }
 
