@@ -19,26 +19,14 @@ export const Route = createFileRoute("/widget")({
   component: WidgetEstoque,
 });
 
-/* Remove o manifest principal da raiz para o PWA instalar com start_url /widget */
-function useManifestWidget() {
-  useEffect(() => {
-    document.querySelectorAll('link[rel="manifest"]').forEach((link) => {
-      if ((link.getAttribute("href") || "").includes("manifest-widget")) return;
-      link.setAttribute("data-widget-hidden", "true");
-      link.remove();
-    });
-    return () => {
-      document.querySelectorAll('link[data-widget-hidden="true"]').forEach((link) => {
-        link.removeAttribute("data-widget-hidden");
-        document.head.appendChild(link);
-      });
-    };
-  }, []);
-}
-
 function WidgetEstoque() {
   const { autenticado, pronto, login } = useAuth();
-  useManifestWidget();
+
+  // Garante que só o manifest-widget.json esteja ativo (cobre navegação client-side)
+  useEffect(() => {
+    const main = document.querySelector('link[rel="manifest"]:not([href*="manifest-widget"])');
+    if (main) main.remove();
+  }, []);
 
   if (!pronto) return null;
   if (!autenticado) return <TelaLogin onLogin={login} />;

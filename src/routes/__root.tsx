@@ -100,7 +100,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
-      { rel: "manifest", href: "/manifest.json" },
       { rel: "preload", href: "/fundo-satelite-real.jpg", as: "image", fetchPriority: "high" },
       { rel: "preload", href: "/__l5e/assets-v1/b47b6349-333e-45b3-8e02-3e806841bcf4/lopas-aerea-jardim.webp", as: "image", fetchPriority: "high" },
       { rel: "preload", href: "/fundo-apresentacao.jpg", as: "image" },
