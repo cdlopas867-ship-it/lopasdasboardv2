@@ -15,6 +15,7 @@ export default function PWAInstallButton() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [showIosHint, setShowIosHint] = useState(false);
+  const [showDesktopHint, setShowDesktopHint] = useState(false);
   const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
@@ -58,6 +59,8 @@ export default function PWAInstallButton() {
       setDeferred(null);
     } else if (isIos) {
       setShowIosHint(true);
+    } else {
+      setShowDesktopHint(true);
     }
   };
 
@@ -98,6 +101,46 @@ export default function PWAInstallButton() {
             <button
               type="button"
               onClick={() => setShowIosHint(false)}
+              className="mt-5 rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showDesktopHint && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 px-6"
+          onClick={() => setShowDesktopHint(false)}
+        >
+          <div
+            className="max-w-sm rounded-2xl border border-white/15 bg-brand-dark p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="font-serif text-lg text-white">Instalar o app</p>
+            <p className="mt-3 text-sm text-white/70">
+              Abra o menu do navegador (ícone{" "}
+              <span className="inline-block rounded border border-white/30 px-1.5 py-0.5 text-white">
+                ⋮
+              </span>{" "}
+              ou{" "}
+              <span className="inline-block rounded border border-white/30 px-1.5 py-0.5 text-white">
+                ⊕
+              </span>
+              ) e escolha{" "}
+              <span className="inline-block rounded border border-white/30 px-1.5 py-0.5 text-white">
+                Instalar app
+              </span>{" "}
+              ou{" "}
+              <span className="inline-block rounded border border-white/30 px-1.5 py-0.5 text-white">
+                Adicionar à tela inicial
+              </span>
+              .
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowDesktopHint(false)}
               className="mt-5 rounded-full bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground"
             >
               Entendi
