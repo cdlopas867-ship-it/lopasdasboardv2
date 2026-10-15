@@ -45,9 +45,17 @@ function WidgetDesempenho() {
 
   // Fundo transparente para o efeito de vidro (backdrop blur) no desktop
   useEffect(() => {
-    const prev = document.body.style.background;
+    const style = document.createElement("style");
+    style.id = "widget-transparent";
+    style.textContent = "html, body { background: transparent !important; }";
+    document.head.appendChild(style);
+    document.documentElement.style.background = "transparent";
     document.body.style.background = "transparent";
-    return () => { document.body.style.background = prev; };
+    return () => {
+      style.remove();
+      document.documentElement.style.background = "";
+      document.body.style.background = "";
+    };
   }, []);
 
   if (!pronto) return <TelaCarregando />;
@@ -102,12 +110,10 @@ function WidgetConteudo() {
   return (
     <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-transparent p-3">
       <div
-        className="flex w-full max-w-[320px] flex-col gap-3 rounded-2xl p-4 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.6)]"
+        className="flex w-full max-w-[320px] flex-col gap-3 rounded-2xl p-4"
         style={{
-          background: "rgba(28, 28, 28, 0.8)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
+          background: "transparent",
+          border: "none",
         }}
       >
         {/* cabeçalho */}
@@ -215,12 +221,10 @@ function TelaLogin({ onLogin }: { onLogin: (u: string, s: string) => Promise<boo
     <div className="flex h-screen w-screen items-center justify-center bg-transparent px-6">
       <form
         onSubmit={submit}
-        className="flex w-full max-w-xs flex-col gap-4 rounded-2xl p-6 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.6)]"
+        className="flex w-full max-w-xs flex-col gap-4 rounded-2xl p-6"
         style={{
-          background: "rgba(28, 28, 28, 0.8)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
+          background: "transparent",
+          border: "none",
         }}
       >
         <div className="flex items-center gap-2">
