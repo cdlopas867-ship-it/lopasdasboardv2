@@ -745,8 +745,14 @@ function construirSincronizacao(arquivos: ArquivoDrive[]) {
    Retorna true se um novo registro foi salvo. */
 declare global {
   // eslint-disable-next-line no-var
-  var __driveImportState: { ultimo: number; assinatura: string; emAndamento: Promise<boolean> | null } | undefined;
+  var __driveImportState: { ultimo: number; assinatura: string; assinaturaEm?: number; emAndamento: Promise<boolean> | null } | undefined;
 }
+
+/* O carimbo da pasta do Drive traz só a data ("Oct 15"), sem hora: uma planilha
+   atualizada no mesmo dia não muda a assinatura e a importação ficava presa nos
+   dados antigos (sintoma: painel mostrando a posição anterior, com tonelagem 0).
+   Passado esse tempo, reprocessa a pasta mesmo com a assinatura igual. */
+const REPROCESSAR_A_CADA = 5 * 60_000;
 
 /* Versão com controle: verifica a pasta no máximo a cada 10 s, só reprocessa
    quando algum arquivo mudou e evita importações simultâneas. Quando nada
@@ -762,13 +768,16 @@ export async function importarSeMudou(forcar = false): Promise<boolean> {
       const arquivos = await listarPlanilhasDaPasta(FOLDER_ID);
       const assinatura = arquivos.map((a) => `${a.id}:${a.modificado?.toString() ?? ""}`).sort().join("|");
       const semData = arquivos.some((a) => !a.modificado);
-      if (!forcar && assinatura === st.assinatura && !semData) {
+      const assinaturaMudou = assinatura !== st.assinatura || semData;
+      const reprocessoVencido = agora - (st.assinaturaEm ?? 0) >= REPROCESSAR_A_CADA;
+      if (!forcar && !assinaturaMudou && !reprocessoVencido) {
         /* Nada mudou no Drive: mantém o carimbo "Sincronizado" do painel atual. */
         setSincronizacao(construirSincronizacao(arquivos));
         return false;
       }
       const ok = await importarDoDriveServidor(arquivos);
       st.assinatura = assinatura;
+      st.assinaturaEm = agora;
       return ok;
     } catch (e) {
       console.error("[auto-import] falha:", (e as Error).message);
@@ -1281,6 +1290,18 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       await setData({
         ...(existing2 ?? {}),
         ...(melhorResumo.data ? { atualizadoEm: melhorResumo.data } : {}),
+        /* O painel sempre recebe o resumo da leitura atual: sem isso o
+           sync-store mantinha um resumo antigo enquanto itens/fora de linha
+           vinham da planilha nova, e a cena "Estoque × Previsto" ficava
+           inconsistente (bloco em linha com 0 t ao lado de tonelagem cheia).
+           Só o registro do histórico é que é pulado quando nada mudou. */
+        resumo: {
+          valor: melhorResumo.valor,
+          ton: melhorResumo.ton,
+          saldo: melhorResumo.saldo,
+          itens: melhorResumo.itens,
+          previsto: melhorResumo.previsto,
+        },
         ...(reservadosResumo2 ? { reservadosResumo: reservadosResumo2 } : {}),
         ...(semReservaResumo2 ? { semReservaResumo: semReservaResumo2 } : {}),
         sincronizacao,
