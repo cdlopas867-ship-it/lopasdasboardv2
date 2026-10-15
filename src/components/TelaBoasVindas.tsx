@@ -8,7 +8,7 @@ export default function TelaBoasVindas() {
       {/* Imagem de satélite */}
       <div
         className="boas-vindas-bg absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/__l5e/assets-v1/b47b6349-333e-45b3-8e02-3e806841bcf4/lopas-aerea-jardim.webp')" }}
+        style={{ backgroundImage: "url('/fundo-satelite-real.jpg')" }}
       />
       <div className="absolute inset-0 bg-black/35" />
 
