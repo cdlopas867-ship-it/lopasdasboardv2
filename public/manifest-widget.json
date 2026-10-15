@@ -5,8 +5,8 @@
   "start_url": "/widget",
   "scope": "/widget",
   "display": "standalone",
-  "background_color": "#1c1c1e",
-  "theme_color": "#1c1c1e",
+  "background_color": "#212132",
+  "theme_color": "#3a2e4c",
   "orientation": "any",
   "icons": [
     {

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
-import { fmtTonDec, fmtMi, fmtInt } from "@/lib/format";
+import { fmtTonDec } from "@/lib/format";
 
 type Painel = typeof initialSyncData & Record<string, unknown>;
 type Resumo = { ton?: number; valor?: number; itens?: number };
@@ -55,83 +55,94 @@ function WidgetEstoque() {
   );
 }
 
-/* ── Card principal — estilo Apple Stocks widget ───────────────────── */
+/* ── Card principal — estilo System Monitor ────────────────────────── */
+
+type Reservado = { pesoReservado?: number };
 
 function Card() {
   const { dados } = useDadosSync<Painel>(initialSyncData as Painel);
   const resumo = ((dados as Record<string, unknown>)["resumo"] ?? {}) as Resumo;
   const mensal = ((dados as Record<string, unknown>)["mensal"] ?? []) as Mensal[];
+  const reservados = ((dados as Record<string, unknown>)["reservados"] ?? []) as Reservado[];
 
-  const ton = resumo.ton ?? 0;
-  const valor = resumo.valor ?? 0;
-  const itens = resumo.itens ?? 0;
+  const tonEstoque = resumo.ton ?? 0;
+  const tonReservado = reservados.reduce((s, r) => s + (r.pesoReservado ?? 0), 0) / 1000;
+  const tonLinha = Math.max(0, tonEstoque - tonReservado);
+  const pctReservado = tonEstoque > 0 ? (tonReservado / tonEstoque) * 100 : 0;
 
   // Série do gráfico: carregado mensal (toneladas)
   const serie = mensal.map((m) => m.carregado).filter((v) => v > 0);
-  const serieLabels = mensal.filter((m) => m.carregado > 0).map((m) => m.mes);
-
-  // Variação do último mês vs anterior
-  let variacao: number | null = null;
-  if (serie.length >= 2) {
-    const ult = serie[serie.length - 1];
-    const ant = serie[serie.length - 2];
-    variacao = ant > 0 ? ((ult - ant) / ant) * 100 : null;
-  }
 
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-transparent">
       <div
-        className="flex w-[320px] flex-col overflow-hidden rounded-[22px] p-5"
-        style={{ background: "#1c1c1e" }}
+        className="flex w-[320px] flex-col gap-4 rounded-[20px] p-5"
+        style={{ background: "linear-gradient(160deg, #3a2e4c 0%, #212132 100%)" }}
       >
-        {/* Cabeçalho — label + variação */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-1.5">
-            <span
-              className="text-[13px] font-semibold leading-none"
-              style={{ color: variacao === null || variacao >= 0 ? "#34c759" : "#ff3b30" }}
-            >
-              {variacao === null || variacao >= 0 ? "▲" : "▼"}
-            </span>
-            <span className="text-[13px] font-semibold leading-none text-white">
-              Estoque
+        {/* ── Seção 1: Peso de Estoque (com gráfico) ── */}
+        <div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <IconeCaixa />
+              <span className="text-[13px] font-semibold text-white">
+                Estoque: {fmtTonDec(tonEstoque)}
+              </span>
+            </div>
+            <span className="text-[13px] font-semibold tabular-nums" style={{ color: "#00d4ff" }}>
+              {resumo.itens ?? 0} un
             </span>
           </div>
-          <div className="text-right">
-            <p
-              className="text-[13px] font-semibold leading-none tabular-nums"
-              style={{ color: variacao === null || variacao >= 0 ? "#34c759" : "#ff3b30" }}
-            >
-              {variacao === null
-                ? "—"
-                : `${variacao >= 0 ? "+" : ""}${variacao.toFixed(1).replace(".", ",")}%`}
-            </p>
+          <div className="mt-2 flex h-[44px] items-center rounded-lg bg-black/25 px-2">
+            <GraficoLinha serie={serie} />
           </div>
         </div>
 
-        {/* Gráfico de linha — gradiente verde */}
-        <div className="mt-3 h-[90px]">
-          <GraficoLinha serie={serie} positiva={variacao === null || variacao >= 0} />
+        {/* Divisor */}
+        <div className="h-px bg-white/10" />
+
+        {/* ── Seção 2: Peso Reservado + Peso em Linha ── */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span style={{ color: "#00d4ff" }}>▼</span>
+              <span className="text-[13px] font-medium text-white/80">Reservado</span>
+            </div>
+            <span className="text-[13px] font-semibold tabular-nums text-white">
+              {fmtTonDec(tonReservado)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span style={{ color: "#ff9e80" }}>▲</span>
+              <span className="text-[13px] font-medium text-white/80">Em Linha</span>
+            </div>
+            <span className="text-[13px] font-semibold tabular-nums text-white">
+              {fmtTonDec(tonLinha)}
+            </span>
+          </div>
         </div>
 
-        {/* Valor principal — tonelagem em destaque */}
-        <p className="mt-2 text-[34px] font-bold leading-none tracking-tight text-white tabular-nums">
-          {fmtInt(ton)}
-          <span className="text-[20px] font-medium text-white/50"> t</span>
-        </p>
+        {/* Divisor */}
+        <div className="h-px bg-white/10" />
 
-        {/* Rodapé — valor e itens */}
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-[12px] font-medium text-white/60 tabular-nums">
-            {fmtMi(valor)}
-          </span>
-          <span className="text-[12px] font-medium text-white/40 tabular-nums">
-            {itens ?? "—"} itens
-          </span>
+        {/* ── Seção 3: Barra de progresso — % reservado ── */}
+        <div>
+          <div className="flex items-center gap-2">
+            <IconeGrafico />
+            <span className="text-[13px] font-medium text-white/80">
+              Reservado: {pctReservado.toFixed(0).replace(".", ",")}%
+            </span>
+          </div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#4e4e5e]">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${pctReservado}%`, background: "#00d4ff" }}
+            />
+          </div>
         </div>
 
-        {/* Selo de origem */}
-        <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-white/25">
+        {/* Rodapé */}
+        <p className="text-center text-[10px] font-medium uppercase tracking-wider text-white/25">
           CD Lopas
         </p>
       </div>
@@ -139,17 +150,39 @@ function Card() {
   );
 }
 
-/* ── Gráfico de linha minimalista (SVG) ────────────────────────────── */
+/* ── Ícones SVG minimalistas ────────────────────────────────────────── */
 
-function GraficoLinha({ serie, positiva }: { serie: number[]; positiva: boolean }) {
+function IconeCaixa() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  );
+}
+
+function IconeGrafico() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2">
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  );
+}
+
+/* ── Gráfico de linha minimalista (SVG) — ciano ────────────────────── */
+
+function GraficoLinha({ serie }: { serie: number[] }) {
   if (serie.length < 2) {
     return <div className="h-full w-full" />;
   }
 
   const W = 280;
-  const H = 90;
-  const pad = 4;
-  const cor = positiva ? "#34c759" : "#ff3b30";
+  const H = 36;
+  const pad = 2;
+  const cor = "#00d4ff";
 
   const min = Math.min(...serie);
   const max = Math.max(...serie);
@@ -162,27 +195,14 @@ function GraficoLinha({ serie, positiva }: { serie: number[]; positiva: boolean 
   });
 
   const path = pontos.map((p, i) => `${i === 0 ? "M" : "L"}${p[0]},${p[1]}`).join(" ");
-  const areaPath = `${path} L${pontos[pontos.length - 1][0]},${H} L${pontos[0][0]},${H} Z`;
-  const gradId = positiva ? "gradVerde" : "gradVermelho";
 
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      preserveAspectRatio="none"
-      className="h-full w-full"
-    >
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={cor} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={cor} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaPath} fill={`url(#${gradId})`} />
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-full w-full">
       <path
         d={path}
         fill="none"
         stroke={cor}
-        strokeWidth="2"
+        strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
@@ -221,7 +241,8 @@ function BotaoInstalar() {
         setDeferred(null);
         setInstalado(true);
       }}
-      className="fixed bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/20 bg-[#1c1c1e] px-4 py-1.5 text-[11px] font-semibold text-white/70 shadow-lg"
+      className="fixed bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/20 px-4 py-1.5 text-[11px] font-semibold text-white/70 shadow-lg"
+      style={{ background: "linear-gradient(160deg, #3a2e4c 0%, #212132 100%)" }}
     >
       ⬇ Instalar widget
     </button>
@@ -245,8 +266,8 @@ function TelaLogin({ onLogin }: { onLogin: (u: string, s: string) => Promise<boo
     <div className="flex h-screen w-screen items-center justify-center bg-transparent">
       <form
         onSubmit={submit}
-        className="flex w-[320px] flex-col gap-3 rounded-[22px] p-5"
-        style={{ background: "#1c1c1e" }}
+        className="flex w-[320px] flex-col gap-3 rounded-[20px] p-5"
+        style={{ background: "linear-gradient(160deg, #3a2e4c 0%, #212132 100%)" }}
       >
         <div className="flex items-center gap-1.5">
           <span className="text-[13px] font-semibold text-white">Estoque · CD Lopas</span>
@@ -267,7 +288,8 @@ function TelaLogin({ onLogin }: { onLogin: (u: string, s: string) => Promise<boo
         {erro && <p className="text-[11px] text-red-400">Credenciais inválidas.</p>}
         <button
           type="submit"
-          className="w-full rounded-xl bg-[#34c759] py-2.5 text-sm font-semibold text-black"
+          className="w-full rounded-xl py-2.5 text-sm font-semibold text-white"
+          style={{ background: "#00d4ff", color: "#1a1a2e" }}
         >
           Entrar
         </button>
