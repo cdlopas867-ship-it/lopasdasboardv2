@@ -181,6 +181,7 @@ export default function CenaProducaoSemana({
               <th className="pb-0.5 text-right font-bold" style={{ color: COR_RECEBIDO }}>
                 Recebido
               </th>
+              <th className="pb-0.5 text-right font-bold text-white/55">Média</th>
             </tr>
           </thead>
           <tbody>
@@ -206,13 +207,23 @@ export default function CenaProducaoSemana({
                     <span className="text-[9px] text-white/45">{fmtInt(d.entregue)}</span>
                     <VariacaoDia atual={d.tonEntregue} anterior={ant?.tonEntregue} />
                   </td>
+                  <td className="py-0.5 text-right">
+                    <span className="font-mono font-bold text-white/90">
+                      {d.ordens > 0 && d.tonPrevisto > 0
+                        ? `${fmtBrMax(d.tonPrevisto / d.ordens, 1)} t`
+                        : "—"}
+                    </span>
+                    <span className="block text-[9px] text-white/45">
+                      {d.ordens > 0 ? "por ordem" : ""}
+                    </span>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. ▲/▼ = variação em % da tonelagem vs dia anterior.
+          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. Média = tonelagem prevista do dia ÷ nº de ordens de produção do dia. ▲/▼ = variação em % da tonelagem vs dia anterior.
         </p>
       </div>
 

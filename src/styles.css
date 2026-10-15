@@ -1253,6 +1253,15 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
   letter-spacing: 0.075em;
   line-height: 1.2;
 }
+/* Mini-janela de estoque (desktop) — faixa que "passa" sinalizando ao vivo. */
+@keyframes mini-janela-passa {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(420%); }
+}
+.mini-janela-passa {
+  animation: mini-janela-passa 2.4s ease-in-out infinite;
+}
+
 @keyframes destaque-gleam {
   0% { transform: translateX(0) skewX(-22deg); opacity: 0; }
   15% { opacity: 1; }

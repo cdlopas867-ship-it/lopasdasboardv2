@@ -26,6 +26,7 @@ import { existsSync, readFileSync } from "./fs-compat";
 import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
 import { lerForaDeLinha, aplicarCustos, rebuildForaDeLinhaFromItens } from "./fora-de-linha-import";
+import { lerItensFull, lerPesosPosicao, calcularSaldoComparativo } from "./saldo-comparativo-import";
 
 /* Planilha analise-estoque não traz custo: usa o custo médio da planilha de reservas. */
 function comCustos(
@@ -48,6 +49,7 @@ function comCustos(
 import type { Avaria } from "./avarias";
 import type { PendenteProducao } from "./pendentes";
 import type { ItemEstoque } from "./base-estoque";
+import type { SaldoComparativo } from "@/data/saldo-comparativo";
 
 const FOLDER_ID = "16WJaYavcR8B1QgpVsT51Kg0_ADJsSGtQ";
 const DRIVE_GATEWAY = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
@@ -821,6 +823,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorRecebimento: ReturnType<typeof calcularRecebimento> | null = null;
   let melhorItens: ItemEstoque[] | null = null;
   let melhorItensMod: Date | undefined;
+  let itensFull: Map<string, { saldo: number; desc: string }> | null = null;
+  /* Peso unitário (PESO LIQ UN) dos itens da posição do Focco — usado para
+     pesar a quantidade do Full, que não traz peso no relatório. */
+  let pesosPosicao: Map<string, number> | null = null;
   let melhorUnidadesResumo: UnidadeResumo[] | null = null;
   let melhorForaDeLinha: ReturnType<typeof lerForaDeLinha> | null = null;
   let melhorFdlMod = 0;
@@ -885,6 +891,23 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       if (itensEstoque.length > (melhorItens?.length ?? 0)) {
         melhorItens = itensEstoque;
         melhorItensMod = parseModificado(arq.modificado ?? "");
+      }
+
+      /* Extrai o saldo do Full (relatório WF0112 - Estoques, do WMS FullSoft)
+         para o comparativo Full × Focco. O sheet_to_json é feito aqui, onde o
+         XLSX funciona sob o SSR, e as linhas vão para lerItensFull. */
+      for (const nome of wb.SheetNames) {
+        const ws = wb.Sheets[nome];
+        if (!ws) continue;
+        const linhas = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
+        const full = lerItensFull(linhas);
+        if (full) {
+          itensFull = full;
+          continue;
+        }
+        /* A posição do Focco traz o PESO LIQ UN de cada item — inclusive dos
+           zerados, que só existem no relatório do Full. */
+        if (!pesosPosicao) pesosPosicao = lerPesosPosicao(linhas);
       }
 
       /* Extrai dados por unidade (Guarda-Roupas, Complementos, Salas) da aba Resumo */
@@ -1170,6 +1193,23 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     }
   }
 
+  /* Comparativo de saldo Full (relatório WF0112, do FullSoft) × Focco (posição de estoque 001). */
+  let saldoComparativo: SaldoComparativo | null = null;
+  if (melhorItens && itensFull) {
+    saldoComparativo = calcularSaldoComparativo(
+      melhorItens,
+      itensFull,
+      pesosPosicao ?? new Map<string, number>(),
+      melhorResumo.data || new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+    );
+    if (saldoComparativo) {
+      console.info(
+        `[auto-import] saldo Full × Focco: ${fmtInt(saldoComparativo.full.itens)} × ${fmtInt(saldoComparativo.focco.itens)} itens · ` +
+          `acuracidade ${saldoComparativo.comparativo.pctAcuracia}% · só Full ${fmtInt(saldoComparativo.alertas.soFull)}`,
+      );
+    }
+  }
+
   if (melhorOcupacao) {
     console.info(`[auto-import] ocupação: ${fmtInt(melhorOcupacao.ocupados)} ocupados, ${fmtInt(melhorOcupacao.livres)} livres, ${fmtInt(melhorOcupacao.bloqueados)} bloqueados, ${fmtInt(melhorOcupacao.total)} total (${(melhorOcupacao.pct * 100).toFixed(1)}%)`);
   } else {
@@ -1246,6 +1286,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         && melhorItens.some(it => (it.valor > 0 || it.custo > 0));
       return { foraDeLinha: foiReconstruido ? melhorForaDeLinha : comCustos(melhorForaDeLinha, melhorReservados) };
     })(),
+    ...(saldoComparativo ? { saldoComparativo } : {}),
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
     ...(melhorOcupacao
       ? {

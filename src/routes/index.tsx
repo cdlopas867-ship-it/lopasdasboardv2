@@ -5,8 +5,10 @@ import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
 import VideoResumoDashboard, { type VideoAvarias, type VideoDia, type VideoKpi, type VideoMes, type VideoOcupacao, type VideoPaletas, type VideoPendentes, type VideoReservados, type VideoTurno, type VideoUnidade, type RecebimentoSemanalDia } from "@/components/VideoResumoDashboard";
 import type { VideoForaDeLinha } from "@/components/CenasApresentacao";
+import type { SaldoComparativo } from "@/data/saldo-comparativo";
 
 import LoadingApresentacao from "@/components/LoadingApresentacao";
+import MiniJanelaEstoque from "@/components/MiniJanelaEstoque";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
 import { normalizarDiasExibicao } from "@/lib/recebimento";
@@ -79,9 +81,16 @@ function DashboardHome() {
        permanece apenas como fallback. */
     const paletasSync = p["paletas"] as VideoPaletas | undefined;
     const paletas = paletasSync && paletasSync.totalPaletes > 0 ? paletasSync : PALETAS_FIXO;
-    return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, semReserva: p["semReservaResumo"] as VideoReservados | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, paletas: paletas as VideoPaletas, recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
+    return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, semReserva: p["semReservaResumo"] as VideoReservados | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, saldoComparativo: p["saldoComparativo"] as SaldoComparativo | undefined, paletas: paletas as VideoPaletas, recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
   }, [dados]);
-  if (!pronto || !autenticado) return null;
-  if (!loaded) return <LoadingApresentacao />;
-  return <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />;
+  // Mantém conteúdo visível no SSR, na checagem de sessão e no redirecionamento.
+  if (!pronto || !autenticado || !loaded) return <LoadingApresentacao />;
+  const r = presentation.resumo as { ton?: number; valor?: number; itens?: number } | undefined;
+  const atualizadoEm = presentation.sincronizacao?.em
+    ? new Date(presentation.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
+    : dados.atualizadoEm;
+  return (<>
+    <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />
+    {r && <MiniJanelaEstoque pesoTon={r.ton ?? 0} valor={r.valor ?? 0} itens={r.itens} atualizadoEm={atualizadoEm} />}
+  </>);
 }
