@@ -3,8 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
-import { POSICAO_EM_LINHA, POSICAO_FORA_DE_LINHA, POSICAO_TOTAL } from "@/data/fora-de-linha";
-import { fmtTonDec } from "@/lib/format";
+import { fmtTonDec, fmtMi } from "@/lib/format";
 
 type Painel = typeof initialSyncData & Record<string, unknown>;
 
@@ -24,36 +23,32 @@ export const Route = createFileRoute("/widget")({
 /* ── Tipos do payload ─────────────────────────────────────────────── */
 
 type Resumo = { ton?: number; valor?: number; previsto?: number; saldo?: number; itens?: number };
-type Posicao = { reservas?: number; pesoReservadoTon?: number };
-type ForaDeLinha = {
-  posicaoEmLinha?: Posicao;
-  posicaoForaDeLinha?: Posicao;
-  posicaoTotal?: Posicao;
-} | null;
 
-/* ── Paleta Windows 11 Quick Settings ─────────────────────────────── */
+/* ── Paleta ──────────────────────────────────────────────────────── */
 
 const C = {
-  panel: "#1c1c1c",
-  panelEdge: "#ffffff20",
-  tileActive: "#609af8",
-  tileInactive: "#303030",
+  accent: "#609af8",
+  tileBlue: "#6a9dfa",
   text: "#ffffff",
   textDim: "#ffffff99",
   textFaint: "#ffffff66",
-  track: "#4d4d4d",
-  trackFill: "#609af8",
-  accent: "#609af8",
 };
 
 /* Tamanho compacto da janela PWA (flyout) */
-const WIDGET_W = 380;
-const WIDGET_H = 460;
+const WIDGET_W = 340;
+const WIDGET_H = 240;
 
 /* ── Widget ───────────────────────────────────────────────────────── */
 
 function WidgetDesempenho() {
   const { autenticado, pronto, login } = useAuth();
+
+  // Fundo transparente para o efeito de vidro (backdrop blur) no desktop
+  useEffect(() => {
+    const prev = document.body.style.background;
+    document.body.style.background = "transparent";
+    return () => { document.body.style.background = prev; };
+  }, []);
 
   if (!pronto) return <TelaCarregando />;
   if (!autenticado) return <TelaLogin onLogin={login} />;
@@ -70,7 +65,6 @@ function WidgetConteudo() {
     const emPWA = window.matchMedia("(display-mode: standalone)").matches;
     if (emPWA) {
       setInstalado(true);
-      // Redimensiona a janela do PWA para o tamanho compacto (flyout)
       window.resizeTo(WIDGET_W, WIDGET_H);
       return;
     }
@@ -93,21 +87,10 @@ function WidgetConteudo() {
 
   const p = dados as unknown as Record<string, unknown>;
   const resumo = (p["resumo"] ?? {}) as Resumo;
-  const foraDeLinha = (p["foraDeLinha"] ?? null) as ForaDeLinha;
 
   const pesoTon = resumo.ton ?? 0;
-  const pesoReservadoEmLinha = foraDeLinha?.posicaoEmLinha?.pesoReservadoTon ?? POSICAO_EM_LINHA.pesoReservadoTon;
-  const pesoReservadoForaLinha = foraDeLinha?.posicaoForaDeLinha?.pesoReservadoTon ?? POSICAO_FORA_DE_LINHA.pesoReservadoTon;
-  const pesoReservadoTotal = foraDeLinha?.posicaoTotal?.pesoReservadoTon ?? POSICAO_TOTAL.pesoReservadoTon;
-  const pesoDisponivel = pesoTon - pesoReservadoTotal;
-
-  const atualizadoEm = (p["sincronizacao"] as { em?: string } | undefined)?.em
-    ? new Date((p["sincronizacao"] as { em: string }).em).toLocaleString("pt-BR", {
-        dateStyle: "short",
-        timeStyle: "short",
-        timeZone: "America/Sao_Paulo",
-      })
-    : (p["atualizadoEm"] as string | undefined);
+  const valorMi = resumo.valor ?? 0;
+  const itens = resumo.itens ?? "—";
 
   const instalar = async () => {
     if (!instalavel) return;
@@ -116,14 +99,16 @@ function WidgetConteudo() {
     setInstalavel(null);
   };
 
-  // proporção disponível/total para o slider visual
-  const pctDisponivel = pesoTon > 0 ? Math.round((pesoDisponivel / pesoTon) * 100) : 0;
-
   return (
-    <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-[#0a0a0a] p-0 sm:p-4">
+    <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-transparent p-3">
       <div
-        className="flex h-full w-full flex-col gap-3 rounded-none p-4 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.9)] sm:h-auto sm:max-w-sm sm:rounded-2xl"
-        style={{ background: C.panel, border: `1px solid ${C.panelEdge}` }}
+        className="flex w-full max-w-[320px] flex-col gap-3 rounded-2xl p-4 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.6)]"
+        style={{
+          background: "rgba(28, 28, 28, 0.8)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border: "1px solid rgba(255, 255, 255, 0.12)",
+        }}
       >
         {/* cabeçalho */}
         <header className="flex items-center justify-between">
@@ -133,106 +118,79 @@ function WidgetConteudo() {
               style={{ background: C.accent, boxShadow: `0 0 8px ${C.accent}` }}
             />
             <span className="text-xs font-semibold tracking-wide text-white/90">
-              Desempenho · CD Lopas
+              Desempenho
             </span>
           </div>
-          {!instalado && instalavel && (
+          <div className="flex items-center gap-2">
+            {!instalado && instalavel && (
+              <button
+                type="button"
+                onClick={instalar}
+                className="rounded-lg px-2 py-0.5 text-[10px] font-semibold text-white/80 transition hover:bg-white/10"
+                style={{ border: `1px solid ${C.accent}55`, background: `${C.accent}1a` }}
+              >
+                ⬇ Fixar
+              </button>
+            )}
             <button
               type="button"
-              onClick={instalar}
-              className="rounded-lg px-2.5 py-1 text-[10px] font-semibold text-white/80 transition hover:bg-white/10"
-              style={{ border: `1px solid ${C.accent}55`, background: `${C.accent}1a` }}
+              onClick={() => window.close()}
+              className="text-white/50 transition hover:text-white/90"
+              aria-label="Fechar"
             >
-              ⬇ Fixar
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
             </button>
-          )}
+          </div>
         </header>
 
-        {/* grid de tiles — estilo Quick Settings */}
+        {/* dois cards — PESO e VALOR */}
         <div className="grid grid-cols-2 gap-2.5">
-          <Tile rotulo="Peso do Estoque" valor={fmtTonDec(pesoTon)} ativo />
-          <Tile rotulo="Peso Disponível" valor={fmtTonDec(pesoDisponivel)} ativo />
-          <Tile rotulo="Reserv. em Linha" valor={fmtTonDec(pesoReservadoEmLinha)} />
-          <Tile rotulo="Reserv. Fora de Linha" valor={fmtTonDec(pesoReservadoForaLinha)} />
-        </div>
-
-        {/* slider visual — proporção disponível */}
-        <div className="flex items-center gap-3 px-1 pt-1">
-          {/* ícone sol */}
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-          </svg>
-          <div className="relative h-1.5 flex-1 rounded-full" style={{ background: C.track }}>
-            <div
-              className="absolute left-0 top-0 h-full rounded-full transition-all"
-              style={{ width: `${pctDisponivel}%`, background: C.trackFill }}
-            />
-            <div
-              className="absolute top-1/2 size-3.5 -translate-y-1/2 rounded-full border-2 shadow-md transition-all"
-              style={{ left: `calc(${pctDisponivel}% - 7px)`, background: "#fff", borderColor: C.trackFill }}
-            />
+          <div
+            className="flex flex-col gap-1 rounded-xl px-3 py-2.5"
+            style={{ background: C.tileBlue }}
+          >
+            <span className="text-[9px] font-semibold tracking-[0.14em] uppercase text-white/80">
+              Peso
+            </span>
+            <span className="font-mono text-lg font-bold tabular-nums text-white">
+              {fmtTonDec(pesoTon)}
+            </span>
           </div>
-          <span className="w-9 text-right text-[11px] font-medium tabular-nums text-white/70">
-            {pctDisponivel}%
-          </span>
+          <div
+            className="flex flex-col gap-1 rounded-xl px-3 py-2.5"
+            style={{ background: C.tileBlue }}
+          >
+            <span className="text-[9px] font-semibold tracking-[0.14em] uppercase text-white/80">
+              Valor
+            </span>
+            <span className="whitespace-nowrap font-mono text-base font-bold tabular-nums text-white">
+              {fmtMi(valorMi)}
+            </span>
+          </div>
         </div>
 
         {/* rodapé */}
-        <footer className="flex items-center justify-between px-1 pt-0.5 text-[10px] text-white/50">
-          <div className="flex items-center gap-1.5">
-            {/* ícone bateria */}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
-              <rect x="2" y="7" width="18" height="10" rx="2" />
-              <path d="M22 11v2" />
-              <path d="M6 10v4M10 10v4" fill={C.text} stroke="none" />
-            </svg>
-            <span>{resumo.itens ?? "—"} itens</span>
-          </div>
-          <span className="tracking-wide">Atualizado {atualizadoEm ?? "—"}</span>
+        <footer className="flex items-center justify-between px-0.5 text-[10px]">
+          <span className="text-white/50">{itens} itens</span>
+          <a
+            href="/"
+            className="text-white/60 underline transition hover:text-white/90"
+          >
+            Abrir widget ↗
+          </a>
         </footer>
       </div>
     </div>
   );
 }
 
-/* ── Subcomponentes ────────────────────────────────────────────────── */
-
-function Tile({
-  rotulo,
-  valor,
-  ativo,
-}: {
-  rotulo: string;
-  valor: string;
-  ativo?: boolean;
-}) {
-  return (
-    <div
-      className="flex flex-col gap-1 rounded-xl px-3 py-2.5 transition"
-      style={{
-        background: ativo ? C.tileActive : C.tileInactive,
-      }}
-    >
-      <span
-        className="text-[9px] font-semibold tracking-[0.12em] uppercase"
-        style={{ color: ativo ? "#ffffffcc" : C.textFaint }}
-      >
-        {rotulo}
-      </span>
-      <span
-        className="font-mono text-base font-bold tabular-nums"
-        style={{ color: "#fff" }}
-      >
-        {valor}
-      </span>
-    </div>
-  );
-}
+/* ── Telas auxiliares ─────────────────────────────────────────────── */
 
 function TelaCarregando() {
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-[#0a0a0a]">
+    <div className="flex h-screen w-screen items-center justify-center bg-transparent">
       <span
         className="size-3 animate-pulse rounded-full"
         style={{ background: C.accent, boxShadow: `0 0 12px ${C.accent}` }}
@@ -254,11 +212,16 @@ function TelaLogin({ onLogin }: { onLogin: (u: string, s: string) => Promise<boo
   };
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-[#0a0a0a] px-6">
+    <div className="flex h-screen w-screen items-center justify-center bg-transparent px-6">
       <form
         onSubmit={submit}
-        className="flex w-full max-w-xs flex-col gap-4 rounded-2xl p-6 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.9)]"
-        style={{ background: C.panel, border: `1px solid ${C.panelEdge}` }}
+        className="flex w-full max-w-xs flex-col gap-4 rounded-2xl p-6 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.6)]"
+        style={{
+          background: "rgba(28, 28, 28, 0.8)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border: "1px solid rgba(255, 255, 255, 0.12)",
+        }}
       >
         <div className="flex items-center gap-2">
           <span
@@ -314,7 +277,7 @@ function Campo({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-lg border border-white/15 px-3 py-2 text-sm text-white outline-none transition focus:border-[#609af8]/60"
-        style={{ background: C.tileInactive }}
+        style={{ background: "rgba(48, 48, 48, 0.8)" }}
       />
     </label>
   );
@@ -327,6 +290,4 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-/* Evita aviso de variável não usada — `ReactNode` é re-exportado para
-   futuras expansões do widget sem precisar re-importar. */
 export type _WidgetReactNode = ReactNode;
