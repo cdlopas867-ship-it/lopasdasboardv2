@@ -1,13 +1,12 @@
 {
-  "name": "Lopas · Desempenho",
-  "short_name": "Desempenho",
-  "description": "Widget de desempenho do CD Lopas — peso e valor do estoque em tempo real.",
+  "name": "Lopas · Estoque",
+  "short_name": "Estoque",
+  "description": "Widget de estoque do CD Lopas — peso e valor em tempo real.",
   "start_url": "/widget",
   "scope": "/widget",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
-  "background_color": "transparent",
-  "theme_color": "#1c1c1c",
+  "background_color": "#121212",
+  "theme_color": "#1db954",
   "orientation": "any",
   "icons": [
     {
