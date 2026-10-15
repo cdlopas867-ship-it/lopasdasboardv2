@@ -83,8 +83,8 @@ function DashboardHome() {
     const paletas = paletasSync && paletasSync.totalPaletes > 0 ? paletasSync : PALETAS_FIXO;
     return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, semReserva: p["semReservaResumo"] as VideoReservados | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, saldoComparativo: p["saldoComparativo"] as SaldoComparativo | undefined, paletas: paletas as VideoPaletas, recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
   }, [dados]);
-  if (!pronto || !autenticado) return null;
-  if (!loaded) return <LoadingApresentacao />;
+  // Mantém conteúdo visível no SSR, na checagem de sessão e no redirecionamento.
+  if (!pronto || !autenticado || !loaded) return <LoadingApresentacao />;
   const r = presentation.resumo as { ton?: number; valor?: number; itens?: number } | undefined;
   const atualizadoEm = presentation.sincronizacao?.em
     ? new Date(presentation.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
