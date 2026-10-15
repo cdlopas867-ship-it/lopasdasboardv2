@@ -29,6 +29,15 @@ function WidgetEstoque() {
     if (main) main.remove();
   }, []);
 
+  // Ao abrir como PWA instalada, força a janela no tamanho do widget (só o card)
+  useEffect(() => {
+    const W = 360;
+    const H = 440;
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      window.resizeTo(W, H);
+    }
+  }, []);
+
   if (!pronto) return null;
   if (!autenticado) return <TelaLogin onLogin={login} />;
   return <Card />;
