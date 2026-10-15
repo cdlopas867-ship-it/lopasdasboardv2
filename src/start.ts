@@ -1,6 +1,6 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 
-import { describeError } from "./lib/error-capture";
+import { describeError, isAbortedRequest } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
 /* Converte qualquer exceção do SSR em uma resposta HTTP válida.
@@ -11,6 +11,9 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
     return await next();
   } catch (error) {
+    /* Requisição cancelada pelo cliente (aborted/ECONNRESET): não é falha do app. */
+    if (isAbortedRequest(error)) return new Response(null, { status: 499 });
+
     console.error("[ssr] erro não tratado:\n" + describeError(error));
 
     const status =

@@ -49,6 +49,27 @@ function isErrorLike(value: unknown): value is Error {
   return value instanceof Error;
 }
 
+/* O cliente cortar a conexão no meio do pedido (aba fechada, navegação/reload
+   cancelando a requisição, proxy fechando o socket) faz o Node abortar o
+   request e a exceção "aborted" (ConnResetException, code ECONNRESET) subir pelo
+   SSR. Não é falha do app: não deve virar log de erro nem página 500. */
+export function isAbortedRequest(error: unknown): boolean {
+  const CAUSE_DEPTH = 5;
+  let current: unknown = error;
+
+  for (let depth = 0; current != null && depth < CAUSE_DEPTH; depth++) {
+    if (current instanceof Error) {
+      /* "aborted" é o message do ConnResetException que o Node cria quando o
+         cliente corta a conexão. Um ECONNRESET de serviço externo (Supabase,
+         Drive) tem outra mensagem — esse continua sendo registrado como erro. */
+      if (current.message === "aborted" || current.name === "AbortError") return true;
+      if ((current as { code?: unknown }).code === "ABORT_ERR") return true;
+    }
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
+}
+
 // Wrap console.error so errors logged by any layer — including h3's internal
 // unhandled-error logging, which this file cannot hook directly — are both
 // recorded for consumeLastCapturedError and expanded before serialization.

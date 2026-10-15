@@ -1,5 +1,5 @@
 import "./lib/error-capture";
-import { consumeLastCapturedError, describeError } from "./lib/error-capture";
+import { consumeLastCapturedError, describeError, isAbortedRequest } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
 /* O servidor principal precisa ser leve e compatível com o runtime do Lovable.
@@ -78,6 +78,9 @@ export default {
       }
       return response;
     } catch (error) {
+      /* Requisição cancelada pelo cliente (aborted/ECONNRESET): não é falha do app. */
+      if (isAbortedRequest(error)) return new Response(null, { status: 499 });
+
       return errorResponse(error);
     }
   },
