@@ -43,7 +43,11 @@ const WIDGET_H = 240;
 function WidgetDesempenho() {
   const { autenticado, pronto, login } = useAuth();
 
-  // Fundo transparente para o efeito de vidro (backdrop blur) no desktop
+  // Fundo transparente para o efeito de vidro (backdrop blur) no desktop.
+  // Também remove o manifest principal (da rota raiz) para que o navegador
+  // use apenas o manifest-widget.json ao instalar o PWA — sem isso, o
+  // browser vê dois <link rel="manifest"> e pode instalar o app principal
+  // (start_url "/") em vez do widget (start_url "/widget").
   useEffect(() => {
     const style = document.createElement("style");
     style.id = "widget-transparent";
@@ -51,10 +55,23 @@ function WidgetDesempenho() {
     document.head.appendChild(style);
     document.documentElement.style.background = "transparent";
     document.body.style.background = "transparent";
+
+    const manifests = document.querySelectorAll('link[rel="manifest"]');
+    manifests.forEach((link) => {
+      const href = link.getAttribute("href") || "";
+      if (href.includes("manifest-widget")) return;
+      link.setAttribute("data-widget-hidden", "true");
+      link.remove();
+    });
+
     return () => {
       style.remove();
       document.documentElement.style.background = "";
       document.body.style.background = "";
+      document.querySelectorAll('link[data-widget-hidden="true"]').forEach((link) => {
+        link.removeAttribute("data-widget-hidden");
+        document.head.appendChild(link);
+      });
     };
   }, []);
 
