@@ -11,10 +11,8 @@ import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
 import CenaReservados from "@/components/CenaReservados";
 import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
-import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaPaletes from "@/components/CenaPaletes";
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
-import CenaProdutividade from "@/components/CenaProdutividade";
 import CenaSaldoComparativo from "@/components/CenaSaldoComparativo";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
 
@@ -66,8 +64,6 @@ type Props = {
   saldoComparativo?: SaldoComparativo | null | undefined;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
-  onExportarExcel?: (() => void) | undefined;
-  exportando?: boolean | undefined;
   onPausar?: (() => void) | undefined;
 };
 
@@ -93,8 +89,6 @@ export default function CenasApresentacao({
   saldoComparativo,
   onReiniciar,
   onGerarRelatorio,
-  onExportarExcel,
-  exportando,
   onPausar,
 }: Props) {
   /* Mostra todos os meses com recebimento ou carregamento — meses sem
@@ -151,28 +145,23 @@ export default function CenasApresentacao({
         <CenaRecebimentoTurno anim={anim} turnos={turnos} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 4 — Saúde do Estoque (donut interativo com toggle Carregado/Recebido) */}
-      {cena === 3 && listaMes.length > 0 && (
-        <CenaSaudeEstoque anim={anim} mensal={listaMes} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 5 — Paletes em Estoque (donut interativo com toggle por tamanho) */}
-      {cena === 4 && paletas && paletas.totalPaletes > 0 && (
+      {/* Cena 4 — Paletes em Estoque (donut interativo com toggle por tamanho) */}
+      {cena === 3 && paletas && paletas.totalPaletes > 0 && (
         <CenaPaletes anim={anim} paletas={paletas} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 6 — Produção da Semana (donut interativo com toggle Entregue/Pendente) */}
-      {cena === 5 && producaoSemanal && producaoSemanal.length > 0 && (
+      {/* Cena 5 — Produção da Semana (donut interativo com toggle Entregue/Pendente) */}
+      {cena === 4 && producaoSemanal && producaoSemanal.length > 0 && (
         <CenaProducaoSemana anim={anim} dias={producaoSemanal} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 7 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
-      {cena === 6 && (
+      {/* Cena 6 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
+      {cena === 5 && (
         <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
       )}
 
-      {/* Cena 8 — pendências de produção */}
-      {cena === 7 && (
+      {/* Cena 7 — pendências de produção */}
+      {cena === 6 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -339,13 +328,13 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 9 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
-      {cena === 8 && reservados && (
+      {/* Cena 8 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
+      {cena === 7 && reservados && (
         <CenaReservados anim={anim} reservados={reservados} semReserva={semReserva} valorFaturado={valorFaturado} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 9 fallback — sem dados de reservados */}
-      {cena === 8 && !reservados && (
+      {/* Cena 8 fallback — sem dados de reservados */}
+      {cena === 7 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -362,28 +351,23 @@ export default function CenasApresentacao({
         </div>
       )}
 
-      {/* Cena 10 — Fora de linha por categoria */}
-      {cena === 9 && (
+      {/* Cena 9 — Fora de linha por categoria */}
+      {cena === 8 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 11 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 10 && (
+      {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 9 && (
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 12 — Produtividade por colaborador e por turma */}
-      {cena === 11 && (
-        <CenaProdutividade anim={anim} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 13 — Controle de saldo Full × Focco */}
-      {cena === 12 && (
+      {/* Cena 11 — Controle de saldo Full × Focco */}
+      {cena === 10 && (
         <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} />
       )}
 
-      {/* Cena 14 — encerramento */}
-      {cena === 13 && (
+      {/* Cena 12 — encerramento */}
+      {cena === 11 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
@@ -392,14 +376,6 @@ export default function CenasApresentacao({
             A apresentação reinicia automaticamente.
           </p>
           <div className="video-sobe mt-6 flex flex-wrap items-center justify-center gap-3" style={{ animationDelay: "0.45s" }}>
-            <button
-              type="button"
-              onClick={onExportarExcel}
-              disabled={exportando}
-              className="cursor-pointer rounded-full border border-white/30 bg-white/10 px-8 py-3 text-xs font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-60"
-            >
-              {exportando ? "Gerando Excel…" : "⬇ Exportar Excel"}
-            </button>
             <button
               type="button"
               onClick={onReiniciar}
