@@ -31,6 +31,21 @@ type ForaDeLinha = {
   posicaoTotal?: Posicao;
 } | null;
 
+/* ── Paleta Windows 11 Quick Settings ─────────────────────────────── */
+
+const C = {
+  panel: "#1c1c1c",
+  panelEdge: "#ffffff20",
+  tileActive: "#609af8",
+  tileInactive: "#303030",
+  text: "#ffffff",
+  textDim: "#ffffff99",
+  textFaint: "#ffffff66",
+  track: "#4d4d4d",
+  trackFill: "#609af8",
+  accent: "#609af8",
+};
+
 /* ── Widget ───────────────────────────────────────────────────────── */
 
 function WidgetDesempenho() {
@@ -93,48 +108,81 @@ function WidgetConteudo() {
     setInstalavel(null);
   };
 
+  // proporção disponível/total para o slider visual
+  const pctDisponivel = pesoTon > 0 ? Math.round((pesoDisponivel / pesoTon) * 100) : 0;
+
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-gradient-to-b from-[#0f1a0b] to-[#0a1306] text-white">
-      {/* cabeçalho */}
-      <header className="flex items-center justify-between px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <span className="size-2 animate-pulse rounded-full bg-[#00FFCC] shadow-[0_0_8px_#00FFCC]" />
-          <span className="text-[10px] font-bold tracking-[0.22em] text-white/80 uppercase">
-            Desempenho · CD Lopas
+    <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-[#0a0a0a] p-4">
+      <div
+        className="flex w-full max-w-sm flex-col gap-3 rounded-2xl p-4 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.9)]"
+        style={{ background: C.panel, border: `1px solid ${C.panelEdge}` }}
+      >
+        {/* cabeçalho */}
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span
+              className="size-2.5 animate-pulse rounded-full"
+              style={{ background: C.accent, boxShadow: `0 0 8px ${C.accent}` }}
+            />
+            <span className="text-xs font-semibold tracking-wide text-white/90">
+              Desempenho · CD Lopas
+            </span>
+          </div>
+          {!instalado && instalavel && (
+            <button
+              type="button"
+              onClick={instalar}
+              className="rounded-lg px-2.5 py-1 text-[10px] font-semibold text-white/80 transition hover:bg-white/10"
+              style={{ border: `1px solid ${C.accent}55`, background: `${C.accent}1a` }}
+            >
+              ⬇ Fixar
+            </button>
+          )}
+        </header>
+
+        {/* grid de tiles — estilo Quick Settings */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <Tile rotulo="Peso do Estoque" valor={fmtTonDec(pesoTon)} ativo />
+          <Tile rotulo="Peso Disponível" valor={fmtTonDec(pesoDisponivel)} ativo />
+          <Tile rotulo="Reserv. em Linha" valor={fmtTonDec(pesoReservadoEmLinha)} />
+          <Tile rotulo="Reserv. Fora de Linha" valor={fmtTonDec(pesoReservadoForaLinha)} />
+        </div>
+
+        {/* slider visual — proporção disponível */}
+        <div className="flex items-center gap-3 px-1 pt-1">
+          {/* ícone sol */}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+          </svg>
+          <div className="relative h-1.5 flex-1 rounded-full" style={{ background: C.track }}>
+            <div
+              className="absolute left-0 top-0 h-full rounded-full transition-all"
+              style={{ width: `${pctDisponivel}%`, background: C.trackFill }}
+            />
+            <div
+              className="absolute top-1/2 size-3.5 -translate-y-1/2 rounded-full border-2 shadow-md transition-all"
+              style={{ left: `calc(${pctDisponivel}% - 7px)`, background: "#fff", borderColor: C.trackFill }}
+            />
+          </div>
+          <span className="w-9 text-right text-[11px] font-medium tabular-nums text-white/70">
+            {pctDisponivel}%
           </span>
         </div>
-        {!instalado && instalavel && (
-          <button
-            type="button"
-            onClick={instalar}
-            className="rounded-full border border-[#00FFCC]/30 bg-[#00FFCC]/10 px-3 py-1 text-[9px] font-bold tracking-widest text-[#00FFCC] uppercase transition hover:bg-[#00FFCC]/20"
-          >
-            ⬇ Fixar
-          </button>
-        )}
-      </header>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-
-      {/* métricas */}
-      <main className="flex flex-1 flex-col gap-3 px-4 py-4">
-        <Metrica rotulo="Peso do Estoque" valor={fmtTonDec(pesoTon)} destaque />
-        <Metrica rotulo="Peso Disponível" valor={fmtTonDec(pesoDisponivel)} destaque />
-        <div className="grid grid-cols-2 gap-3">
-          <Metrica rotulo="Peso Reserv. em Linha" valor={fmtTonDec(pesoReservadoEmLinha)} compacta />
-          <Metrica rotulo="Peso Reserv. Fora de Linha" valor={fmtTonDec(pesoReservadoForaLinha)} compacta />
-        </div>
-      </main>
-
-      {/* rodapé */}
-      <footer className="flex items-center justify-between px-4 pb-3 pt-1 text-[9px] text-white/35">
-        <span className="tracking-wide">Atualizado {atualizadoEm ?? "—"}</span>
-        <span className="tracking-wide">{resumo.itens ?? "—"} itens</span>
-      </footer>
-
-      {/* faixa animada */}
-      <div className="h-0.5 w-full overflow-hidden bg-white/5">
-        <div className="mini-janela-passa h-full w-1/3 bg-gradient-to-r from-transparent via-[#00FFCC] to-transparent" />
+        {/* rodapé */}
+        <footer className="flex items-center justify-between px-1 pt-0.5 text-[10px] text-white/50">
+          <div className="flex items-center gap-1.5">
+            {/* ícone bateria */}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.text} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.7">
+              <rect x="2" y="7" width="18" height="10" rx="2" />
+              <path d="M22 11v2" />
+              <path d="M6 10v4M10 10v4" fill={C.text} stroke="none" />
+            </svg>
+            <span>{resumo.itens ?? "—"} itens</span>
+          </div>
+          <span className="tracking-wide">Atualizado {atualizadoEm ?? "—"}</span>
+        </footer>
       </div>
     </div>
   );
@@ -142,43 +190,45 @@ function WidgetConteudo() {
 
 /* ── Subcomponentes ────────────────────────────────────────────────── */
 
-function Metrica({
+function Tile({
   rotulo,
   valor,
-  destaque,
-  compacta,
+  ativo,
 }: {
   rotulo: string;
   valor: string;
-  destaque?: boolean;
-  compacta?: boolean;
+  ativo?: boolean;
 }) {
   return (
     <div
-      className={[
-        "rounded-xl border border-[#00FFCC]/15 bg-[#0c1408]/60 px-3.5",
-        compacta ? "py-2.5" : "py-3",
-      ].join(" ")}
+      className="flex flex-col gap-1 rounded-xl px-3 py-2.5 transition"
+      style={{
+        background: ativo ? C.tileActive : C.tileInactive,
+      }}
     >
-      <span className="text-[9px] font-semibold tracking-[0.15em] text-white/45 uppercase">
+      <span
+        className="text-[9px] font-semibold tracking-[0.12em] uppercase"
+        style={{ color: ativo ? "#ffffffcc" : C.textFaint }}
+      >
         {rotulo}
       </span>
-      <p
-        className={[
-          "font-mono font-bold tabular-nums",
-          destaque ? "text-2xl text-[#00FFCC] [text-shadow:0_0_12px_rgba(0,255,204,0.3)]" : "text-lg text-white",
-        ].join(" ")}
+      <span
+        className="font-mono text-base font-bold tabular-nums"
+        style={{ color: "#fff" }}
       >
         {valor}
-      </p>
+      </span>
     </div>
   );
 }
 
 function TelaCarregando() {
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-[#0a1306]">
-      <span className="size-3 animate-pulse rounded-full bg-[#00FFCC] shadow-[0_0_12px_#00FFCC]" />
+    <div className="flex h-screen w-screen items-center justify-center bg-[#0a0a0a]">
+      <span
+        className="size-3 animate-pulse rounded-full"
+        style={{ background: C.accent, boxShadow: `0 0 12px ${C.accent}` }}
+      />
     </div>
   );
 }
@@ -196,11 +246,18 @@ function TelaLogin({ onLogin }: { onLogin: (u: string, s: string) => Promise<boo
   };
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-gradient-to-b from-[#0f1a0b] to-[#0a1306] px-6">
-      <form onSubmit={submit} className="w-full max-w-xs space-y-4">
+    <div className="flex h-screen w-screen items-center justify-center bg-[#0a0a0a] px-6">
+      <form
+        onSubmit={submit}
+        className="flex w-full max-w-xs flex-col gap-4 rounded-2xl p-6 shadow-[0_8px_40px_-8px_rgba(0,0,0,0.9)]"
+        style={{ background: C.panel, border: `1px solid ${C.panelEdge}` }}
+      >
         <div className="flex items-center gap-2">
-          <span className="size-2.5 animate-pulse rounded-full bg-[#00FFCC] shadow-[0_0_8px_#00FFCC]" />
-          <span className="text-xs font-bold tracking-[0.22em] text-white/80 uppercase">
+          <span
+            className="size-2.5 animate-pulse rounded-full"
+            style={{ background: C.accent, boxShadow: `0 0 8px ${C.accent}` }}
+          />
+          <span className="text-xs font-semibold tracking-wide text-white/90">
             Desempenho · CD Lopas
           </span>
         </div>
@@ -211,7 +268,8 @@ function TelaLogin({ onLogin }: { onLogin: (u: string, s: string) => Promise<boo
         )}
         <button
           type="submit"
-          className="w-full rounded-lg bg-[#00FFCC] py-2.5 text-sm font-bold text-[#0a1306] transition hover:bg-[#00FFCC]/90"
+          className="w-full rounded-lg py-2.5 text-sm font-bold text-white transition"
+          style={{ background: C.accent }}
         >
           Entrar
         </button>
@@ -247,7 +305,8 @@ function Campo({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-lg border border-white/15 bg-[#0c1408]/80 px-3 py-2 text-sm text-white outline-none transition focus:border-[#00FFCC]/50"
+        className="mt-1 w-full rounded-lg border border-white/15 px-3 py-2 text-sm text-white outline-none transition focus:border-[#609af8]/60"
+        style={{ background: C.tileInactive }}
       />
     </label>
   );
