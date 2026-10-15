@@ -43,6 +43,11 @@ export function lerItensEstoque(wb: XLSX.WorkBook): ItemEstoque[] {
     const cMasc = colIncl("MASCARA", "MÁSCARA");
     const cSaldo = col("SALDO", "SALDO FOCCO");
     const cPeso = colIncl("PESO LIQ TOTAL", "PESO TOTAL");
+    /* Peso unitário — reserva para planilhas em que a coluna de peso total
+       existe mas está vazia (caso da "Em Linha × Fora de Linha", que só
+       preenche PESO UN. (kg)): o peso total é PESO UN × SALDO, como a
+       própria planilha calcula. Sem isso a tonelagem do painel ia a zero. */
+    const cPesoUn = colIncl("PESO LIQ UN", "PESO UN");
     const cCusto = colIncl("CUSTO MEDIO", "CUSTO MÉDIO");
     const cValor = colIncl("VALOR ESTOQUE", "VALOR");
     const cUnid = colIncl("CLASSIFICACAO N1", "CLASSIFICAÇÃO N1", "CATEGORIA");
@@ -60,12 +65,13 @@ export function lerItensEstoque(wb: XLSX.WorkBook): ItemEstoque[] {
       if (!item) continue;
       const saldo = num(r, cSaldo);
       if (!saldo) continue;
+      const pesoTotal = num(r, cPeso);
       itens.push({
         item,
         desc: str(r, cDesc),
         mascara: str(r, cMasc),
         saldo,
-        peso: num(r, cPeso),
+        peso: pesoTotal > 0 ? pesoTotal : num(r, cPesoUn) * saldo,
         custo: num(r, cCusto),
         valor: num(r, cValor) || saldo * num(r, cCusto),
         unidade: str(r, cUnid),
