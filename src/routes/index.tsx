@@ -8,6 +8,7 @@ import type { VideoForaDeLinha } from "@/components/CenasApresentacao";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
 
 import LoadingApresentacao from "@/components/LoadingApresentacao";
+import MiniJanelaEstoque from "@/components/MiniJanelaEstoque";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
 import { normalizarDiasExibicao } from "@/lib/recebimento";
@@ -84,5 +85,12 @@ function DashboardHome() {
   }, [dados]);
   if (!pronto || !autenticado) return null;
   if (!loaded) return <LoadingApresentacao />;
-  return <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />;
+  const r = presentation.resumo as { ton?: number; valor?: number; itens?: number } | undefined;
+  const atualizadoEm = presentation.sincronizacao?.em
+    ? new Date(presentation.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
+    : dados.atualizadoEm;
+  return (<>
+    <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />
+    {r && <MiniJanelaEstoque pesoTon={r.ton ?? 0} valor={r.valor ?? 0} itens={r.itens} atualizadoEm={atualizadoEm} />}
+  </>);
 }
