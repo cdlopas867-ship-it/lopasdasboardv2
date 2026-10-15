@@ -3,11 +3,13 @@
    outras cenas: donut interativo + botões, card com o % do foco, tabela Legenda,
    indicadores e alertas das divergências. */
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtMi, fmtBrMax, fmtMoeda, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import { SALDO_COMPARATIVO, type SaldoComparativo } from "@/data/saldo-comparativo";
+import { exportarSaldoComparativoExcel } from "@/lib/export-saldo-comparativo";
 
 const COR_EXATO = "#22C55E";
 const COR_DIFERENCA = "#F97316";
@@ -27,6 +29,7 @@ export default function CenaSaldoComparativo({
   saldoComparativo?: SaldoComparativo | null | undefined;
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
+  const [exportando, setExportando] = useState(false);
   const d = saldoComparativo ?? SALDO_COMPARATIVO;
 
   const c = d.comparativo;
@@ -221,6 +224,28 @@ export default function CenaSaldoComparativo({
           geral: {fmtMoeda(d.alertas.diferencaTotal)} de diferença. Data-base: {d.dataBase}.
         </p>
       </div>
+
+      {/* Botão de exportar Excel */}
+      <button
+        type="button"
+        disabled={exportando}
+        onClick={async (e) => {
+          e.stopPropagation();
+          onPausar?.();
+          setExportando(true);
+          try {
+            await exportarSaldoComparativoExcel(d);
+          } catch (erro) {
+            console.error("Falha ao gerar o Excel", erro);
+          } finally {
+            setExportando(false);
+          }
+        }}
+        className="video-sobe mt-3 cursor-pointer rounded-full border border-white/30 bg-white/10 px-6 py-2.5 text-[11px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-60"
+        style={{ animationDelay: "0.9s" }}
+      >
+        {exportando ? "Gerando Excel…" : "⬇ Exportar Excel"}
+      </button>
     </div>
   );
 }
