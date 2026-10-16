@@ -192,7 +192,8 @@ export default function CenaAcertosEstoque({
             <div className="space-y-1">
               {d.ruas.map((r: RuaAcerto, i: number) => {
                 const pctCom = (r.comAcerto / r.totalEnderecos) * 100;
-                const maxAcertos = Math.max(...d.ruas.map((x) => x.totalAcertos), 1);
+                const focoCom = enderecoAtivo === "com";
+                const focoSem = enderecoAtivo === "sem";
                 return (
                   <div key={r.rua} className="flex items-center gap-2">
                     <span className="w-14 shrink-0 font-mono text-[9px] font-bold text-white/70">
@@ -201,23 +202,33 @@ export default function CenaAcertosEstoque({
                     <div className="flex-1">
                       <div className="flex h-3 overflow-hidden rounded-sm bg-white/5">
                         <div
-                          className="h-full transition-all duration-700"
+                          className="h-full transition-all duration-500"
                           style={{
                             width: anim ? `${pctCom}%` : "0%",
                             background: COR_COM_ACERTO,
+                            opacity: focoSem ? 0.3 : 1,
                             transitionDelay: `${i * 0.04 + 0.3}s`,
                           }}
                         />
                         <div
-                          className="h-full flex-1 transition-all duration-700"
-                          style={{ background: COR_SEM_ACERTO }}
+                          className="h-full flex-1 transition-all duration-500"
+                          style={{
+                            background: COR_SEM_ACERTO,
+                            opacity: focoCom ? 0.3 : 1,
+                          }}
                         />
                       </div>
                     </div>
-                    <span className="w-10 shrink-0 text-right font-mono text-[9px] font-bold" style={{ color: COR_COM_ACERTO }}>
+                    <span
+                      className="w-10 shrink-0 text-right font-mono text-[9px] font-bold transition-opacity duration-300"
+                      style={{ color: COR_COM_ACERTO, opacity: focoSem ? 0.3 : 1 }}
+                    >
                       {fmtInt(r.comAcerto)}
                     </span>
-                    <span className="w-10 shrink-0 text-right font-mono text-[9px] font-bold" style={{ color: COR_SEM_ACERTO }}>
+                    <span
+                      className="w-10 shrink-0 text-right font-mono text-[9px] font-bold transition-opacity duration-300"
+                      style={{ color: COR_SEM_ACERTO, opacity: focoCom ? 0.3 : 1 }}
+                    >
                       {fmtInt(r.semAcerto)}
                     </span>
                     <span className="w-12 shrink-0 text-right font-mono text-[9px] font-bold text-brand-amber">
