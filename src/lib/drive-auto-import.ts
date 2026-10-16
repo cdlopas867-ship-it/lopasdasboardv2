@@ -823,7 +823,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorRecebimento: ReturnType<typeof calcularRecebimento> | null = null;
   let melhorItens: ItemEstoque[] | null = null;
   let melhorItensMod: Date | undefined;
-  let itensFull: Map<string, { saldo: number; desc: string; enderecos: string[] }> | null = null;
+  let itensFull: Map<string, { saldo: number; desc: string; enderecos: string[]; enderecosQtd?: Map<string, number> }> | null = null;
   /* Peso unitário (PESO LIQ UN) dos itens da posição do Focco — usado para
      pesar a quantidade do Full, que não traz peso no relatório. */
   let pesosPosicao: Map<string, number> | null = null;
