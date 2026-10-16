@@ -9,6 +9,7 @@
 
 import type { CellValue, Workbook, Worksheet } from "exceljs";
 import type { VideoResumoProps } from "@/components/VideoResumoDashboard";
+import { SALDO_COMPARATIVO } from "@/data/saldo-comparativo";
 import { PRODUTIVIDADE } from "@/data/produtividade";
 import { QLP_CD } from "@/data/qlp-cd";
 import {
@@ -1222,6 +1223,114 @@ function abaQlp(wb: Workbook): Refs {
   return refs;
 }
 
+/* ---------- Divergências Full × Focco com cruzamento de reservas ---------- */
+
+function abaDivergencias(wb: Workbook, d: VideoResumoProps): Refs {
+  const ws = novaAba(
+    wb,
+    "Divergencias",
+    "Divergências de saldo · Full × Focco",
+    "Itens com diferença de saldo entre WMS Full (estoque 112) e ERP Focco (estoque 001), cruzados com a carteira de reservas.",
+    [16, 44, 14, 14, 14, 16, 14, 14],
+  );
+  const refs: Refs = {};
+  let linha = LINHA_INICIAL;
+
+  const sc = d.saldoComparativo ?? SALDO_COMPARATIVO;
+
+  /* Mapa de reservas por código do item para cruzamento */
+  const reservasPorCod = new Map<string, { qtd: number; pct: number }>();
+  (d.reservados?.topItens ?? []).forEach((item) => {
+    reservasPorCod.set(item.cod, { qtd: item.qtdReservada, pct: item.pctReservado });
+  });
+
+  linha = secao(ws, linha, "Resumo Full × Focco", 8);
+  const blocoResumo = listaValores(ws, "Divergencias", linha, [
+    ["Itens no Full (estoque 112)", sc.full.itens, INT],
+    ["Saldo no Full (un)", sc.full.saldo, INT],
+    ["Itens no Focco (estoque 001)", sc.focco.itens, INT],
+    ["Saldo no Focco (un)", sc.focco.saldo, INT],
+    ["Valor no Focco", sc.focco.valor, MOEDA0],
+    ["Itens em comum", sc.comparativo.itensEmComum, INT],
+    ["Itens só no Full", sc.comparativo.itensSoFull, INT],
+    ["Itens só no Focco", sc.comparativo.itensSoFocco, INT],
+    ["Itens com saldo exato", sc.comparativo.qtdExata, INT],
+    ["Itens com diferença", sc.comparativo.qtdDiferenca, INT],
+    ["Acuracidade (%)", sc.comparativo.pctAcuracia, PCT],
+    ["Diferença total de saldo", sc.alertas.diferencaTotal, INT],
+  ]);
+  refs["acuracia"] = blocoResumo.refs[10] ?? "";
+  refs["diferencaTotal"] = blocoResumo.refs[11] ?? "";
+  linha = blocoResumo.proxima + 1;
+
+  linha = secao(ws, linha, "Maiores divergências · cruzado com reservas", 8);
+  const diffs = sc.topDiferencas;
+  if (diffs.length) {
+    const primeira = linha + 1;
+    const ultima = linha + diffs.length;
+    const linhas: Valor[][] = diffs.map((item) => {
+      const reserva = reservasPorCod.get(item.item);
+      return [
+        item.item,
+        item.desc,
+        item.full,
+        item.focco,
+        item.diff,
+        reserva ? "Sim" : "Não",
+        reserva?.qtd ?? "",
+        reserva?.pct ?? "",
+      ] as Valor[];
+    });
+
+    const totalDiff = diffs.reduce((s, i) => s + i.diff, 0);
+    const comReserva = diffs.filter((i) => reservasPorCod.has(i.item)).length;
+    linhas.push([
+      "Total",
+      "",
+      f(`SUM(C${primeira}:C${ultima})`, diffs.reduce((s, i) => s + i.full, 0)),
+      f(`SUM(D${primeira}:D${ultima})`, diffs.reduce((s, i) => s + i.focco, 0)),
+      f(`SUM(E${primeira}:E${ultima})`, totalDiff),
+      `${comReserva} com reserva`,
+      "",
+      "",
+    ]);
+    linha =
+      tabela(
+        ws,
+        linha,
+        [
+          { titulo: "Item", align: "left" },
+          { titulo: "Descrição", align: "left" },
+          { titulo: "Qtd Full", fmt: INT },
+          { titulo: "Qtd Focco", fmt: INT },
+          { titulo: "Diferença", fmt: INT },
+          { titulo: "Tem reserva?", align: "center" },
+          { titulo: "Qtd reservada", fmt: INT },
+          { titulo: "% reservado", fmt: PCT },
+        ],
+        linhas,
+      ) + 1;
+    destacarLinha(ws, ultima + 1, 8);
+    refs["topDif"] = ref("Divergencias", ultima + 1, 5);
+  } else {
+    linha = nota(ws, linha, "Sem divergências no payload atual.", 8) + 1;
+  }
+
+  linha += 1;
+  linha = secao(ws, linha, "Tonelagem por situação", 8);
+  const blocoTon = listaValores(ws, "Divergencias", linha, [
+    ["Ton. exato (Focco)", sc.comparativo.tonExato, TON],
+    ["Ton. diferença (Focco)", sc.comparativo.tonDiferenca, TON],
+    ["Ton. só Focco", sc.comparativo.tonSoFocco, TON],
+    ["Ton. exato (Full)", sc.comparativo.tonFullExato, TON],
+    ["Ton. diferença (Full)", sc.comparativo.tonFullDiferenca, TON],
+    ["Ton. só Full", sc.comparativo.tonFullSoFull, TON],
+  ]);
+  linha = blocoTon.proxima + 1;
+
+  return refs;
+}
+
 /* ---------- Capa e Resumo (criadas primeiro, preenchidas no fim) ---------- */
 
 function preencherResumo(ws: Worksheet, d: VideoResumoProps, refs: Record<string, Refs>): void {
@@ -1239,6 +1348,7 @@ function preencherResumo(ws: Worksheet, d: VideoResumoProps, refs: Record<string
   const avarias = refs["avarias"] ?? {};
   const pendentes = refs["pendentes"] ?? {};
   const producao = refs["producao"] ?? {};
+  const divergencias = refs["divergencias"] ?? {};
   const produtividade = refs["produtividade"] ?? {};
   const qlp = refs["qlp"] ?? {};
 
@@ -1310,6 +1420,13 @@ function preencherResumo(ws: Worksheet, d: VideoResumoProps, refs: Record<string
       ["Volumes avariados", liga(avarias["total"], d.avarias?.total ?? 0), INT],
       ["Ordens pendentes", liga(pendentes["itens"], d.pendentes?.itens ?? 0), INT],
       ["Peso a produzir (t)", liga(pendentes["ton"], d.pendentes?.totalTon ?? 0), TON],
+    ]).proxima + 1;
+
+  linha = secao(ws, linha, "Divergências Full × Focco", 4);
+  linha =
+    listaValores(ws, "Resumo", linha, [
+      ["Acuracidade do saldo", liga(divergencias["acuracia"], d.saldoComparativo?.comparativo.pctAcuracia ?? 0), PCT],
+      ["Diferença total de saldo", liga(divergencias["diferencaTotal"], d.saldoComparativo?.alertas.diferencaTotal ?? 0), INT],
     ]).proxima + 1;
 
   linha = secao(ws, linha, "Pessoas", 4);
@@ -1410,6 +1527,7 @@ function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, 
     ["Recebimento", "Recebimento e fluxo", "Semana, turnos e mensal"],
     ["Reservas", "Carteira de reservas", "Reservado × sem reserva"],
     ["ForaDeLinha", "Em linha × fora de linha", "Saldos, peso e valor"],
+    ["Divergencias", "Divergências Full × Focco", "Saldo, acuracidade e reservas"],
     ["Avarias", "Avarias", "Volumes por mês"],
     ["Pendentes", "Pendências", "A produzir por mês"],
     ["Producao", "Produção da semana", "Programado × produzido"],
@@ -1481,6 +1599,7 @@ export async function exportarExcelLopas(dados: VideoResumoProps): Promise<void>
     avarias: abaAvarias(wb, dados),
     pendentes: abaPendentes(wb, dados),
     producao: abaProducao(wb, dados),
+    divergencias: abaDivergencias(wb, dados),
     produtividade: abaProdutividade(wb),
     qlp: abaQlp(wb),
   };
