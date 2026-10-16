@@ -32,6 +32,19 @@ export type DiferencaSaldo = {
   diff: number;
 };
 
+/* Item individual do comparativo — usado na exportação Excel completa.
+   `situacao` classifica o item no cruzamento Full × Focco. */
+export type ItemSaldoCompleto = {
+  item: string;
+  desc: string;
+  full: number;
+  focco: number;
+  diff: number;
+  reservados: number;
+  disponiveis: number;
+  situacao: "exato" | "diferenca" | "so-full" | "so-focco";
+};
+
 export type SaldoComparativo = {
   dataBase: string;
   full: { itens: number; saldo: number };
@@ -61,6 +74,9 @@ export type SaldoComparativo = {
     diferencaTotal: number;
   };
   topDiferencas: DiferencaSaldo[];
+  /* Relação completa de todos os itens (em comum + só Full + só Focco) para
+     a exportação Excel detalhada. */
+  todosItens: ItemSaldoCompleto[];
 };
 
 export const SALDO_COMPARATIVO: SaldoComparativo = {
@@ -93,6 +109,7 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     soFocco: 23,
     diferencaTotal: 1821
   },
+  todosItens: [],
   topDiferencas: [
     {
       item: "2194.16652",

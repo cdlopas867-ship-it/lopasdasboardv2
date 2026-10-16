@@ -11,10 +11,20 @@ export type PalletItem = {
   undPorPalete: number;
 };
 
+export type ItemPalete = {
+  item: string;
+  desc: string;
+  saldo: number;
+  paletes: number;
+  undPorPalete: number;
+  enderecos: string[];
+};
+
 export type ResumoPaletes = {
   porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
   totalPaletes: number;
   totalItens: number;
+  itensPorTamanho?: Record<string, ItemPalete[]>;
 };
 
 function normalizarTexto(value: unknown): string {
@@ -144,13 +154,42 @@ export function lerPaletes(wb: XLSX.WorkBook): Map<string, PalletItem> {
   return mapa;
 }
 
+/* Constrói a chave composta do item (ex.: "84911.31290") para casar com
+   o relatório do Full, que já usa o formato "item.mascara". */
+function chaveComposta(item: string, mascara?: string): string {
+  const maskNum = mascara?.match(/\((\d+)\)/)?.[1] ?? "";
+  return maskNum ? `${item}.${maskNum}` : item;
+}
+
 /* Calcula quantos paletes existem no estoque por tamanho, cruzando
    o saldo de cada item (base de estoque) com a configuração de pallet. */
+/* Faixa de endereços do CD considerada no cálculo de paletes em estoque.
+   Apenas itens nesses endereços (1 a 40) entram na contagem. */
+const PALETES_END_MIN = 1;
+const PALETES_END_MAX = 40;
+
+/* Extrai o primeiro número do endereço e verifica se está na faixa válida.
+   Ex.: "01-A-01" → 1 (dentro), "45-B-02" → 45 (fora). */
+function enderecoNaFaixa(end: string): boolean {
+  const match = end.match(/(\d+)/);
+  if (!match) return false;
+  const n = parseInt(match[1]!, 10);
+  return n >= PALETES_END_MIN && n <= PALETES_END_MAX;
+}
+
+/* Itens de assento (volumes de assento/encosto de cadeiras) são considerados
+   independente do endereço — não passam pelo filtro da faixa 1-40. */
+function isAssento(desc: string): boolean {
+  return normalizarTexto(desc).includes("ASSENTO");
+}
+
 export function calcularResumoPaletes(
-  itensEstoque: { item: string; saldo: number }[],
+  itensEstoque: { item: string; saldo: number; desc?: string; mascara?: string }[],
   paletes: Map<string, PalletItem>,
+  itensFull?: Map<string, { saldo: number; desc: string; enderecos: string[]; enderecosQtd?: Map<string, number> }> | null,
 ): ResumoPaletes {
   const porTamanho = new Map<string, { paletes: number; itens: number; und: number }>();
+  const itensPorTamanho: Record<string, ItemPalete[]> = {};
 
   for (const it of itensEstoque) {
     const chave = normalizarTexto(it.item).replace(/\s+/g, "").trim();
@@ -165,7 +204,27 @@ export function calcularResumoPaletes(
     }
     if (!pallet || pallet.undPorPalete <= 0) continue;
 
-    const paletesItem = Math.ceil(it.saldo / pallet.undPorPalete);
+    /* Casamento com o relatório do Full (tem endereços e qtd por endereço). */
+    const composta = chaveComposta(it.item, it.mascara);
+    const full = itensFull?.get(composta) ?? itensFull?.get(chave);
+
+    /* Filtra endereços da faixa 1-40 e recalcula o saldo apenas desses
+       endereços quando o Full está disponível com qtd por endereço.
+       Itens de assento (ASSENTO) entram independente do endereço. */
+    let saldoCalculo = it.saldo;
+    let enderecos = full?.enderecos ?? [];
+    const descItem = it.desc ?? full?.desc ?? "";
+    if (full?.enderecosQtd && full.enderecosQtd.size > 0 && !isAssento(descItem)) {
+      saldoCalculo = 0;
+      for (const [end, qtd] of full.enderecosQtd) {
+        if (enderecoNaFaixa(end)) saldoCalculo += qtd;
+      }
+      /* Ignora itens sem saldo nos endereços 1-40. */
+      if (saldoCalculo <= 0) continue;
+      enderecos = enderecos.filter(enderecoNaFaixa);
+    }
+
+    const paletesItem = Math.ceil(saldoCalculo / pallet.undPorPalete);
     const atual = porTamanho.get(pallet.tamanho) ?? {
       paletes: 0,
       itens: 0,
@@ -173,8 +232,23 @@ export function calcularResumoPaletes(
     };
     atual.paletes += paletesItem;
     atual.itens += 1;
-    atual.und += it.saldo;
+    atual.und += saldoCalculo;
     porTamanho.set(pallet.tamanho, atual);
+
+    if (!itensPorTamanho[pallet.tamanho]) itensPorTamanho[pallet.tamanho] = [];
+    itensPorTamanho[pallet.tamanho].push({
+      item: it.item,
+      desc: it.desc ?? full?.desc ?? "",
+      saldo: saldoCalculo,
+      paletes: paletesItem,
+      undPorPalete: pallet.undPorPalete,
+      enderecos,
+    });
+  }
+
+  /* Ordena cada lista por paletes desc */
+  for (const t of Object.keys(itensPorTamanho)) {
+    itensPorTamanho[t].sort((a, b) => b.paletes - a.paletes);
   }
 
   const ordem = ["P", "M", "G", "GG"];
@@ -186,5 +260,6 @@ export function calcularResumoPaletes(
     porTamanho: lista,
     totalPaletes: lista.reduce((s, t) => s + t.paletes, 0),
     totalItens: lista.reduce((s, t) => s + t.itens, 0),
+    itensPorTamanho,
   };
 }

@@ -67,6 +67,7 @@ export type VideoPaletas = {
   porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
   totalPaletes: number;
   totalItens: number;
+  itensPorTamanho?: Record<string, { item: string; desc: string; saldo: number; paletes: number; undPorPalete: number; enderecos: string[] }[]>;
   recebimento?: { porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[]; totalPaletes: number; totalItens: number } | null;
   diasRecebidos?: number;
   diasQtd?: { dia: string; data: string; qtd: number; iso?: string }[];
@@ -141,7 +142,6 @@ export default function VideoResumoDashboard({
   const [anim, setAnim] = useState(false);
   const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
   const [relatorio, setRelatorio] = useState(false);
-  const [exportando, setExportando] = useState(false);
   const cenaAnteriorRef = useRef(0);
 
 
@@ -220,20 +220,6 @@ export default function VideoResumoDashboard({
     sincronizacao,
   };
 
-  /* Exporta o .xlsx analítico — pausa a apresentação enquanto monta o arquivo. */
-  const exportarExcel = async () => {
-    setPausado(true);
-    setExportando(true);
-    try {
-      const { exportarExcelLopas } = await import("@/lib/export-excel-lopas");
-      await exportarExcelLopas(dadosPainel);
-    } catch (erro) {
-      console.error("Falha ao gerar o Excel", erro);
-    } finally {
-      setExportando(false);
-    }
-  };
-
   const propsCena = {
     kpis,
     unidades,
@@ -254,8 +240,6 @@ export default function VideoResumoDashboard({
     saldoComparativo,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
-    onExportarExcel: exportarExcel,
-    exportando,
     onPausar: () => setPausado(true),
   };
 

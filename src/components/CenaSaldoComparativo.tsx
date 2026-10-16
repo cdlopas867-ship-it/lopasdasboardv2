@@ -3,11 +3,14 @@
    outras cenas: donut interativo + botões, card com o % do foco, tabela Legenda,
    indicadores e alertas das divergências. */
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtMi, fmtBrMax, fmtMoeda, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import { SALDO_COMPARATIVO, type SaldoComparativo } from "@/data/saldo-comparativo";
+import type { VideoReservados } from "./VideoResumoDashboard";
+import { exportarExcelSaldo } from "@/lib/export-excel-saldo";
 
 const COR_EXATO = "#22C55E";
 const COR_DIFERENCA = "#F97316";
@@ -20,14 +23,29 @@ export default function CenaSaldoComparativo({
   cena,
   onPausar,
   saldoComparativo,
+  reservados,
 }: {
   anim: boolean;
   cena: number;
   onPausar?: (() => void) | undefined;
   saldoComparativo?: SaldoComparativo | null | undefined;
+  reservados?: VideoReservados | null | undefined;
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
+  const [exportando, setExportando] = useState(false);
   const d = saldoComparativo ?? SALDO_COMPARATIVO;
+
+  const handleExport = async () => {
+    onPausar?.();
+    setExportando(true);
+    try {
+      await exportarExcelSaldo(d, reservados);
+    } catch (e) {
+      console.error("Erro ao exportar Excel:", e);
+    } finally {
+      setExportando(false);
+    }
+  };
 
   const c = d.comparativo;
   const totalItens = c.itensEmComum + c.itensSoFull + c.itensSoFocco;
@@ -220,7 +238,17 @@ export default function CenaSaldoComparativo({
           Full = WMS FullSoft, estoque 112 (relatório WF0112 - Estoques) · Focco = ERP, estoque 001 (posição de estoque) · Saldo
           geral: {fmtMoeda(d.alertas.diferencaTotal)} de diferença. Data-base: {d.dataBase}.
         </p>
+
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exportando}
+          className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[10px] font-bold tracking-widest text-white/80 uppercase backdrop-blur-sm transition-colors hover:bg-white/10 disabled:opacity-50"
+        >
+          {exportando ? "Gerando Excel…" : "⬇ Exportar Excel"}
+        </button>
       </div>
+
     </div>
   );
 }
