@@ -55,6 +55,12 @@ export type AcertosEstoque = {
   pctSemAcerto: number;
   porMes: AcertoMensal[];
   ruas: RuaAcerto[];
+  enderecosSemAcertoLista: EnderecoSemAcerto[];
+};
+
+export type EnderecoSemAcerto = {
+  endereco: string;
+  rua: string;
 };
 
 export const ACERTOS_ESTOQUE: AcertosEstoque = {
@@ -122,5 +128,34 @@ export const ACERTOS_ESTOQUE: AcertosEstoque = {
     { rua: "RUA 10", totalEnderecos: 420, comAcerto: 200, semAcerto: 220, totalAcertos: 490 },
     { rua: "RUA 11", totalEnderecos: 430, comAcerto: 210, semAcerto: 220, totalAcertos: 510 },
     { rua: "RUA 12", totalEnderecos: 420, comAcerto: 200, semAcerto: 220, totalAcertos: 480 },
+  ],
+  /* Amostra de endereços sem acerto (sem correção de inventário no período).
+   * Dado representativo; reextrair do cruzamento WF0097 × WF0112 para atualizar. */
+  enderecosSemAcertoLista: [
+    { endereco: "01-01-01-01", rua: "RUA 01" },
+    { endereco: "01-01-02-03", rua: "RUA 01" },
+    { endereco: "01-02-01-02", rua: "RUA 01" },
+    { endereco: "02-01-03-01", rua: "RUA 02" },
+    { endereco: "02-02-01-04", rua: "RUA 02" },
+    { endereco: "03-01-02-02", rua: "RUA 03" },
+    { endereco: "03-03-01-01", rua: "RUA 03" },
+    { endereco: "04-01-01-03", rua: "RUA 04" },
+    { endereco: "04-02-02-01", rua: "RUA 04" },
+    { endereco: "05-01-03-02", rua: "RUA 05" },
+    { endereco: "05-02-01-01", rua: "RUA 05" },
+    { endereco: "06-01-01-04", rua: "RUA 06" },
+    { endereco: "06-03-02-03", rua: "RUA 06" },
+    { endereco: "07-01-02-01", rua: "RUA 07" },
+    { endereco: "07-02-03-02", rua: "RUA 07" },
+    { endereco: "08-01-01-02", rua: "RUA 08" },
+    { endereco: "08-02-02-04", rua: "RUA 08" },
+    { endereco: "09-01-03-01", rua: "RUA 09" },
+    { endereco: "09-02-01-03", rua: "RUA 09" },
+    { endereco: "10-01-02-02", rua: "RUA 10" },
+    { endereco: "10-03-01-01", rua: "RUA 10" },
+    { endereco: "11-01-01-03", rua: "RUA 11" },
+    { endereco: "11-02-02-01", rua: "RUA 11" },
+    { endereco: "12-01-03-02", rua: "RUA 12" },
+    { endereco: "12-02-01-04", rua: "RUA 12" },
   ],
 };

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { fmtInt, fmtBrMax } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
-import { ACERTOS_ESTOQUE, type AcertosEstoque, type RuaAcerto } from "@/data/acertos-estoque";
+import { ACERTOS_ESTOQUE, type AcertosEstoque, type RuaAcerto, type EnderecoSemAcerto } from "@/data/acertos-estoque";
 
 const COR_ENTRADA = "#22C55E";
 const COR_SAIDA = "#F97316";
@@ -244,6 +244,26 @@ export default function CenaAcertosEstoque({
               <span className="w-12 text-right">acertos</span>
             </div>
           </div>
+
+          {/* Lista de endereços sem acerto — visível quando foco em "sem acerto" */}
+          {enderecoAtivo === "sem" && (
+            <div className="mt-3">
+              <p className="mb-1.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+                Endereços sem acerto · {fmtInt(d.enderecosSemAcerto)} no total
+              </p>
+              <div className="grid grid-cols-3 gap-x-2 gap-y-0.5">
+                {d.enderecosSemAcertoLista.map((e: EnderecoSemAcerto) => (
+                  <div key={e.endereco} className="flex items-center gap-1">
+                    <span className="size-1.5 shrink-0 rounded-full" style={{ background: COR_SEM_ACERTO }} />
+                    <span className="font-mono text-[9px] text-white/70">{e.endereco}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-1 text-[8px] text-white/30">
+                Mostrando {d.enderecosSemAcertoLista.length} de {fmtInt(d.enderecosSemAcerto)} endereços
+              </p>
+            </div>
+          )}
         </div>
       )}
 
