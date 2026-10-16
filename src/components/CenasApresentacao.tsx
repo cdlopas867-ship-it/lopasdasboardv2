@@ -64,6 +64,8 @@ type Props = {
   saldoComparativo?: SaldoComparativo | null | undefined;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
+  onExportarExcel?: (() => void) | undefined;
+  exportando?: boolean | undefined;
   onPausar?: (() => void) | undefined;
 };
 
@@ -89,6 +91,8 @@ export default function CenasApresentacao({
   saldoComparativo,
   onReiniciar,
   onGerarRelatorio,
+  onExportarExcel,
+  exportando,
   onPausar,
 }: Props) {
   /* Mostra todos os meses com recebimento ou carregamento — meses sem
@@ -363,7 +367,7 @@ export default function CenasApresentacao({
 
       {/* Cena 11 — Controle de saldo Full × Focco */}
       {cena === 10 && (
-        <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} />
+        <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} onExportarExcel={onExportarExcel} exportando={exportando} />
       )}
 
       {/* Cena 12 — encerramento */}
