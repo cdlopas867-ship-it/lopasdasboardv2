@@ -1010,6 +1010,29 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     }
   }
 
+  /* Fallback de produção da semana + recebido por dia: as planilhas locais
+     (public/planilhas/producao.xlsx e peso-recebido.xlsx) só entram quando o
+     Drive não entregou esses relatórios (download falhou/indisponível).
+     O Drive continua sendo a fonte principal e atualizada — estas cópias
+     garantem que a cena "Produção da Semana" não fique vazia se um arquivo
+     do Drive falhar ao baixar (já acontece, ex.: sextawer.xlsx). */
+  for (const localPath of ["public/planilhas/producao.xlsx", "public/planilhas/peso-recebido.xlsx"]) {
+    try {
+      if (!existsSync(localPath)) continue;
+      const wb = XLSX.read(readFileSync(localPath), { type: "buffer" });
+      if (!wbProducao) {
+        const prod = calcularProducaoSemanal(wb, undefined);
+        if (prod && prod.length > 0) wbProducao = wb;
+      }
+      if (!melhorRecebidoPorDia) {
+        const rec = calcularRecebidoPorDia(wb);
+        if (rec && rec.size > 0) melhorRecebidoPorDia = rec;
+      }
+    } catch (e) {
+      console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
+    }
+  }
+
   /* Processa a produção da semana agora que os itens de estoque estão disponíveis */
   let melhorProducao: ProducaoSemanalDia[] | null = null;
   if (wbProducao && melhorItens) {
