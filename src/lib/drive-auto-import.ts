@@ -131,6 +131,15 @@ function parseModificado(mod: string): Date | undefined {
    em vez de depender de uma estrutura HTML específica do Google. */
 async function listarPlanilhasDaPasta(folderId: string): Promise<ArquivoDrive[]> {
   const headers = gatewayHeaders();
+
+  if (headers) {
+    console.info("[auto-import] Drive access: using gateway connector");
+  } else if (ALLOW_PUBLIC_DRIVE_FALLBACK) {
+    console.info("[auto-import] Drive access: gateway missing — using public fallback (ALLOW_PUBLIC_DRIVE_FALLBACK=true)");
+  } else {
+    console.info("[auto-import] Drive access: gateway missing and public fallback disabled");
+  }
+
   if (headers) {
     /* A conexão do Drive no gateway pode expirar ou ser revogada. A pasta é
        pública, então, se o gateway falhar, seguimos para a leitura direta do
@@ -222,6 +231,15 @@ async function listarPlanilhasDaPasta(folderId: string): Promise<ArquivoDrive[]>
 /* Baixa uma planilha do Drive como ArrayBuffer. */
 async function baixarPlanilha(id: string): Promise<ArrayBuffer> {
   const headers = gatewayHeaders();
+
+  if (headers) {
+    console.info(`[auto-import] baixarPlanilha: usando gateway para id=${id}`);
+  } else if (ALLOW_PUBLIC_DRIVE_FALLBACK) {
+    console.info(`[auto-import] baixarPlanilha: gateway ausente — usando fallback público para id=${id}`);
+  } else {
+    console.info(`[auto-import] baixarPlanilha: gateway ausente e fallback público desabilitado para id=${id}`);
+  }
+
   if (headers && !PLANILHAS_HISTORICAS.includes(id)) {
     /* Mesmo caso da listagem: se o gateway falhar, tenta o download público
        (docs.google / drive.google) antes de desistir da planilha. */
@@ -253,8 +271,8 @@ async function baixarPlanilha(id: string): Promise<ArrayBuffer> {
   }
 
   const urls = [
-    `https://docs.google.com/spreadsheets/d/${id}/export?format=xlsx&_= ${Date.now()}`,
-    `https://drive.google.com/uc?export=download&confirm=t&id=${id}&_= ${Date.now()}`,
+    `https://docs.google.com/spreadsheets/d/${id}/export?format=xlsx&_=${Date.now()}`,
+    `https://drive.google.com/uc?export=download&confirm=t&id=${id}&_=${Date.now()}`,
   ];
   let ultimo = 0;
   for (const url of urls) {
