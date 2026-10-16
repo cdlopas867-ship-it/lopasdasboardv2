@@ -86,14 +86,7 @@ export default function CenaPaletes({
         </button>
       )}
 
-      <p className="video-sobe mt-1.5 w-full max-w-xs mx-auto text-[8px] leading-tight text-white/40" style={{ animationDelay: "0.5s" }}>
-        * Paletes distribuídos por tamanho no CD Lopas. Clique no gráfico para alternar.
-      </p>
-
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.55s" }}>
-        <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-          Ver itens
-        </p>
         <table className="w-full text-left text-[11px] text-white">
           <thead>
             <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
