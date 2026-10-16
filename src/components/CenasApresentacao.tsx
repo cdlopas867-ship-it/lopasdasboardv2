@@ -376,7 +376,7 @@ export default function CenasApresentacao({
 
       {/* Cena 12 — Acertos de Estoque (WF0097) */}
       {cena === 11 && (
-        <CenaAcertosEstoque anim={anim} cena={cena} onPausar={onPausar} acertos={acertosEstoque} />
+        <CenaAcertosEstoque anim={anim} cena={cena} onPausar={onPausar} acertos={acertosEstoque} onExportarExcel={onExportarExcel} exportando={exportando} />
       )}
 
       {/* Cena 13 — encerramento */}

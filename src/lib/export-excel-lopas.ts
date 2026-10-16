@@ -12,6 +12,7 @@ import type { VideoResumoProps } from "@/components/VideoResumoDashboard";
 import { SALDO_COMPARATIVO } from "@/data/saldo-comparativo";
 import { PRODUTIVIDADE } from "@/data/produtividade";
 import { QLP_CD } from "@/data/qlp-cd";
+import { ACERTOS_ESTOQUE, type AcertosEstoque } from "@/data/acertos-estoque";
 import {
   ITENS_FORA_DE_LINHA,
   POSICAO_EM_LINHA,
@@ -1223,6 +1224,136 @@ function abaQlp(wb: Workbook): Refs {
   return refs;
 }
 
+/* ---------- Acertos de Estoque (WF0097) ---------- */
+
+function abaAcertos(wb: Workbook, d: AcertosEstoque): Refs {
+  const ws = novaAba(
+    wb,
+    "Acertos",
+    "Acertos de Estoque · WF0097",
+    `Período ${d.periodoInicio} a ${d.periodoFim} · relatório de acerto de inventário do WMS FullSoft (estoque 112). Endereços ASTEC desconsiderados.`,
+    [28, 14, 14, 14, 14, 14],
+  );
+  const refs: Refs = {};
+  let linha = LINHA_INICIAL;
+
+  linha = secao(ws, linha, "Resumo geral", 6);
+  const bloco = listaValores(ws, "Acertos", linha, [
+    ["Total de acertos", d.totalAcertos, INT],
+    ["Endereços com acerto", d.totalEnderecosComAcerto, INT],
+    ["Endereços sem acerto", d.enderecosSemAcerto, INT],
+    ["Endereços totais do CD", d.totalEnderecosCD, INT],
+    ["% com acerto", d.pctComAcerto, PCT],
+    ["% sem acerto", d.pctSemAcerto, PCT],
+    ["Média de acertos / mês", d.mediaPorMes, INT],
+    ["Média de acertos / dia", d.mediaPorDia, INT],
+    ["Dias no período", d.diasNoPeriodo, INT],
+    ["Colaboradores", d.totalColaboradores, INT],
+  ]);
+  refs["totalAcertos"] = bloco.refs[0] ?? "";
+  linha = bloco.proxima + 1;
+
+  linha = secao(ws, linha, "Tipos de acerto", 6);
+  if (d.tipos.length) {
+    const primeira = linha + 1;
+    const ultima = linha + d.tipos.length;
+    const linhas: Valor[][] = d.tipos.map((t) => [t.tipo, t.count, t.pct]);
+    linhas.push([
+      "Total",
+      f(`SUM(B${primeira}:B${ultima})`, d.tipos.reduce((s, t) => s + t.count, 0)),
+      f(`SUM(C${primeira}:C${ultima})`, d.tipos.reduce((s, t) => s + t.pct, 0)),
+    ]);
+    linha =
+      tabela(
+        ws,
+        linha,
+        [
+          { titulo: "Tipo", align: "left" },
+          { titulo: "Acertos", fmt: INT },
+          { titulo: "%", fmt: PCT },
+        ],
+        linhas,
+      ) + 1;
+    destacarLinha(ws, ultima + 1, 6);
+  }
+
+  linha = secao(ws, linha, "Acertos por mês", 6);
+  if (d.porMes.length) {
+    const primeira = linha + 1;
+    const ultima = linha + d.porMes.length;
+    const linhas: Valor[][] = d.porMes.map((m) => [m.mes, m.count, m.pct]);
+    linhas.push([
+      "Total",
+      f(`SUM(B${primeira}:B${ultima})`, d.porMes.reduce((s, m) => s + m.count, 0)),
+      f(`SUM(C${primeira}:C${ultima})`, d.porMes.reduce((s, m) => s + m.pct, 0)),
+    ]);
+    linha =
+      tabela(
+        ws,
+        linha,
+        [
+          { titulo: "Mês", align: "left" },
+          { titulo: "Acertos", fmt: INT },
+          { titulo: "%", fmt: PCT },
+        ],
+        linhas,
+      ) + 1;
+    destacarLinha(ws, ultima + 1, 6);
+  }
+
+  linha = secao(ws, linha, "Ruas — endereços com e sem acerto", 6);
+  if (d.ruas.length) {
+    const primeira = linha + 1;
+    const ultima = linha + d.ruas.length;
+    const linhas: Valor[][] = d.ruas.map((r) => [
+      r.rua,
+      r.totalEnderecos,
+      r.comAcerto,
+      r.semAcerto,
+      r.totalAcertos,
+    ]);
+    linhas.push([
+      "Total",
+      f(`SUM(B${primeira}:B${ultima})`, d.ruas.reduce((s, r) => s + r.totalEnderecos, 0)),
+      f(`SUM(C${primeira}:C${ultima})`, d.ruas.reduce((s, r) => s + r.comAcerto, 0)),
+      f(`SUM(D${primeira}:D${ultima})`, d.ruas.reduce((s, r) => s + r.semAcerto, 0)),
+      f(`SUM(E${primeira}:E${ultima})`, d.ruas.reduce((s, r) => s + r.totalAcertos, 0)),
+    ]);
+    linha =
+      tabela(
+        ws,
+        linha,
+        [
+          { titulo: "Rua", align: "left" },
+          { titulo: "Endereços", fmt: INT },
+          { titulo: "Com acerto", fmt: INT },
+          { titulo: "Sem acerto", fmt: INT },
+          { titulo: "Total acertos", fmt: INT },
+        ],
+        linhas,
+      ) + 1;
+    destacarLinha(ws, ultima + 1, 6);
+  }
+
+  linha = secao(ws, linha, "Endereços sem acerto", 6);
+  if (d.enderecosSemAcertoLista.length) {
+    linha =
+      tabela(
+        ws,
+        linha,
+        [
+          { titulo: "Endereço", align: "left" },
+          { titulo: "Rua", align: "left" },
+        ],
+        d.enderecosSemAcertoLista.map((e) => [e.endereco, e.rua] as Valor[]),
+      ) + 1;
+  } else {
+    linha = nota(ws, linha, "Sem endereços sem acerto.", 6) + 1;
+  }
+
+  return refs;
+}
+
 /* ---------- Divergências Full × Focco com cruzamento de reservas ---------- */
 
 function abaDivergencias(wb: Workbook, d: VideoResumoProps): Refs {
@@ -1533,6 +1664,7 @@ function preencherCapa(ws: Worksheet, d: VideoResumoProps, refs: Record<string, 
     ["Producao", "Produção da semana", "Programado × produzido"],
     ["Produtividade", "Produtividade", "Por colaborador e turma"],
     ["QLP-CD", "QLP · CD", "Lotação por classe"],
+    ["Acertos", "Acertos de Estoque", "WF0097 · com/sem acerto, tipos e ruas"],
   ];
 
   linha = secao(ws, linha, "Abas deste arquivo", 5);
@@ -1602,6 +1734,7 @@ export async function exportarExcelLopas(dados: VideoResumoProps): Promise<void>
     divergencias: abaDivergencias(wb, dados),
     produtividade: abaProdutividade(wb),
     qlp: abaQlp(wb),
+    acertos: abaAcertos(wb, dados.acertosEstoque ?? ACERTOS_ESTOQUE),
   };
 
   preencherResumo(resumo, dados, refs);
