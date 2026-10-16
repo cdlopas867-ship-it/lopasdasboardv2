@@ -90,8 +90,8 @@ export const ACERTOS_ESTOQUE: AcertosEstoque = {
   ],
   totalColaboradores: 66,
   totalEnderecosComAcerto: 2704,
-  totalEnderecosCD: 5970,
-  enderecosSemAcerto: 3266,
+  totalEnderecosCD: 5967, // 5.970 do WF0112 menos 3 endereços ASTEC (ASTEC-1-1, ASTEC-2-1, ASTEC-4-1)
+  enderecosSemAcerto: 3263,
   pctComAcerto: 45.3,
   pctSemAcerto: 54.7,
   porMes: [
