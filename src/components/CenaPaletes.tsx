@@ -8,7 +8,6 @@ import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoPaletas } from "./VideoResumoDashboard";
-import { exportarExcelPaletes } from "@/lib/export-excel-paletes";
 
 const CORES_TAMANHO: Record<string, string> = {
   P: "#33D953",
@@ -30,19 +29,6 @@ export default function CenaPaletes({
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
   const [expandido, setExpandido] = useState(false);
-  const [exportando, setExportando] = useState(false);
-
-  const handleExport = async () => {
-    onPausar?.();
-    setExportando(true);
-    try {
-      await exportarExcelPaletes(paletas);
-    } catch (e) {
-      console.error("Erro ao exportar Excel:", e);
-    } finally {
-      setExportando(false);
-    }
-  };
 
   const total = paletas?.totalPaletes ?? 0;
   const itens = paletas?.totalItens ?? 0;
@@ -152,15 +138,6 @@ export default function CenaPaletes({
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
           * Paletes distribuídos por tamanho no CD Lopas. Clique no gráfico para alternar.
         </p>
-
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={exportando}
-          className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[10px] font-bold tracking-widest text-white/80 uppercase backdrop-blur-sm transition-colors hover:bg-white/10 disabled:opacity-50"
-        >
-          {exportando ? "Gerando Excel…" : "⬇ Exportar Excel"}
-        </button>
       </div>
 
       {/* Lista de itens do tamanho ativo */}
