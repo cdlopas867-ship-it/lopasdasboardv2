@@ -851,7 +851,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const itensReservados = lerReservados(wb);
       if (itensReservados && itensReservados.length > 0) {
         const reservados = calcularReservados(itensReservados);
-        if (reservados.itens.length > 0) melhorReservados = reservados;
+        if (reservados.itens.length > 0) {
+          melhorReservados = reservados;
+          console.info(`[auto-import] reservas: ${reservados.itens.length} itens · ${reservados.totalTon.toFixed(1)} t · ${reservados.totalValor.toFixed(0)} R$ (arquivo: ${arq.nome || arq.id})`);
+        }
       }
       /* Itens em estoque sem reserva (saldo disponível) */
       const itensSemReserva = lerReservados(wb, "semReserva");
@@ -955,7 +958,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         reservadoValor = extrairReservaValor(wb);
       }
     } catch (e) {
-      console.error(`[auto-import] planilha ${arq.id} ignorada:`, (e as Error).message);
+      console.error(`[auto-import] planilha ${arq.nome || arq.id} ignorada:`, (e as Error).message);
     }
   }
 
@@ -1007,6 +1010,58 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       if (ocupacao) melhorOcupacao = ocupacao;
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
+    }
+  }
+
+  /* Fallback de produção da semana + recebido por dia: as planilhas locais
+     (public/planilhas/producao.xlsx e peso-recebido.xlsx) só entram quando o
+     Drive não entregou esses relatórios (download falhou/indisponível).
+     O Drive continua sendo a fonte principal e atualizada — estas cópias
+     garantem que a cena "Produção da Semana" não fique vazia se um arquivo
+     do Drive falhar ao baixar (já acontece, ex.: sextawer.xlsx). */
+  for (const localPath of ["public/planilhas/producao.xlsx", "public/planilhas/peso-recebido.xlsx"]) {
+    try {
+      if (!existsSync(localPath)) continue;
+      const wb = XLSX.read(readFileSync(localPath), { type: "buffer" });
+      if (!wbProducao) {
+        const prod = calcularProducaoSemanal(wb, undefined);
+        if (prod && prod.length > 0) wbProducao = wb;
+      }
+      if (!melhorRecebidoPorDia) {
+        const rec = calcularRecebidoPorDia(wb);
+        if (rec && rec.size > 0) melhorRecebidoPorDia = rec;
+      }
+    } catch (e) {
+      console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
+    }
+  }
+
+  /* Fallback de reservas: se o Drive não entregou a planilha de reservados
+     (download falhou, ex.: reservaxza.xlsx → "fetch failed"), tenta a cópia
+     local em public/planilhas/reservados.xlsx. O Drive continua a fonte
+     principal — esta cópia garante que a cena de itens reservados não
+     fique com dados antigos se um arquivo do Drive falhar ao baixar. */
+  if (!melhorReservados) {
+    const reservasPath = "public/planilhas/reservados.xlsx";
+    try {
+      if (existsSync(reservasPath)) {
+        const wb = XLSX.read(readFileSync(reservasPath), { type: "buffer" });
+        const itensReservados = lerReservados(wb);
+        if (itensReservados && itensReservados.length > 0) {
+          const reservados = calcularReservados(itensReservados);
+          if (reservados.itens.length > 0) {
+            melhorReservados = reservados;
+            console.info(`[auto-import] reservas (fallback local): ${reservados.itens.length} itens · ${reservados.totalTon.toFixed(1)} t`);
+          }
+        }
+        if (!melhorSemReserva) {
+          const itensSemReserva = lerReservados(wb, "semReserva");
+          if (itensSemReserva && itensSemReserva.length > 0)
+            melhorSemReserva = calcularReservados(itensSemReserva);
+        }
+      }
+    } catch (e) {
+      console.error(`[auto-import] planilha local ${reservasPath} ignorada:`, (e as Error).message);
     }
   }
 
@@ -1398,26 +1453,30 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 }
 
 /* Inicia o ciclo de importação automática no servidor.
-   Roda imediatamente e a cada 5 minutos.
-   Usa flag global para evitar duplicar o intervalo em HMR. */
+   Roda imediatamente e a cada 5 s. Usa IDs globais para limpar timers antigos
+   antes de recriar — sobrevive a program reload do Vite SSR (HMR), que limpa
+   os timers antigos mas deixava __driveAutoImportStarted=true, impedindo o
+   ciclo de reiniciar. */
 declare global {
   // eslint-disable-next-line no-var
-  var __driveAutoImportStarted: boolean | undefined;
+  var __driveAutoImportInterval: ReturnType<typeof setInterval> | undefined;
+  var __driveAutoImportTimeout: ReturnType<typeof setTimeout> | undefined;
 }
 
 export function iniciarAutoImport() {
-  if (globalThis.__driveAutoImportStarted) return;
-  globalThis.__driveAutoImportStarted = true;
+  /* Limpa timers anteriores (de um ciclo pré-HMR/program reload) */
+  if (globalThis.__driveAutoImportInterval) clearInterval(globalThis.__driveAutoImportInterval);
+  if (globalThis.__driveAutoImportTimeout) clearTimeout(globalThis.__driveAutoImportTimeout);
 
-  /* Primeira execução após 10s (deixa o servidor subir) */
-  setTimeout(() => {
-    importarSeMudou().catch((e) =>
+  /* Primeira execução após 3s (deixa o servidor subir) */
+  globalThis.__driveAutoImportTimeout = setTimeout(() => {
+    importarSeMudou(true).catch((e) =>
       console.error("[auto-import] falha na execução inicial:", e),
     );
-  }, 10_000);
+  }, 3_000);
 
-  /* A cada 15 s — detecta mudanças no Drive o mais rápido possível */
-  setInterval(() => {
+  /* A cada 5 s — detecta mudanças no Drive o mais rápido possível */
+  globalThis.__driveAutoImportInterval = setInterval(() => {
     importarSeMudou().catch((e) =>
       console.error("[auto-import] falha no ciclo:", e),
     );
