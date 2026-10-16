@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { fmtInt, fmtBrMax } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
-import { ACERTOS_ESTOQUE, type AcertosEstoque } from "@/data/acertos-estoque";
+import { ACERTOS_ESTOQUE, type AcertosEstoque, type RuaAcerto } from "@/data/acertos-estoque";
 
 const COR_ENTRADA = "#22C55E";
 const COR_SAIDA = "#F97316";
@@ -182,6 +182,56 @@ export default function CenaAcertosEstoque({
             <p className="pt-1 text-[9px] leading-tight text-white/40">
               {fmtInt(d.totalEnderecosCD)} endereços totais do CD · cruzamento com a planilha de estoques (WF0112). ASTEC desconsiderado.
             </p>
+          </div>
+
+          {/* Ruas — endereços com e sem acerto por rua */}
+          <div className="mt-3">
+            <p className="mb-1.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+              Por Rua · {d.ruas.length} ruas
+            </p>
+            <div className="space-y-1">
+              {d.ruas.map((r: RuaAcerto, i: number) => {
+                const pctCom = (r.comAcerto / r.totalEnderecos) * 100;
+                const maxAcertos = Math.max(...d.ruas.map((x) => x.totalAcertos), 1);
+                return (
+                  <div key={r.rua} className="flex items-center gap-2">
+                    <span className="w-14 shrink-0 font-mono text-[9px] font-bold text-white/70">
+                      {r.rua}
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex h-3 overflow-hidden rounded-sm bg-white/5">
+                        <div
+                          className="h-full transition-all duration-700"
+                          style={{
+                            width: anim ? `${pctCom}%` : "0%",
+                            background: COR_COM_ACERTO,
+                            transitionDelay: `${i * 0.04 + 0.3}s`,
+                          }}
+                        />
+                        <div
+                          className="h-full flex-1 transition-all duration-700"
+                          style={{ background: COR_SEM_ACERTO }}
+                        />
+                      </div>
+                    </div>
+                    <span className="w-10 shrink-0 text-right font-mono text-[9px] font-bold" style={{ color: COR_COM_ACERTO }}>
+                      {fmtInt(r.comAcerto)}
+                    </span>
+                    <span className="w-10 shrink-0 text-right font-mono text-[9px] font-bold" style={{ color: COR_SEM_ACERTO }}>
+                      {fmtInt(r.semAcerto)}
+                    </span>
+                    <span className="w-12 shrink-0 text-right font-mono text-[9px] font-bold text-brand-amber">
+                      {fmtInt(r.totalAcertos)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-1.5 flex items-center gap-2 pl-14 text-[8px] text-white/40">
+              <span className="w-10 text-right">com</span>
+              <span className="w-10 text-right">sem</span>
+              <span className="w-12 text-right">acertos</span>
+            </div>
           </div>
         </div>
       )}

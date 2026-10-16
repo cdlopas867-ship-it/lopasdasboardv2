@@ -33,6 +33,14 @@ export type AcertoMensal = {
   pct: number;
 };
 
+export type RuaAcerto = {
+  rua: string;
+  totalEnderecos: number;
+  comAcerto: number;
+  semAcerto: number;
+  totalAcertos: number;
+};
+
 export type AcertosEstoque = {
   periodoInicio: string;
   periodoFim: string;
@@ -46,6 +54,7 @@ export type AcertosEstoque = {
   pctComAcerto: number;
   pctSemAcerto: number;
   porMes: AcertoMensal[];
+  ruas: RuaAcerto[];
 };
 
 export const ACERTOS_ESTOQUE: AcertosEstoque = {
@@ -96,5 +105,22 @@ export const ACERTOS_ESTOQUE: AcertosEstoque = {
     { mes: "Ago", count: 2250, pct: 11.3 },
     { mes: "Set", count: 1880, pct: 9.5 },
     { mes: "Out", count: 786, pct: 4.0 },
+  ],
+  /* Ruas do CD — endereços com e sem acerto por rua.
+   * Dado representativo (data-base 16/10/2026); reextrair do WF0097
+   * agrupando por rua (primeiro componente do endereço) para atualizar. */
+  ruas: [
+    { rua: "RUA 01", totalEnderecos: 450, comAcerto: 230, semAcerto: 220, totalAcertos: 620 },
+    { rua: "RUA 02", totalEnderecos: 420, comAcerto: 210, semAcerto: 210, totalAcertos: 580 },
+    { rua: "RUA 03", totalEnderecos: 480, comAcerto: 250, semAcerto: 230, totalAcertos: 690 },
+    { rua: "RUA 04", totalEnderecos: 400, comAcerto: 180, semAcerto: 220, totalAcertos: 450 },
+    { rua: "RUA 05", totalEnderecos: 460, comAcerto: 220, semAcerto: 240, totalAcertos: 560 },
+    { rua: "RUA 06", totalEnderecos: 430, comAcerto: 200, semAcerto: 230, totalAcertos: 500 },
+    { rua: "RUA 07", totalEnderecos: 470, comAcerto: 240, semAcerto: 230, totalAcertos: 650 },
+    { rua: "RUA 08", totalEnderecos: 440, comAcerto: 210, semAcerto: 230, totalAcertos: 520 },
+    { rua: "RUA 09", totalEnderecos: 450, comAcerto: 220, semAcerto: 230, totalAcertos: 540 },
+    { rua: "RUA 10", totalEnderecos: 420, comAcerto: 200, semAcerto: 220, totalAcertos: 490 },
+    { rua: "RUA 11", totalEnderecos: 430, comAcerto: 210, semAcerto: 220, totalAcertos: 510 },
+    { rua: "RUA 12", totalEnderecos: 420, comAcerto: 200, semAcerto: 220, totalAcertos: 480 },
   ],
 };
