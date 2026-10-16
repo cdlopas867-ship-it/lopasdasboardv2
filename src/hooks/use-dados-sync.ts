@@ -55,6 +55,23 @@ function arrSig(arr: unknown[] | undefined): string {
   return `${arr.length}:${sum}:${key(first)}:${key(last)}`;
 }
 
+/* Assinatura do recebimento da semana — dias, tonelagens, paletes e volumes.
+   Precisa entrar na chave: a Base Recebimento muda sem alterar estoque/resumo,
+   e sem isso o painel ignorava a atualização (a cena ficava congelada). */
+function recSig(arr: unknown[] | undefined): string {
+  if (!arr?.length) return "0";
+  const a = arr as Record<string, unknown>[];
+  let ton = 0, qtd = 0, paletes = 0;
+  for (const d of a) {
+    ton += (typeof d["ton"] === "number" ? d["ton"] : 0);
+    qtd += (typeof d["totalQtd"] === "number" ? d["totalQtd"] : 0);
+    paletes += (typeof d["totalPaletes"] === "number" ? d["totalPaletes"] : 0);
+  }
+  const first = a[0]?.["iso"] ?? "";
+  const last = a[a.length - 1]?.["iso"] ?? "";
+  return `${a.length}:${first}:${last}:${Math.round(ton)}:${qtd}:${paletes}`;
+}
+
 /* Assinatura da produção da semana (PCP 003) — dias e totais de toneladas/
    unidades. Precisa entrar na chave: a planilha de produção muda sem alterar
    estoque/resumo, e sem isso o painel ignorava a atualização (a cena ficava
@@ -111,6 +128,7 @@ function dataKey(payload: unknown, incluirSync = true): string {
     ar: (p["avariasResumo"] as { tipos?: { tipo: string; total: number }[] } | undefined)
       ?.tipos?.map(({ tipo, total }) => [tipo, total]),
     me: (p["mensal"] as unknown[])?.length,
+    rs2: recSig(p["recebimentoSemanal"] as unknown[] | undefined),
     ps: prodSig(p["producaoSemanal"] as unknown[] | undefined),
     sc: (() => {
       const sc = p["saldoComparativo"] as {

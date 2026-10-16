@@ -14,7 +14,7 @@ import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 import CenaSaudeEstoque from "@/components/CenaSaudeEstoque";
 import CenaPaletes from "@/components/CenaPaletes";
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
-import CenaProdutividade from "@/components/CenaProdutividade";
+import CenaRecebimentoSemanal from "@/components/CenaRecebimentoSemanal";
 import CenaSaldoComparativo from "@/components/CenaSaldoComparativo";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
 
@@ -372,9 +372,9 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 12 — Produtividade por colaborador e por turma */}
+      {/* Cena 12 — Recebimento da Semana (tonelagem, paletes e volumes por dia) */}
       {cena === 11 && (
-        <CenaProdutividade anim={anim} cena={cena} onPausar={onPausar} />
+        <CenaRecebimentoSemanal anim={anim} dias={recebimentoSemanal} onPausar={onPausar} />
       )}
 
       {/* Cena 13 — Controle de saldo Full × Focco */}
