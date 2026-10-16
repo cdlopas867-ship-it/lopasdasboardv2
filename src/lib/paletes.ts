@@ -177,6 +177,12 @@ function enderecoNaFaixa(end: string): boolean {
   return n >= PALETES_END_MIN && n <= PALETES_END_MAX;
 }
 
+/* Itens de assento (volumes de assento/encosto de cadeiras) são considerados
+   independente do endereço — não passam pelo filtro da faixa 1-40. */
+function isAssento(desc: string): boolean {
+  return normalizarTexto(desc).includes("ASSENTO");
+}
+
 export function calcularResumoPaletes(
   itensEstoque: { item: string; saldo: number; desc?: string; mascara?: string }[],
   paletes: Map<string, PalletItem>,
@@ -203,10 +209,12 @@ export function calcularResumoPaletes(
     const full = itensFull?.get(composta) ?? itensFull?.get(chave);
 
     /* Filtra endereços da faixa 1-40 e recalcula o saldo apenas desses
-       endereços quando o Full está disponível com qtd por endereço. */
+       endereços quando o Full está disponível com qtd por endereço.
+       Itens de assento (ASSENTO) entram independente do endereço. */
     let saldoCalculo = it.saldo;
     let enderecos = full?.enderecos ?? [];
-    if (full?.enderecosQtd && full.enderecosQtd.size > 0) {
+    const descItem = it.desc ?? full?.desc ?? "";
+    if (full?.enderecosQtd && full.enderecosQtd.size > 0 && !isAssento(descItem)) {
       saldoCalculo = 0;
       for (const [end, qtd] of full.enderecosQtd) {
         if (enderecoNaFaixa(end)) saldoCalculo += qtd;
