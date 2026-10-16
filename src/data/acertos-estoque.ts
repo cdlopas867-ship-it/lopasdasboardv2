@@ -53,6 +53,9 @@ export type AcertosEstoque = {
   enderecosSemAcerto: number;
   pctComAcerto: number;
   pctSemAcerto: number;
+  mediaPorMes: number;
+  mediaPorDia: number;
+  diasNoPeriodo: number;
   porMes: AcertoMensal[];
   ruas: RuaAcerto[];
   enderecosSemAcertoLista: EnderecoSemAcerto[];
@@ -100,6 +103,9 @@ export const ACERTOS_ESTOQUE: AcertosEstoque = {
   enderecosSemAcerto: 3263,
   pctComAcerto: 45.3,
   pctSemAcerto: 54.7,
+  mediaPorMes: 1989,
+  mediaPorDia: 69,
+  diasNoPeriodo: 288,
   porMes: [
     { mes: "Jan", count: 2140, pct: 10.8 },
     { mes: "Fev", count: 1524, pct: 7.7 },
