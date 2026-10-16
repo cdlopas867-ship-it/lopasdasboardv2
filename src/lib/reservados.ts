@@ -83,7 +83,7 @@ export function lerReservados(wb: XLSX.WorkBook, modo: "reservado" | "semReserva
     }
     if (ws) break;
   }
-  if (!ws) return lerReservadosPCP004(wb, modo);
+  if (!ws) return null;
 
   const raw = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
   const header = (raw[headerRow] ?? []).map(normalizar);
@@ -137,80 +137,6 @@ export function lerReservados(wb: XLSX.WorkBook, modo: "reservado" | "semReserva
   }
   if (modo === "semReserva" && !itens.some((i) => i.qtdReservada > 0)) return null;
   return itens.length ? itens.sort((a, b) => b.qtdReservada - a.qtdReservada) : null;
-}
-
-/* Parser alternativo para planilhas PCP 004 — "ANALISE DE REALIZAÇÃO
-   PENDENTE" (ex.: reservaxza.xlsx do Drive). Esta planilha traz ordens de
-   produção pendentes em vez do formato COMERCIAL 024, mas os itens
-   pendentes funcionam como "reservados" para a carteira do painel.
-   Colunas: COD ITEM, DESC ITEM, PREVISTO, QTDE ENTREGUE, QTDE PENDENTE,
-   PESO PENDENTE (peso total pendente em kg, não por unidade). */
-function lerReservadosPCP004(wb: XLSX.WorkBook, modo: "reservado" | "semReserva"): ItemReservado[] | null {
-  let ws: XLSX.WorkSheet | undefined;
-  let headerRow = 0;
-
-  for (const name of wb.SheetNames) {
-    const candidate = wb.Sheets[name];
-    if (!candidate) continue;
-    const raw = XLSX.utils.sheet_to_json<unknown[]>(candidate, { header: 1, defval: null });
-    for (let i = 0; i < Math.min(raw.length, 20); i++) {
-      const texto = (raw[i] ?? []).map(normalizar).join(" ");
-      if (/COD\s*ITEM/.test(texto) && /QTDE\s+PENDENTE/.test(texto) && /PESO\s+PENDENTE/.test(texto)) {
-        ws = candidate;
-        headerRow = i;
-        break;
-      }
-    }
-    if (ws) break;
-  }
-  if (!ws) return null;
-
-  const raw = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
-  const header = (raw[headerRow] ?? []).map(normalizar);
-  const rows = raw.slice(headerRow + 1);
-  const find = (patterns: RegExp[]) => header.findIndex((h) => patterns.some((p) => p.test(h)));
-
-  const colCod = find([/^COD(IGO)?\s+ITEM/, /^COD/]);
-  if (colCod < 0) return null;
-  const colDesc = find([/DESC\s*ITEM/, /DESCRICAO/, /PRODUTO/]);
-  const colPrevisto = find([/PREVISTO/]);
-  const colEntregue = find([/QTDE\s+ENTREGUE/, /QTD\s+ENTREGUE/]);
-  const colPendente = find([/QTDE\s+PENDENTE/, /QTD\s+PENDENTE/]);
-  const colPeso = find([/PESO\s+PENDENTE/]);
-  if (colPendente < 0) return null;
-
-  const itens: ItemReservado[] = [];
-  for (const r of rows) {
-    const cod = str(r[colCod]);
-    if (!cod) continue;
-    const previsto = num(r[colPrevisto >= 0 ? colPrevisto : -1]);
-    const pendente = num(r[colPendente]);
-    const pesoPendente = num(r[colPeso >= 0 ? colPeso : -1]);
-    const entregue = colEntregue >= 0 ? num(r[colEntregue]) : Math.max(0, previsto - pendente);
-
-    const qtdReservada = modo === "semReserva" ? entregue : pendente;
-    if (modo === "reservado" && qtdReservada <= 0) continue;
-    /* pesoBrt = peso por unidade (PESO PENDENTE ÷ QTDE PENDENTE) */
-    const pesoBrt = pendente > 0 ? pesoPendente / pendente : 0;
-    const pesoReservado = modo === "reservado" ? pesoPendente : pesoBrt * qtdReservada;
-
-    itens.push({
-      cod,
-      desc: str(r[colDesc >= 0 ? colDesc : -1]),
-      mascara: "—",
-      unidade: "",
-      pesoBrt,
-      custoMedio: 0,
-      saldoAtual: previsto,
-      qtdReservada,
-      pesoReservado,
-      valorReservado: 0,
-      valorEstoque: 0,
-      pctReservado: previsto > 0 ? (qtdReservada / previsto) * 100 : 0,
-    });
-  }
-  if (modo === "semReserva" && !itens.some((i) => i.qtdReservada > 0)) return null;
-  return itens.length ? itens.sort((a, b) => b.pesoReservado - a.pesoReservado) : null;
 }
 
 /* Valor previsto da reserva = Σ (toneladas reservadas × faturado por
