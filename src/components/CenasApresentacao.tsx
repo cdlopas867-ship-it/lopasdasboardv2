@@ -64,8 +64,6 @@ type Props = {
   saldoComparativo?: SaldoComparativo | null | undefined;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
-  onExportarExcel?: (() => void) | undefined;
-  exportando?: boolean | undefined;
   onPausar?: (() => void) | undefined;
 };
 
@@ -91,8 +89,6 @@ export default function CenasApresentacao({
   saldoComparativo,
   onReiniciar,
   onGerarRelatorio,
-  onExportarExcel,
-  exportando,
   onPausar,
 }: Props) {
   /* Mostra todos os meses com recebimento ou carregamento — meses sem
@@ -367,7 +363,7 @@ export default function CenasApresentacao({
 
       {/* Cena 11 — Controle de saldo Full × Focco */}
       {cena === 10 && (
-        <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} onExportarExcel={onExportarExcel} exportando={exportando} />
+        <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} />
       )}
 
       {/* Cena 12 — encerramento */}
@@ -380,14 +376,6 @@ export default function CenasApresentacao({
             A apresentação reinicia automaticamente.
           </p>
           <div className="video-sobe mt-6 flex flex-wrap items-center justify-center gap-3" style={{ animationDelay: "0.45s" }}>
-            <button
-              type="button"
-              onClick={onExportarExcel}
-              disabled={exportando}
-              className="cursor-pointer rounded-full border border-white/30 bg-white/10 px-8 py-3 text-xs font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-60"
-            >
-              {exportando ? "Gerando Excel…" : "⬇ Exportar Excel"}
-            </button>
             <button
               type="button"
               onClick={onReiniciar}
