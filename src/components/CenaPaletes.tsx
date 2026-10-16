@@ -74,7 +74,23 @@ export default function CenaPaletes({
         texto={(() => { const t = tamanhos[focoIdx]; return t ? `${fmtInt(t.itens)} itens em ${fmtInt(t.paletes)} paletes` : `${fmtInt(itens)} itens em ${fmtInt(total)} paletes`; })()}
       />
 
-      <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.5s" }}>
+      {/* Botão para abrir/fechar a lista de itens do tamanho ativo */}
+      {itensLista.length > 0 && (
+        <button
+          type="button"
+          onClick={abrirLista}
+          className="video-sobe mt-2 w-full max-w-xs mx-auto rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[10px] font-bold tracking-widest text-white/80 uppercase backdrop-blur-sm transition-colors hover:bg-white/10"
+          style={{ ...(expandido ? { borderColor: corAtiva, color: corAtiva } : {}), animationDelay: "0.45s" }}
+        >
+          {expandido ? "▲ Fechar itens" : "▼ Ver itens do tamanho"}
+        </button>
+      )}
+
+      <p className="video-sobe mt-1.5 w-full max-w-xs mx-auto text-[8px] leading-tight text-white/40" style={{ animationDelay: "0.5s" }}>
+        * Paletes distribuídos por tamanho no CD Lopas. Clique no gráfico para alternar.
+      </p>
+
+      <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.55s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
           Ver itens
         </p>
@@ -123,21 +139,6 @@ export default function CenaPaletes({
           </tbody>
         </table>
 
-        {/* Botão para abrir/fechar a lista de itens do tamanho ativo */}
-        {itensLista.length > 0 && (
-          <button
-            type="button"
-            onClick={abrirLista}
-            className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[10px] font-bold tracking-widest text-white/80 uppercase backdrop-blur-sm transition-colors hover:bg-white/10"
-            style={expandido ? { borderColor: corAtiva, color: corAtiva } : undefined}
-          >
-            {expandido ? "▲ Fechar itens" : "▼ Ver itens do tamanho"}
-          </button>
-        )}
-
-        <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Paletes distribuídos por tamanho no CD Lopas. Clique no gráfico para alternar.
-        </p>
       </div>
 
       {/* Lista de itens do tamanho ativo */}
