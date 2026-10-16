@@ -25,7 +25,7 @@
  */
 
 import type { ItemEstoque } from "./base-estoque";
-import type { DiferencaSaldo, SaldoComparativo } from "@/data/saldo-comparativo";
+import type { DiferencaSaldo, ItemSaldoCompleto, SaldoComparativo } from "@/data/saldo-comparativo";
 
 const num = (v: unknown) => (typeof v === "number" ? v : Number(v ?? 0) || 0);
 const str = (v: unknown) => (v == null ? "" : String(v).trim());
@@ -135,8 +135,20 @@ export function calcularSaldoComparativo(
   itensFull: Map<string, { saldo: number; desc: string; enderecos: string[]; enderecosQtd?: Map<string, number> }>,
   pesosPosicao: Map<string, number>,
   dataBase: string,
+  reservadosItens?: { cod: string; mascara: string; qtdReservada: number }[] | null,
 ): SaldoComparativo | null {
   if (!itensFocco.length || itensFull.size === 0) return null;
+
+  /* Mapa de reservados por chave do item (chaveItem) para cruzar com o
+     comparativo e preencher reservados/disponíveis por item. */
+  const reservadosMap = new Map<string, number>();
+  if (reservadosItens) {
+    for (const r of reservadosItens) {
+      if (r.qtdReservada <= 0) continue;
+      const chave = chaveItem(r.cod, r.mascara);
+      reservadosMap.set(chave, (reservadosMap.get(chave) ?? 0) + r.qtdReservada);
+    }
+  }
 
   const foccoMap = new Map<string, { saldo: number; desc: string; valor: number; peso: number }>();
   for (const it of itensFocco) {
@@ -200,6 +212,58 @@ export function calcularSaldoComparativo(
   const foccoValor = [...foccoMap.values()].reduce((s, v) => s + v.valor, 0);
   const fullSaldo = [...itensFull.values()].reduce((s, v) => s + v.saldo, 0);
 
+  /* Relação completa de todos os itens para a exportação Excel. */
+  const todosItens: ItemSaldoCompleto[] = [];
+
+  /* Itens em comum (exato + diferença) */
+  for (const [chave, f] of foccoMap) {
+    const fu = itensFull.get(chave);
+    if (!fu) continue;
+    const diff = f.saldo - fu.saldo;
+    const reserv = reservadosMap.get(chave) ?? 0;
+    todosItens.push({
+      item: chave,
+      desc: f.desc,
+      full: fu.saldo,
+      focco: f.saldo,
+      diff,
+      reservados: reserv,
+      disponiveis: f.saldo - reserv,
+      situacao: diff === 0 ? "exato" : "diferenca",
+    });
+  }
+  /* Só Full */
+  for (const [chave, fu] of itensFull) {
+    if (foccoMap.has(chave)) continue;
+    const reserv = reservadosMap.get(chave) ?? 0;
+    todosItens.push({
+      item: chave,
+      desc: fu.desc,
+      full: fu.saldo,
+      focco: 0,
+      diff: -fu.saldo,
+      reservados: reserv,
+      disponiveis: fu.saldo - reserv,
+      situacao: "so-full",
+    });
+  }
+  /* Só Focco */
+  for (const [chave, f] of foccoMap) {
+    if (itensFull.has(chave)) continue;
+    const reserv = reservadosMap.get(chave) ?? 0;
+    todosItens.push({
+      item: chave,
+      desc: f.desc,
+      full: 0,
+      focco: f.saldo,
+      diff: f.saldo,
+      reservados: reserv,
+      disponiveis: f.saldo - reserv,
+      situacao: "so-focco",
+    });
+  }
+  todosItens.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+
   return {
     dataBase,
     full: { itens: itensFull.size, saldo: +fullSaldo.toFixed(2) },
@@ -224,5 +288,6 @@ export function calcularSaldoComparativo(
       diferencaTotal: +(foccoSaldo - fullSaldo).toFixed(2),
     },
     topDiferencas: diferencas.slice(0, LIMITE_DIFERENCAS),
+    todosItens,
   };
 }

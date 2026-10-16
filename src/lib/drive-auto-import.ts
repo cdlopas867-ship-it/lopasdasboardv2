@@ -1256,6 +1256,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       itensFull,
       pesosPosicao ?? new Map<string, number>(),
       melhorResumo.data || new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+      melhorReservados?.itens ?? null,
     );
     if (saldoComparativo) {
       console.info(
