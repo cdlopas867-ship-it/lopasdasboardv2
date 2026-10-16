@@ -20,11 +20,15 @@ export default function CenaSaldoComparativo({
   cena,
   onPausar,
   saldoComparativo,
+  onExportarExcel,
+  exportando,
 }: {
   anim: boolean;
   cena: number;
   onPausar?: (() => void) | undefined;
   saldoComparativo?: SaldoComparativo | null | undefined;
+  onExportarExcel?: (() => void) | undefined;
+  exportando?: boolean | undefined;
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
   const d = saldoComparativo ?? SALDO_COMPARATIVO;
@@ -221,6 +225,20 @@ export default function CenaSaldoComparativo({
           geral: {fmtMoeda(d.alertas.diferencaTotal)} de diferença. Data-base: {d.dataBase}.
         </p>
       </div>
+
+      {/* Exportar Excel — botão na própria cena do comparativo */}
+      {onExportarExcel && (
+        <div className="video-sobe mt-4 flex justify-center" style={{ animationDelay: "0.9s" }}>
+          <button
+            type="button"
+            onClick={onExportarExcel}
+            disabled={exportando}
+            className="cursor-pointer rounded-full border border-white/30 bg-white/10 px-6 py-2.5 text-[11px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-60"
+          >
+            {exportando ? "Gerando Excel…" : "⬇ Exportar Excel"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
