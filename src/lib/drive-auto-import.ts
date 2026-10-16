@@ -1398,26 +1398,30 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 }
 
 /* Inicia o ciclo de importação automática no servidor.
-   Roda imediatamente e a cada 5 minutos.
-   Usa flag global para evitar duplicar o intervalo em HMR. */
+   Roda imediatamente e a cada 5 s. Usa IDs globais para limpar timers antigos
+   antes de recriar — sobrevive a program reload do Vite SSR (HMR), que limpa
+   os timers antigos mas deixava __driveAutoImportStarted=true, impedindo o
+   ciclo de reiniciar. */
 declare global {
   // eslint-disable-next-line no-var
-  var __driveAutoImportStarted: boolean | undefined;
+  var __driveAutoImportInterval: ReturnType<typeof setInterval> | undefined;
+  var __driveAutoImportTimeout: ReturnType<typeof setTimeout> | undefined;
 }
 
 export function iniciarAutoImport() {
-  if (globalThis.__driveAutoImportStarted) return;
-  globalThis.__driveAutoImportStarted = true;
+  /* Limpa timers anteriores (de um ciclo pré-HMR/program reload) */
+  if (globalThis.__driveAutoImportInterval) clearInterval(globalThis.__driveAutoImportInterval);
+  if (globalThis.__driveAutoImportTimeout) clearTimeout(globalThis.__driveAutoImportTimeout);
 
-  /* Primeira execução após 10s (deixa o servidor subir) */
-  setTimeout(() => {
-    importarSeMudou().catch((e) =>
+  /* Primeira execução após 3s (deixa o servidor subir) */
+  globalThis.__driveAutoImportTimeout = setTimeout(() => {
+    importarSeMudou(true).catch((e) =>
       console.error("[auto-import] falha na execução inicial:", e),
     );
-  }, 10_000);
+  }, 3_000);
 
-  /* A cada 15 s — detecta mudanças no Drive o mais rápido possível */
-  setInterval(() => {
+  /* A cada 5 s — detecta mudanças no Drive o mais rápido possível */
+  globalThis.__driveAutoImportInterval = setInterval(() => {
     importarSeMudou().catch((e) =>
       console.error("[auto-import] falha no ciclo:", e),
     );
