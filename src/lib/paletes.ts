@@ -11,10 +11,20 @@ export type PalletItem = {
   undPorPalete: number;
 };
 
+export type ItemPalete = {
+  item: string;
+  desc: string;
+  saldo: number;
+  paletes: number;
+  undPorPalete: number;
+  enderecos: string[];
+};
+
 export type ResumoPaletes = {
   porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
   totalPaletes: number;
   totalItens: number;
+  itensPorTamanho?: Record<string, ItemPalete[]>;
 };
 
 function normalizarTexto(value: unknown): string {
@@ -144,13 +154,22 @@ export function lerPaletes(wb: XLSX.WorkBook): Map<string, PalletItem> {
   return mapa;
 }
 
+/* Constrói a chave composta do item (ex.: "84911.31290") para casar com
+   o relatório do Full, que já usa o formato "item.mascara". */
+function chaveComposta(item: string, mascara?: string): string {
+  const maskNum = mascara?.match(/\((\d+)\)/)?.[1] ?? "";
+  return maskNum ? `${item}.${maskNum}` : item;
+}
+
 /* Calcula quantos paletes existem no estoque por tamanho, cruzando
    o saldo de cada item (base de estoque) com a configuração de pallet. */
 export function calcularResumoPaletes(
-  itensEstoque: { item: string; saldo: number }[],
+  itensEstoque: { item: string; saldo: number; desc?: string; mascara?: string }[],
   paletes: Map<string, PalletItem>,
+  itensFull?: Map<string, { saldo: number; desc: string; enderecos: string[] }> | null,
 ): ResumoPaletes {
   const porTamanho = new Map<string, { paletes: number; itens: number; und: number }>();
+  const itensPorTamanho: Record<string, ItemPalete[]> = {};
 
   for (const it of itensEstoque) {
     const chave = normalizarTexto(it.item).replace(/\s+/g, "").trim();
@@ -175,6 +194,25 @@ export function calcularResumoPaletes(
     atual.itens += 1;
     atual.und += it.saldo;
     porTamanho.set(pallet.tamanho, atual);
+
+    /* Lista de itens por tamanho — com endereços do Full (se disponível) */
+    const composta = chaveComposta(it.item, it.mascara);
+    const full = itensFull?.get(composta) ?? itensFull?.get(chave);
+    const enderecos = full?.enderecos ?? [];
+    if (!itensPorTamanho[pallet.tamanho]) itensPorTamanho[pallet.tamanho] = [];
+    itensPorTamanho[pallet.tamanho].push({
+      item: it.item,
+      desc: it.desc ?? full?.desc ?? "",
+      saldo: it.saldo,
+      paletes: paletesItem,
+      undPorPalete: pallet.undPorPalete,
+      enderecos,
+    });
+  }
+
+  /* Ordena cada lista por paletes desc */
+  for (const t of Object.keys(itensPorTamanho)) {
+    itensPorTamanho[t].sort((a, b) => b.paletes - a.paletes);
   }
 
   const ordem = ["P", "M", "G", "GG"];
@@ -186,5 +224,6 @@ export function calcularResumoPaletes(
     porTamanho: lista,
     totalPaletes: lista.reduce((s, t) => s + t.paletes, 0),
     totalItens: lista.reduce((s, t) => s + t.itens, 0),
+    itensPorTamanho,
   };
 }

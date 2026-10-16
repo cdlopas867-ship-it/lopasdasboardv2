@@ -59,7 +59,7 @@ const isVolume = (desc: string) => /^VOL/.test(desc.toUpperCase());
    confundir com as outras planilhas da pasta do Drive. */
 export function lerItensFull(
   rows: unknown[][],
-): Map<string, { saldo: number; desc: string }> | null {
+): Map<string, { saldo: number; desc: string; enderecos: string[] }> | null {
   const hi = rows.findIndex((r) => {
     const h = (r ?? []).map(norm);
     return (
@@ -74,18 +74,21 @@ export function lerItensFull(
   const cItem = h.indexOf("ITEM");
   const cDesc = h.findIndex((x) => x.startsWith("DESC"));
   const cQtd = h.findIndex((x) => x.includes("QTD") && x.includes("ATUAL"));
+  const cEnd = h.findIndex((x) => x.includes("ENDERECO"));
   if (cItem < 0 || cQtd < 0 || cDesc < 0) return null;
 
-  const mapa = new Map<string, { saldo: number; desc: string }>();
+  const mapa = new Map<string, { saldo: number; desc: string; enderecos: string[] }>();
   for (const r of rows.slice(hi + 1)) {
     if (!r) continue;
     const chave = str(r[cItem]);
     if (!chave) continue;
     /* Só itens de volume (descrição começando por "VOL"), em qualquer endereço. */
     if (!isVolume(str(r[cDesc]))) continue;
-    const atual = mapa.get(chave) ?? { saldo: 0, desc: cDesc >= 0 ? str(r[cDesc]) : "" };
+    const atual = mapa.get(chave) ?? { saldo: 0, desc: cDesc >= 0 ? str(r[cDesc]) : "", enderecos: [] };
     atual.saldo += num(r[cQtd]);
     if (!atual.desc) atual.desc = cDesc >= 0 ? str(r[cDesc]) : "";
+    const end = cEnd >= 0 ? str(r[cEnd]) : "";
+    if (end && !atual.enderecos.includes(end)) atual.enderecos.push(end);
     mapa.set(chave, atual);
   }
   return mapa.size > 0 ? mapa : null;
@@ -125,7 +128,7 @@ export function lerPesosPosicao(rows: unknown[][]): Map<string, number> | null {
    pesar a quantidade do Full (o relatório dele não traz peso). */
 export function calcularSaldoComparativo(
   itensFocco: ItemEstoque[],
-  itensFull: Map<string, { saldo: number; desc: string }>,
+  itensFull: Map<string, { saldo: number; desc: string; enderecos: string[] }>,
   pesosPosicao: Map<string, number>,
   dataBase: string,
 ): SaldoComparativo | null {

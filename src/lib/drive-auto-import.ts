@@ -823,7 +823,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorRecebimento: ReturnType<typeof calcularRecebimento> | null = null;
   let melhorItens: ItemEstoque[] | null = null;
   let melhorItensMod: Date | undefined;
-  let itensFull: Map<string, { saldo: number; desc: string }> | null = null;
+  let itensFull: Map<string, { saldo: number; desc: string; enderecos: string[] }> | null = null;
   /* Peso unitário (PESO LIQ UN) dos itens da posição do Focco — usado para
      pesar a quantidade do Full, que não traz peso no relatório. */
   let pesosPosicao: Map<string, number> | null = null;
@@ -1098,7 +1098,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     totalQtdRecebido?: number;
   }) | null = null;
   if (melhorItens && melhorPaletes && melhorPaletes.size > 0) {
-    resumoPaletes = calcularResumoPaletes(melhorItens, melhorPaletes);
+    resumoPaletes = calcularResumoPaletes(melhorItens, melhorPaletes, itensFull);
     console.info(
       `[auto-import] paletes: ${resumoPaletes.totalPaletes} paletes (${resumoPaletes.porTamanho.map((t) => `${t.tamanho}: ${t.paletes}`).join(", ")})`,
     );
