@@ -63,10 +63,10 @@ export default function CenaPaletes({
       <DonutInterativo
         secoes={secoes}
         foco={focoIdx}
-        onToggle={() => { setFoco((f) => (f + 1) % secoes.length); setExpandido(false); }}
+        onToggle={() => { setFoco((f) => (f + 1) % secoes.length); setExpandido(true); }}
         anim={anim}
       />
-      <ToggleSecoes secoes={secoes} foco={focoIdx} onChange={(i) => { setFoco(i); setExpandido(false); }} />
+      <ToggleSecoes secoes={secoes} foco={focoIdx} onChange={(i) => { setFoco(i); setExpandido(true); }} />
 
       {/* Resumo rápido da seção ativa — destaque em gradiente */}
       <BannerResumo
