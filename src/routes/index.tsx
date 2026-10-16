@@ -16,7 +16,7 @@ import { calcularPendentesResumo } from "@/lib/pendentes-resumo";
 import type { PendenteProducao } from "@/lib/pendentes";
 import { MENSAL_FIXO_JAN_ABR, PENDENTES_RESUMO_FIXO, PALETAS_FIXO } from "@/data/valores-fixos";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
-import { fmtBrMax, fmtTonDec } from "@/lib/format";
+
 
 export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Painel de Estoque · Lopas 2026" }, { name: "description", content: "Indicadores de estoque, ocupação e recebimento do Centro de Distribuição Lopas." }, { property: "og:title", content: "Painel de Estoque · Lopas 2026" }, { property: "og:description", content: "Indicadores do Centro de Distribuição Lopas em uma apresentação interativa." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: DashboardHome });
 type Painel = typeof initialSyncData & Record<string, unknown>;
@@ -61,27 +61,11 @@ function DashboardHome() {
       }),
       ...mensalSync.filter((m) => !mesesFixos.has(m.mes)),
     ];
-    /* KPI de Saúde do Estoque — carregado ÷ recebido × 100 */
-    const totRec = mensal.reduce((s, m) => s + m.recebido, 0);
-    const totCar = mensal.reduce((s, m) => s + m.carregado, 0);
-    const saudePct = totRec > 0 ? (totCar / totRec) * 100 : 0;
-    const fmtIso = (iso?: string) => (iso && /^\d{4}-\d{2}-\d{2}/.test(iso) ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : undefined);
-    const recebidoAte = fmtIso((dias as { iso?: string }[]).map((d) => d.iso ?? "").sort().pop());
-    const carregadoAte = fmtIso(p["carregadoAte"] as string | undefined);
-    const periodoTxt = `Período: 01/01/2026 a ${(p["atualizadoEm"] as string | undefined) ?? new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.`;
-    const saudeKpi: VideoKpi = {
-      id: "saude",
-      rotulo: "Saúde do Estoque",
-      valor: `${fmtBrMax(saudePct, 1)}%`,
-      detalhe: `De ${fmtTonDec(totRec)} recebidas, ${fmtTonDec(totCar)} foram carregadas — ${fmtBrMax(saudePct, 1)}% de eficiência no fluxo de estoque. ${periodoTxt}`,
-      extra: [[`Recebido${recebidoAte ? ` · 01/01 – ${recebidoAte.slice(0, 5)}` : ""}`, fmtTonDec(totRec)], [`Carregado${carregadoAte ? ` · 01/01 – ${carregadoAte.slice(0, 5)}` : ""}`, fmtTonDec(totCar)], ["Saldo", fmtTonDec(Math.abs(totRec - totCar))]],
-    };
-    const kpisComSaude = [...kpis, saudeKpi];
     /* Paletes: usa o resumo lido do Drive quando disponível; PALETAS_FIXO
        permanece apenas como fallback. */
     const paletasSync = p["paletas"] as VideoPaletas | undefined;
     const paletas = paletasSync && paletasSync.totalPaletes > 0 ? paletasSync : PALETAS_FIXO;
-    return { kpis: kpisComSaude, unidades, ocupacao, semana, turnos, mensal, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, semReserva: p["semReservaResumo"] as VideoReservados | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, saldoComparativo: p["saldoComparativo"] as SaldoComparativo | undefined, paletas: paletas as VideoPaletas, recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
+    return { kpis, unidades, ocupacao, semana, turnos, mensal, avarias, pendentes, reservados: p["reservadosResumo"] as VideoReservados | undefined, semReserva: p["semReservaResumo"] as VideoReservados | undefined, foraDeLinha: p["foraDeLinha"] as VideoForaDeLinha | undefined, saldoComparativo: p["saldoComparativo"] as SaldoComparativo | undefined, paletas: paletas as VideoPaletas, recebimentoSemanal: (p["recebimentoSemanal"] as RecebimentoSemanalDia[] | undefined) ?? dias.map(d => ({ iso: d.iso ?? "", dia: d.dia, data: d.data, ton: d.ton, meta: d.meta, pctMeta: (d.ton / d.meta) * 100, porTamanho: [], totalQtd: 0, totalPaletes: 0 })) as RecebimentoSemanalDia[], producaoSemanal: (p["producaoSemanal"] as ProducaoSemanalDia[] | undefined) ?? undefined, sincronizacao: p["sincronizacao"] as { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined, resumo };
   }, [dados]);
   // Mantém conteúdo visível no SSR, na checagem de sessão e no redirecionamento.
   if (!pronto || !autenticado || !loaded) return <LoadingApresentacao />;
