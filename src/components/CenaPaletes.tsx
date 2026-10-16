@@ -88,14 +88,6 @@ export default function CenaPaletes({
 
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.55s" }}>
         <table className="w-full text-left text-[11px] text-white">
-          <thead>
-            <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
-              <th className="pb-0.5 font-bold">Tamanho</th>
-              <th className="pb-0.5 text-right font-bold">Paletes</th>
-              <th className="pb-0.5 text-right font-bold">Itens</th>
-              <th className="pb-0.5 text-right font-bold">%</th>
-            </tr>
-          </thead>
           <tbody>
             {tamanhos.map((t, i) => {
               const cor = CORES_TAMANHO[t.tamanho] ?? "#6b7280";
