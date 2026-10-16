@@ -221,6 +221,7 @@ export default function CenaSaldoComparativo({
           geral: {fmtMoeda(d.alertas.diferencaTotal)} de diferença. Data-base: {d.dataBase}.
         </p>
       </div>
+
     </div>
   );
 }

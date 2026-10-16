@@ -92,6 +92,25 @@ export default function CenasApresentacao({
   onGerarRelatorio,
   onPausar,
 }: Props) {
+  const [exportando, setExportando] = useState(false);
+
+  const exportarExcel = async () => {
+    onPausar?.();
+    setExportando(true);
+    try {
+      const { exportarExcelCena } = await import("@/lib/export-excel-cena");
+      await exportarExcelCena(cena, {
+        kpis, unidades, ocupacao, semana, turnos, mensal, avarias, pendentes,
+        reservados, semReserva, valorFaturado, foraDeLinha, paletas,
+        recebimentoSemanal, producaoSemanal, resumo, saldoComparativo,
+      });
+    } catch (erro) {
+      console.error("Falha ao gerar o Excel", erro);
+    } finally {
+      setExportando(false);
+    }
+  };
+
   /* Mostra todos os meses com recebimento ou carregamento — meses sem
      carregado no Drive (jan–abr) agora têm valores da planilha do usuário. */
   const listaMes = (mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0);
@@ -388,6 +407,19 @@ export default function CenasApresentacao({
         </div>
       )}
 
+      {/* Botão de exportar Excel — visível em todas as cenas de conteúdo */}
+      {cena < 11 && (
+        <div className="mt-3 flex justify-center">
+          <button
+            type="button"
+            onClick={exportarExcel}
+            disabled={exportando}
+            className="cursor-pointer rounded-full border border-white/30 bg-white/10 px-6 py-2 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20 disabled:cursor-wait disabled:opacity-60"
+          >
+            {exportando ? "Gerando Excel…" : "⬇ Exportar Excel"}
+          </button>
+        </div>
+      )}
     </>
   );
 }
