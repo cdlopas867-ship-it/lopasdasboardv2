@@ -35,6 +35,7 @@ export default function CenaAcertosEstoque({
   ];
 
   const maxMes = Math.max(...d.porMes.map((m) => m.count));
+  const maxCom = Math.max(...d.ruas.map((r) => r.comAcerto));
 
   return (
     <div className="flex w-full flex-col items-center">
@@ -102,52 +103,55 @@ export default function CenaAcertosEstoque({
         </div>
       </div>
 
-      {/* Endereços com/sem acerto */}
+      {/* Lista dinâmica — com acerto (ruas) / sem acerto (endereços) */}
       <div
         className="video-sobe mt-3 w-full max-w-sm mx-auto"
         style={{ animationDelay: "0.6s" }}
       >
         <p className="mb-1 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-          Endereços do CD
+          {foco === 0 ? "Ruas com acerto" : "Endereços sem acerto"}
         </p>
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2.5">
-            <span
-              className="size-2.5 shrink-0 rounded-sm"
-              style={{ background: COR_COM_ACERTO }}
-            />
-            <span className="flex-1 text-[11px] text-white/80">Endereços com acerto</span>
-            <span className="font-mono text-[11px] font-bold text-white">
-              {fmtInt(d.totalEnderecosComAcerto)}
-            </span>
-            <span
-              className="w-10 text-right font-mono text-[10px] font-bold"
-              style={{ color: COR_COM_ACERTO }}
-            >
-              {fmtBrMax(d.pctComAcerto, 1)}%
-            </span>
+        {foco === 0 ? (
+          <div className="space-y-1">
+            {d.ruas
+              .slice()
+              .sort((a, b) => b.comAcerto - a.comAcerto)
+              .slice(0, 10)
+              .map((r) => (
+                <div key={r.rua} className="flex items-center gap-2">
+                  <span className="w-14 shrink-0 text-[10px] text-white/70">{r.rua}</span>
+                  <div className="h-3 flex-1 overflow-hidden rounded-sm bg-white/10">
+                    <div
+                      className="h-full rounded-sm transition-all duration-700"
+                      style={{
+                        width: `${(r.comAcerto / maxCom) * 100}%`,
+                        background: COR_COM_ACERTO,
+                        opacity: 0.8,
+                      }}
+                    />
+                  </div>
+                  <span className="w-8 text-right font-mono text-[10px] font-bold text-white">
+                    {fmtInt(r.comAcerto)}
+                  </span>
+                </div>
+              ))}
+            <p className="pt-0.5 text-[8px] leading-tight text-white/40">
+              Top 10 de {d.ruas.length} ruas · {fmtInt(d.totalEnderecosComAcerto)} endereços com acerto
+            </p>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span
-              className="size-2.5 shrink-0 rounded-sm"
-              style={{ background: COR_SEM_ACERTO }}
-            />
-            <span className="flex-1 text-[11px] text-white/80">Endereços sem acerto</span>
-            <span className="font-mono text-[11px] font-bold text-white">
-              {fmtInt(d.enderecosSemAcerto)}
-            </span>
-            <span
-              className="w-10 text-right font-mono text-[10px] font-bold"
-              style={{ color: COR_SEM_ACERTO }}
-            >
-              {fmtBrMax(d.pctSemAcerto, 1)}%
-            </span>
+        ) : (
+          <div className="space-y-0.5">
+            {d.enderecosSemAcertoLista.slice(0, 12).map((e) => (
+              <div key={e.endereco} className="flex items-center gap-2">
+                <span className="font-mono text-[10px] text-white/70">{e.endereco}</span>
+                <span className="ml-auto text-[9px] text-white/40">{e.rua}</span>
+              </div>
+            ))}
+            <p className="pt-0.5 text-[8px] leading-tight text-white/40">
+              {fmtInt(d.enderecosSemAcertoLista.length)} endereços sem acerto · {fmtInt(d.totalEnderecosCD)} endereços totais do CD
+            </p>
           </div>
-          <p className="pt-1 text-[9px] leading-tight text-white/40">
-            {fmtInt(d.totalEnderecosCD)} endereços totais do CD · cruzamento com a planilha de
-            estoques (WF0112). ASTEC desconsiderado.
-          </p>
-        </div>
+        )}
       </div>
 
       {/* Médias */}
@@ -177,7 +181,7 @@ export default function CenaAcertosEstoque({
         </p>
       </div>
 
-      {/* Acertos por mês */}
+      {/* Acertos por mês — gráfico + tabela */}
       <div
         className="video-sobe mt-3 w-full max-w-sm mx-auto"
         style={{ animationDelay: "0.8s" }}
@@ -201,6 +205,28 @@ export default function CenaAcertosEstoque({
               <span className="text-[7px] text-white/50">{m.mes}</span>
             </div>
           ))}
+        </div>
+        {/* Tabela mensal — acertos e % por mês */}
+        <div className="mt-2 space-y-0.5">
+          <div className="grid grid-cols-3 gap-x-3 text-[8px] font-bold text-white/40 uppercase tracking-wider">
+            <div>Mês</div>
+            <div className="text-right">Acertos</div>
+            <div className="text-right">%</div>
+          </div>
+          {d.porMes.map((m) => (
+            <div key={m.mes} className="grid grid-cols-3 gap-x-3 text-[9px]">
+              <div className="text-white/70">{m.mes}</div>
+              <div className="text-right font-mono text-white">{fmtInt(m.count)}</div>
+              <div className="text-right font-mono font-bold" style={{ color: COR_COM_ACERTO }}>
+                {fmtBrMax(m.pct, 1)}%
+              </div>
+            </div>
+          ))}
+          <div className="grid grid-cols-3 gap-x-3 border-t border-white/15 pt-0.5 text-[9px] font-bold">
+            <div className="text-white/70">Total</div>
+            <div className="text-right font-mono text-white">{fmtInt(d.totalAcertos)}</div>
+            <div className="text-right font-mono text-white">100%</div>
+          </div>
         </div>
       </div>
     </div>
