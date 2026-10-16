@@ -2,15 +2,26 @@
    Mesmo padrão da CenaRecebimentoTurno: donut + toggle + tabela.
    Os % são sobre o peso previsto da semana. */
 
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, DestaqueGradiente, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
+import type { RecebimentoSemanalDia } from "./VideoResumoDashboard";
 
 const COR_PRODUZIDO = "#33D953"; // verde
 const COR_RECEBIDO = "#38BDF8"; // azul
 const COR_DIFERENCA = "#FFA500"; // laranja
+
+const META_DIARIA = 330; // meta de 330 t/dia
+
+const CORES_TAMANHO: Record<string, string> = {
+  P: "#22c55e",
+  M: "#3b82f6",
+  G: "#f97316",
+  GG: "#a855f7",
+};
 
 const TITULOS = ["Recebido da Semana", "Falta Receber"];
 
@@ -29,15 +40,18 @@ function VariacaoDia({ atual, anterior }: { atual: number; anterior: number | un
 export default function CenaProducaoSemana({
   anim,
   dias,
+  recebimentoSemanal,
   cena,
   onPausar,
 }: {
   anim: boolean;
   dias: ProducaoSemanalDia[];
+  recebimentoSemanal?: RecebimentoSemanalDia[];
   cena: number;
   onPausar?: () => void;
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
+  const [mostraPaletes, setMostraPaletes] = useState(false);
 
   const semana = semanaAtual(dias);
   const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
@@ -166,10 +180,81 @@ export default function CenaProducaoSemana({
         </p>
       </div>
 
+      {/* Botão: Tipos de Paletes Recebidos */}
+      {recebimentoSemanal && recebimentoSemanal.length > 0 && (
+        <div className="mt-2 flex justify-center">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setMostraPaletes((v) => !v); onPausar?.(); }}
+            className={cn(
+              "rounded-full border px-4 py-1 text-[9px] font-bold tracking-widest uppercase backdrop-blur-sm transition-colors",
+              mostraPaletes
+                ? "border-primary/40 bg-primary/15 text-primary"
+                : "border-white/20 bg-white/5 text-white/70 hover:bg-white/10",
+            )}
+          >
+            {mostraPaletes ? "✓ Tipos de Paletes Recebidos" : "▶ Tipos de Paletes Recebidos"}
+          </button>
+        </div>
+      )}
+
+      {/* Tipos de Paletes Recebidos por dia — toggleable */}
+      {mostraPaletes && recebimentoSemanal && recebimentoSemanal.length > 0 && (
+        <div className="video-sobe mt-2 w-full max-w-xs mx-auto" style={{ animationDelay: "0.1s" }}>
+          <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+            Tipos de Paletes Recebidos
+          </p>
+          <table className="w-full text-left text-[10px] text-white">
+            <thead>
+              <tr className="border-b border-white/20 text-[7px] font-bold tracking-widest uppercase">
+                <th className="pb-0.5 font-bold text-white/55">Dia</th>
+                <th className="pb-0.5 font-bold text-white/55">Tipos de palete</th>
+                <th className="pb-0.5 text-right font-bold text-white/55">QTD</th>
+                <th className="pb-0.5 text-right font-bold text-white/55">Paletes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recebimentoSemanal.slice(-7).map((d) => (
+                <tr key={d.iso} className="border-b border-white/10 last:border-0">
+                  <td className="py-0.5 whitespace-nowrap">
+                    <span className="font-semibold text-white/90">{d.dia}</span>{" "}
+                    <span className="text-[8px] text-white/45">{d.data}</span>
+                  </td>
+                  <td className="py-0.5">
+                    <div className="flex flex-wrap gap-0.5">
+                      {d.porTamanho.map((t) => {
+                        const cor = CORES_TAMANHO[t.tamanho] ?? "#6b7280";
+                        return (
+                          <span
+                            key={t.tamanho}
+                            className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[8px] font-bold"
+                            style={{ background: `${cor}20`, color: cor }}
+                          >
+                            {t.tamanho}
+                            <span className="font-mono">{fmtInt(t.und)}</span>
+                            <span className="text-white/40">·</span>
+                            <span className="font-mono">{fmtInt(t.paletes)}p</span>
+                          </span>
+                        );
+                      })}
+                      {d.porTamanho.length === 0 && (
+                        <span className="text-[8px] text-white/30">—</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-0.5 text-right font-mono text-white/80">{fmtInt(d.totalQtd)}</td>
+                  <td className="py-0.5 text-right font-mono font-bold text-white">{fmtInt(d.totalPaletes)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* Dia a dia — produzido × recebido por dia (data final) da semana atual */}
       <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.65s" }}>
         <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
-          Dia a dia
+          Dia a dia · Meta {META_DIARIA} t/dia
         </p>
         <table className="w-full text-left text-[11px] text-white">
           <thead>
@@ -181,12 +266,14 @@ export default function CenaProducaoSemana({
               <th className="pb-0.5 text-right font-bold" style={{ color: COR_RECEBIDO }}>
                 Recebido
               </th>
+              <th className="pb-0.5 text-right font-bold text-white/55">Meta</th>
               <th className="pb-0.5 text-right font-bold text-white/55">Média</th>
             </tr>
           </thead>
           <tbody>
             {semana.map((d, i) => {
               const ant = semana[i - 1];
+              const cumpriuMeta = d.tonEntregue >= META_DIARIA;
               return (
                 <tr key={d.iso} className="border-b border-white/10 last:border-0">
                   <td className="py-0.5 whitespace-nowrap">
@@ -208,6 +295,22 @@ export default function CenaProducaoSemana({
                     <VariacaoDia atual={d.tonEntregue} anterior={ant?.tonEntregue} />
                   </td>
                   <td className="py-0.5 text-right">
+                    {d.tonEntregue > 0 ? (
+                      <span
+                        className={cn("font-mono font-bold", cumpriuMeta ? "text-emerald-400" : "text-brand-amber")}
+                      >
+                        {fmtBrMax((d.tonEntregue / META_DIARIA) * 100, 0)}%
+                      </span>
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                    {d.tonEntregue > 0 && (
+                      <span className={cn("ml-0.5", cumpriuMeta ? "text-emerald-400" : "text-white/30")}>
+                        {cumpriuMeta ? "✓" : ""}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-0.5 text-right">
                     <span className="font-mono font-bold text-white/90">
                       {d.ordens > 0 && d.tonPrevisto > 0
                         ? `${fmtBrMax(d.tonPrevisto / d.ordens, 1)} t`
@@ -223,7 +326,7 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. Média = tonelagem prevista do dia ÷ nº de ordens de produção do dia. ▲/▼ = variação em % da tonelagem vs dia anterior.
+          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. Meta = {META_DIARIA} t/dia (% do recebido vs meta · ✓ = meta batida). Média = tonelagem prevista do dia ÷ nº de ordens de produção do dia. ▲/▼ = variação em % da tonelagem vs dia anterior.
         </p>
       </div>
 

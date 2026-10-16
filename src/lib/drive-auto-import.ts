@@ -851,7 +851,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const itensReservados = lerReservados(wb);
       if (itensReservados && itensReservados.length > 0) {
         const reservados = calcularReservados(itensReservados);
-        if (reservados.itens.length > 0) melhorReservados = reservados;
+        if (reservados.itens.length > 0) {
+          melhorReservados = reservados;
+          console.info(`[auto-import] reservas: ${reservados.itens.length} itens · ${reservados.totalTon.toFixed(1)} t · ${reservados.totalValor.toFixed(0)} R$ (arquivo: ${arq.nome || arq.id})`);
+        }
       }
       /* Itens em estoque sem reserva (saldo disponível) */
       const itensSemReserva = lerReservados(wb, "semReserva");
@@ -955,7 +958,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         reservadoValor = extrairReservaValor(wb);
       }
     } catch (e) {
-      console.error(`[auto-import] planilha ${arq.id} ignorada:`, (e as Error).message);
+      console.error(`[auto-import] planilha ${arq.nome || arq.id} ignorada:`, (e as Error).message);
     }
   }
 
@@ -1030,6 +1033,35 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       }
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
+    }
+  }
+
+  /* Fallback de reservas: se o Drive não entregou a planilha de reservados
+     (download falhou, ex.: reservaxza.xlsx → "fetch failed"), tenta a cópia
+     local em public/planilhas/reservados.xlsx. O Drive continua a fonte
+     principal — esta cópia garante que a cena de itens reservados não
+     fique com dados antigos se um arquivo do Drive falhar ao baixar. */
+  if (!melhorReservados) {
+    const reservasPath = "public/planilhas/reservados.xlsx";
+    try {
+      if (existsSync(reservasPath)) {
+        const wb = XLSX.read(readFileSync(reservasPath), { type: "buffer" });
+        const itensReservados = lerReservados(wb);
+        if (itensReservados && itensReservados.length > 0) {
+          const reservados = calcularReservados(itensReservados);
+          if (reservados.itens.length > 0) {
+            melhorReservados = reservados;
+            console.info(`[auto-import] reservas (fallback local): ${reservados.itens.length} itens · ${reservados.totalTon.toFixed(1)} t`);
+          }
+        }
+        if (!melhorSemReserva) {
+          const itensSemReserva = lerReservados(wb, "semReserva");
+          if (itensSemReserva && itensSemReserva.length > 0)
+            melhorSemReserva = calcularReservados(itensSemReserva);
+        }
+      }
+    } catch (e) {
+      console.error(`[auto-import] planilha local ${reservasPath} ignorada:`, (e as Error).message);
     }
   }
 
