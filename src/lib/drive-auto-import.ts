@@ -27,6 +27,7 @@ import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
 import { lerForaDeLinha, aplicarCustos, rebuildForaDeLinhaFromItens } from "./fora-de-linha-import";
 import { lerItensFull, lerPesosPosicao, calcularSaldoComparativo } from "./saldo-comparativo-import";
+import { lerItensCcr, calcularComparativoCcr } from "./ccr-import";
 
 /* Planilha analise-estoque não traz custo: usa o custo médio da planilha de reservas. */
 function comCustos(
@@ -50,6 +51,7 @@ import type { Avaria } from "./avarias";
 import type { PendenteProducao } from "./pendentes";
 import type { ItemEstoque } from "./base-estoque";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
+import type { ComparativoCcr } from "@/data/comparativo-ccr";
 
 const FOLDER_ID = "16WJaYavcR8B1QgpVsT51Kg0_ADJsSGtQ";
 const DRIVE_GATEWAY = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
@@ -252,8 +254,7 @@ async function baixarPlanilha(id: string): Promise<ArrayBuffer> {
         throw new Error(`Google Drive ${res.status}: ${await res.text()}`);
       }
       const buf = await res.arrayBuffer();
-      const bytes = new Uint8Array(buf, 0, 2);
-      if ((bytes[0] === 0x50 && bytes[1] === 0x4b) || (bytes[0] === 0xd0 && bytes[1] === 0xcf)) {
+      if (conteudoReconhecido(buf)) {
         return buf;
       }
       throw new Error("conteúdo não é uma planilha Excel");
@@ -280,11 +281,19 @@ async function baixarPlanilha(id: string): Promise<ArrayBuffer> {
     ultimo = res.status;
     if (!res.ok) continue;
     const buf = await res.arrayBuffer();
-    const b = new Uint8Array(buf, 0, 2);
-    if (b[0] === 0x50 && b[1] === 0x4b) return buf; // arquivo xlsx (zip)
-    if (b[0] === 0xd0 && b[1] === 0xcf) return buf; // xls antigo
+    if (conteudoReconhecido(buf)) return buf;
   }
   throw new Error(`Drive ${id}: ${ultimo}`);
+}
+
+/* Aceita xlsx/xls (zip/OLE) e também HTML — o gerador de relatórios do
+   Focco exporta .xls que é, na verdade, uma página HTML (com as abas
+   "BASE ESTOQUE CCR" etc.). O HTML é parseado pelo XLSX como tabela. */
+function conteudoReconhecido(buf: ArrayBuffer): boolean {
+  const b = new Uint8Array(buf, 0, 2);
+  if (b[0] === 0x50 && b[1] === 0x4b) return true; // xlsx (zip)
+  if (b[0] === 0xd0 && b[1] === 0xcf) return true; // xls antigo
+  return b[0] === 0x3c; // '<' — HTML (relatório Focco)
 }
 
 type ResumoData = {
@@ -910,10 +919,30 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorPaletes: ReturnType<typeof lerPaletes> | null = null;
   let wbProducao: XLSX.WorkBook | null = null;
   let melhorRecebidoPorDia: Map<string, { qtd: number; peso: number }> | null = null;
+  /* Base do CCR (relatório de volumes do CD) — aba com "CCR" no nome. */
+  let melhorCcr: Map<string, { desc: string; saldo: number; pesoKg: number; unidade: string }> | null = null;
+  let melhorCcrMod: Date | undefined;
 
   for (const arq of arquivos) {
     try {
       const buf = await baixarPlanilha(arq.id);
+
+      /* Relatório do Focco exportado em HTML (.xls que é página): o XLSX
+         binário não lê esse formato — parseia o texto e extrai só a aba do
+         CCR, sem alimentar os outros parsers com a versão em HTML. */
+      if (new Uint8Array(buf, 0, 1)[0] === 0x3c) {
+        const wbHtml = XLSX.read(new TextDecoder("windows-1252").decode(buf), { type: "string" });
+        for (const sn of wbHtml.SheetNames) {
+          const linhasHtml = XLSX.utils.sheet_to_json<unknown[]>(wbHtml.Sheets[sn], { header: 1, defval: null });
+          const ccr = lerItensCcr(sn, linhasHtml);
+          if (ccr && ccr.size > (melhorCcr?.size ?? 0)) {
+            melhorCcr = ccr;
+            melhorCcrMod = parseModificado(arq.modificado ?? "");
+          }
+        }
+        continue;
+      }
+
       const wb = XLSX.read(buf, { type: "array" });
 
       /* Extrai dados de viagens (controle de viagens CD) da planilha */
@@ -987,6 +1016,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         /* A posição do Focco traz o PESO LIQ UN de cada item — inclusive dos
            zerados, que só existem no relatório do Full. */
         if (!pesosPosicao) pesosPosicao = lerPesosPosicao(linhas);
+        /* Base do CCR (relatório de volumes do CD) — aba com "CCR" no nome. */
+        const ccr = lerItensCcr(nome, linhas);
+        if (ccr && ccr.size > (melhorCcr?.size ?? 0)) {
+          melhorCcr = ccr;
+          melhorCcrMod = parseModificado(arq.modificado ?? "");
+        }
       }
 
       /* Extrai dados por unidade (Guarda-Roupas, Complementos, Salas) da aba Resumo */
@@ -1341,6 +1376,25 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     }
   }
 
+  /* Comparativo Estoque 001 (Focco ERP) × CCR (relatório de volumes do CD,
+     da pasta do Drive). Sem relatório do CCR legível, a cena usa o fallback
+     estático embutido. */
+  let comparativoCcr: ComparativoCcr | null = null;
+  if (melhorItens && melhorCcr) {
+    const dataBaseCcr = melhorCcrMod
+      ? `${String(melhorCcrMod.getDate()).padStart(2, "0")}/${String(melhorCcrMod.getMonth() + 1).padStart(2, "0")}/${melhorCcrMod.getFullYear()}`
+      : melhorResumo.data || "";
+    comparativoCcr = calcularComparativoCcr(melhorItens, melhorCcr, dataBaseCcr);
+    if (comparativoCcr) {
+      console.info(
+        `[auto-import] CCR: ${fmtInt(comparativoCcr.ccr.itens)} itens × ${fmtInt(comparativoCcr.estoque001.itens)} do 001 · ` +
+          `diferença ${fmtTonDec(comparativoCcr.diferenca.pesoTon)} t (${comparativoCcr.diferenca.pesoPct}%)`,
+      );
+    } else {
+      console.warn("[auto-import] CCR: relatório encontrado mas nada casou com o estoque 001");
+    }
+  }
+
   if (melhorOcupacao) {
     console.info(`[auto-import] ocupação: ${fmtInt(melhorOcupacao.ocupados)} ocupados, ${fmtInt(melhorOcupacao.livres)} livres, ${fmtInt(melhorOcupacao.bloqueados)} bloqueados, ${fmtInt(melhorOcupacao.total)} total (${(melhorOcupacao.pct * 100).toFixed(1)}%)`);
   } else {
@@ -1418,6 +1472,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       return { foraDeLinha: foiReconstruido ? melhorForaDeLinha : comCustos(melhorForaDeLinha, melhorReservados) };
     })(),
     ...(saldoComparativo ? { saldoComparativo } : {}),
+    ...(comparativoCcr ? { comparativoCcr } : {}),
     ...(melhorOcupacao ? { ocupacao: melhorOcupacao } : {}),
     ...(melhorOcupacao
       ? {
