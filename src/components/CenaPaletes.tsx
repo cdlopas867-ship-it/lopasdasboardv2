@@ -86,7 +86,53 @@ export default function CenaPaletes({
         </button>
       )}
 
-
+      {/* Tabela resumo — paletes por tamanho */}
+      <div className="video-sobe mt-3 w-full max-w-xs mx-auto" style={{ animationDelay: "0.55s" }}>
+        <table className="w-full text-left text-[11px] text-white">
+          <thead>
+            <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
+              <th className="pb-1 font-bold">Tam.</th>
+              <th className="pb-1 text-right font-bold">Paletes</th>
+              <th className="pb-1 text-right font-bold">Itens</th>
+              <th className="pb-1 text-right font-bold">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tamanhos.map((t, i) => {
+              const cor = CORES_TAMANHO[t.tamanho] ?? "#6b7280";
+              const pct = total > 0 ? (t.paletes / total) * 100 : 0;
+              const highlighted = i === focoIdx;
+              return (
+                <tr
+                  key={t.tamanho}
+                  className={cn(
+                    "border-b border-white/10 last:border-0 transition-all duration-300",
+                    highlighted ? "bg-white/[0.04]" : "opacity-35",
+                  )}
+                >
+                  <td className="py-0.5" style={highlighted ? { color: cor } : undefined}>
+                    <span className="mr-1.5 inline-block size-2 rounded-full align-middle" style={{ background: cor }} />
+                    {t.tamanho}
+                  </td>
+                  <td className="py-0.5 text-right font-mono font-semibold" style={highlighted ? { color: cor } : undefined}>
+                    {fmtInt(t.paletes)}
+                  </td>
+                  <td className="py-0.5 text-right font-mono text-white/50">{fmtInt(t.itens)}</td>
+                  <td className="py-0.5 text-right font-mono font-bold" style={highlighted ? { color: cor } : undefined}>
+                    {fmtBrMax(pct, 0)}%
+                  </td>
+                </tr>
+              );
+            })}
+            <tr className="border-t-2 border-white/40 bg-white/10 font-bold">
+              <td className="py-1 text-white">Total</td>
+              <td className="py-1 text-right font-mono text-white">{fmtInt(total)}</td>
+              <td className="py-1 text-right font-mono text-white">{fmtInt(itens)}</td>
+              <td className="py-1 text-right font-mono text-white">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
       {/* Lista de itens do tamanho ativo */}
       {expandido && itensLista.length > 0 && (
