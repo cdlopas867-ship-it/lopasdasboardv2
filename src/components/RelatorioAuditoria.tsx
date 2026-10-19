@@ -1,261 +1,320 @@
-/* Relatório de Auditoria — documento técnico que documenta cada cálculo,
-   fonte de dados, fórmula, horário de atualização e métrica de acuracidade do
-   painel. Estilo documento Word profissional, com o trevo da Lopas no topo.
-   "Imprimir / salvar PDF" usa a impressão do navegador. */
+/* Relatório de Auditoria — documento técnico que mostra os DADOS ATUAIS do
+   painel com cada valor, fórmula aplicada e fonte de origem. Estilo Word
+   profissional, com o trevo da Lopas no topo. "Imprimir / salvar PDF" usa a
+   impressão do navegador. */
 
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { fmtBrMax, fmtInt, fmtMoeda, fmtTonDec } from "@/lib/format";
 import type { VideoResumoProps } from "./VideoResumoDashboard";
 
-type Fonte = {
-  nome: string;
-  sistema: string;
-  descricao: string;
-  atualizacao: string;
-};
-
-type Calculo = {
-  item: string;
+type LinhaCalc = {
+  indicador: string;
+  valor: string;
   formula: string;
   fonte: string;
   observacao?: string;
 };
 
-type Acuracidade = {
-  metrica: string;
-  valor: string;
-  detalhe: string;
-};
+function montarCalculos(d: VideoResumoProps): LinhaCalc[] {
+  const linhas: LinhaCalc[] = [];
 
-const FONTES: Fonte[] = [
-  {
-    nome: "Posição de Estoque (Focco · estoque 001)",
-    sistema: "Focco ERP",
-    descricao:
-      "Planilha modelo ESTOQUE 001 — POSIÇÃO DE ESTOQUE (ex.: ST QUARTA.xlsx). Colunas: ITEM, MÁSCARA, SALDO, PESO LIQ UN, PESO LIQ TOTAL, CUSTO MÉDIO, VALOR CUSTO. Base de todos os indicadores de estoque do painel.",
-    atualizacao: "Sincronização automática a cada 15 s com a pasta do Google Drive",
-  },
-  {
-    nome: "Relatório WF0112 — Estoques (Full · estoque 112)",
-    sistema: "FullSoft WMS",
-    descricao:
-      "Relatório do WMS FullSoft Mobile Solutions, aba Resultado. Colunas: Item, Descrição, Endereço, Qtd. Atual. Uma linha por endereço; quantidades somadas por código. Usado no comparativo Full × Focco.",
-    atualizacao: "Importado da pasta do Drive junto com a posição de estoque",
-  },
-  {
-    nome: "PCP 003 — Análise de Realização Total",
-    sistema: "Focco ERP",
-    descricao:
-      "Planilha de produção (ex.: produção NN.xlsx). Colunas: NUM ORDEM, DT INICIAL, DT FINAL, LOTE, VOLUME, PREVISTO, QTDE ENTREGUE, QTDE PENDENTE, PESO PREVISTO, PESO REALIZADO. Base da cena Produção da Semana.",
-    atualizacao: "Sincronização automática com a pasta do Drive",
-  },
-  {
-    nome: "PESO RECEBIDO POR PERÍODO",
-    sistema: "Focco ERP",
-    descricao:
-      "Colunas: DT_INICIO, DT_FIM, ITEM, DESCRICAO, QTD_RECEBIDA, PESO_RECEBIDO. Base do recebimento por turno e por dia.",
-    atualizacao: "Sincronização automática com a pasta do Drive",
-  },
-  {
-    nome: "COMERCIAL 024 — Saldo de Itens com Reserva",
-    sistema: "Focco ERP",
-    descricao:
-      "Colunas de reserva comercial por item: qtd reservada, peso bruto, custo médio, saldo atual. Base da cena de itens reservados.",
-    atualizacao: "Sincronização automática com a pasta do Drive",
-  },
-  {
-    nome: "Planilha de Avarias",
-    sistema: "Focco ERP / Drive",
-    descricao:
-      "Registros de volumes avariados com coluna Quantidade e Motivo. A métrica oficial é a Soma de Quantidade, não a contagem de registros.",
-    atualizacao: "Sincronização automática com a pasta do Drive",
-  },
-  {
-    nome: "CD — QLP.xlsx (Lotação de pessoal)",
-    sistema: "Cadastro interno",
-    descricao:
-      "Aba Base, 252 registros. Colunas: NOME, ADMISSÃO, TEMPO, CIDADE, SETOR, CARGO, FUNÇÃO, TURNO, TURMA, CLASSE. Classifica todos os registros por CLASSE (Desligamento, Carregamento, Estoque, etc.).",
-    atualizacao: "Extração manual em 07/10/2026 (não lida automaticamente pelo sync)",
-  },
-  {
-    nome: "Produtividade por Colaborador",
-    sistema: "Focco ERP / FullSoft",
-    descricao:
-      "Uma planilha por tipo de atividade (separação manual, empilhadeira, recebimento, movimentação). Colunas: DIA, COD_COLABORADOR, NOME, TURNO, QTDE_TAREFAS, PESO, CX. Cargo e turma casados pelo nome com a CD — QLP.xlsx.",
-    atualizacao: "Extração manual em 07/10/2026",
-  },
-  {
-    nome: "Toneladas Mensal / Gerenciamento de Carregamento",
-    sistema: "Focco ERP",
-    descricao:
-      "Carregado mensal (Jan–Set/2026): jan–abr da planilha Toneladas Mensal; mai–set da aba Gerenciamento Carregamento da planilha pública. Base da saúde do estoque e do comparativo de produtividade.",
-    atualizacao: "Dado estático — reextrair para atualizar",
-  },
-];
+  if (d.resumo) {
+    const r = d.resumo;
+    linhas.push({
+      indicador: "Peso em estoque",
+      valor: fmtTonDec(r.ton),
+      formula: "Σ PESO LIQ TOTAL de todos os itens ativos",
+      fonte: "Posição de Estoque (Focco · estoque 001)",
+    });
+    linhas.push({
+      indicador: "Valor em estoque",
+      valor: fmtMoeda(r.valor),
+      formula: "Σ (custo médio × saldo) de cada item",
+      fonte: "Posição de Estoque (Focco · estoque 001)",
+    });
+    linhas.push({
+      indicador: "Itens ativos",
+      valor: fmtInt(r.itens),
+      formula: "Contagem de itens com saldo ou cadastro",
+      fonte: "Posição de Estoque (Focco · estoque 001)",
+    });
+    linhas.push({
+      indicador: "Saldo físico (un)",
+      valor: fmtInt(r.saldo),
+      formula: "Σ SALDO de todos os itens",
+      fonte: "Posição de Estoque (Focco · estoque 001)",
+    });
+    linhas.push({
+      indicador: "Valor previsto",
+      valor: fmtMoeda(r.previsto),
+      formula: "Estimativa de venda (não faturamento realizado)",
+      fonte: "Posição de Estoque (Focco · estoque 001)",
+    });
+  }
 
-const CALCULOS: Calculo[] = [
-  {
-    item: "Peso em estoque (toneladas)",
-    formula: "Σ PESO LIQ TOTAL de todos os itens ativos",
-    fonte: "Posição de Estoque (Focco · estoque 001)",
-    observacao: "Inclui todos os itens de volume; peças e componentes soltos ficam de fora.",
-  },
-  {
-    item: "Valor em estoque (R$)",
-    formula: "Σ (custo médio × saldo) de cada item",
-    fonte: "Posição de Estoque (Focco · estoque 001)",
-  },
-  {
-    item: "Quantidade de itens",
-    formula: "Contagem de itens ativos (linhas com saldo ou cadastro)",
-    fonte: "Posição de Estoque (Focco · estoque 001)",
-  },
-  {
-    item: "Ocupação do CD (%)",
+  linhas.push({
+    indicador: "Ocupação do CD",
+    valor: `${fmtBrMax(d.ocupacao.pct * 100, 1)}%`,
     formula: "posições ocupadas ÷ total de endereços (5.970) × 100",
     fonte: "Posição de Estoque (Focco · estoque 001)",
-    observacao: "Posições livres = total − ocupados − bloqueados.",
-  },
-  {
-    item: "Recebimento por turno (ton e %)",
-    formula: "ton = Σ PESO_RECEBIDO do turno; % = ton do turno ÷ total recebido × 100",
-    fonte: "PESO RECEBIDO POR PERÍODO",
-  },
-  {
-    item: "Produção da semana — previsto",
-    formula: "previsto = QTDE ENTREGUE + QTDE PENDENTE (programado da ordem)",
-    fonte: "PCP 003 — Análise de Realização Total",
-  },
-  {
-    item: "Produção da semana — produzido",
-    formula: "produzido = QTDE ENTREGUE; tonelagem = PESO PREVISTO (exibida na coluna Produzido)",
-    fonte: "PCP 003 — Análise de Realização Total",
-    observacao: "A tonelagem exibida na coluna Produzido é o peso previsto, não o realizado.",
-  },
-  {
-    item: "Produção da semana — pendente",
-    formula: "pendente = previsto − produzido; tonelagem = PESO PENDENTE",
-    fonte: "PCP 003 — Análise de Realização Total",
-  },
-  {
-    item: "Recebido da semana (ton e %)",
-    formula: "ton = Σ PESO_RECEBIDO do dia; % = ton recebida ÷ ton prevista × 100",
-    fonte: "PESO RECEBIDO POR PERÍODO",
-  },
-  {
-    item: "Variação dia a dia (%)",
-    formula: "(ton atual − ton anterior) ÷ ton anterior × 100",
-    fonte: "PCP 003 + PESO RECEBIDO",
-    observacao: "O primeiro dia da semana não tem variação (sem dia anterior).",
-  },
-  {
-    item: "Média por ordem de produção (ton)",
-    formula: "tonPrevisto ÷ número de ordens do dia",
-    fonte: "PCP 003 — Análise de Realização Total",
-  },
-  {
-    item: "Avarias — total de volumes",
-    formula: "Soma de Quantidade (coluna Quantidade), não contagem de registros",
-    fonte: "Planilha de Avarias",
-    observacao: "Custo é parcial e rotulado como tal; volume movimentado por mês não está disponível.",
-  },
-  {
-    item: "Pendências de produção — tonelagem total",
-    formula: "Σ tonelagem pendente das ordens em aberto",
-    fonte: "PCP 004 — Pendências",
-  },
-  {
-    item: "Pendências — classificação crítica",
-    formula: "Crítico = 3 meses ou mais de atraso; No prazo = até 2 meses, mês atual ou futuro",
-    fonte: "PCP 004 — Pendências",
-  },
-  {
-    item: "Itens reservados — valor",
-    formula: "valor reservado = qtd reservada × custo médio do item",
-    fonte: "COMERCIAL 024 — Saldo de Itens com Reserva",
-  },
-  {
-    item: "Itens reservados — peso",
-    formula: "peso reservado = qtd reservada × peso bruto do item",
-    fonte: "COMERCIAL 024 — Saldo de Itens com Reserva",
-  },
-  {
-    item: "Itens reservados — % do estoque",
-    formula: "% = valor reservado ÷ valor total do estoque × 100",
-    fonte: "COMERCIAL 024 + Posição de Estoque",
-  },
-  {
-    item: "Saúde do estoque (%)",
-    formula: "carregado ÷ recebido × 100 (acumulado do período)",
-    fonte: "Toneladas Mensal + PESO RECEBIDO",
-  },
-  {
-    item: "Fora de linha — peso e valor",
-    formula: "Σ peso e valor dos itens classificados como fora de linha",
-    fonte: "Posição de Estoque (classificação em linha/fora de linha)",
-    observacao: "Valor é estimativa quando a planilha não traz o custo.",
-  },
-  {
-    item: "Saldo comparativo Full × Focco — acuracidade",
-    formula: "acuracidade = itens com saldo exatamente igual ÷ itens em comum × 100",
-    fonte: "WF0112 (Full) × ESTOQUE 001 (Focco)",
-    observacao:
-      "Cruzamento pelo código completo do item (ex.: 2194.16652). Ton. Full = qtd × PESO LIQ UN da posição.",
-  },
-  {
-    item: "Produtividade — tonelagem por colaborador",
-    formula: "ton = PESO (kg) ÷ 1000; cx = Σ CX",
-    fonte: "Produtividade por Colaborador",
-    observacao:
-      "Cargo e turma casados pelo nome (todos os tokens do nome curto no nome completo). ~87/117 casam na separação manual.",
-  },
-  {
-    item: "Comparativo produtividade × carregado",
-    formula: "diferença = ton atividade − ton carregado (no mesmo período)",
-    fonte: "Produtividade + Toneladas Mensal",
-    observacao: "Setembro parcial (até 11/09); outubro sem carregado lançado.",
-  },
-  {
-    item: "Tonelagem do estoque — variação mês a mês",
-    formula: "variação % = (ton atual − ton anterior) ÷ ton anterior × 100",
-    fonte: "Histórico de sincronização (Supabase)",
-  },
-];
+    observacao: `Ocupados: ${fmtInt(d.ocupacao.ocupados)} · Livres: ${fmtInt(d.ocupacao.livres)}${d.ocupacao.bloqueados ? ` · Bloqueadas: ${fmtInt(d.ocupacao.bloqueados)}` : ""}`,
+  });
 
-const ACURACIDADE: Acuracidade[] = [
-  {
-    metrica: "Acuracidade Full × Focco (saldo)",
-    valor: "29%",
-    detalhe:
-      "171 de 589 itens em comum com saldo exatamente igual. 68 itens só no Full, 23 só no Focco. Diferença acumulada de +1.821 unidades.",
-  },
-  {
-    metrica: "Casamento de nomes — produtividade (separação manual)",
-    valor: "~74%",
-    detalhe: "Aproximadamente 87 de 117 colaboradores casados pelo nome com o cadastro QLP.",
-  },
-  {
-    metrica: "Casamento de nomes — produtividade (empilhadeira)",
-    valor: "~77%",
-    detalhe: "Aproximadamente 75 de 98 colaboradores casados pelo nome com o cadastro QLP.",
-  },
-  {
-    metrica: "Casamento de nomes — fichas QLP",
-    valor: "~76%",
-    detalhe: "108 de 142 nomes casados com o cadastro da CD — QLP.xlsx.",
-  },
-  {
-    metrica: "Cobertura de meses — carregado",
-    valor: "Jan–Set/2026",
-    detalhe: "Setembro parcial (até 11/09); outubro sem carregado lançado. Recebido cobre a semana corrente.",
-  },
-  {
-    metrica: "Total de registros QLP classificados",
-    valor: "252 registros",
-    detalhe:
-      "Todos os 252 registros classificados por CLASSE: Desligamento 93, Carregamento 88, Estoque 40, Transferência 9, Liderança 8, Afastamento 7, Treinamento 7.",
-  },
-];
+  if (d.semana) {
+    const dias = d.semana.dias;
+    const total = dias.reduce((s, x) => s + x.ton, 0);
+    const meta = dias.reduce((s, x) => s + x.meta, 0);
+    linhas.push({
+      indicador: `Recebimento da semana (${d.semana.rotulo})`,
+      valor: fmtTonDec(total),
+      formula: "Σ PESO_RECEBIDO de cada dia da semana",
+      fonte: "PESO RECEBIDO POR PERÍODO (Drive)",
+      observacao: meta > 0 ? `Meta: ${fmtTonDec(meta)} · ${fmtBrMax((total / meta) * 100, 0)}% da meta` : undefined,
+    });
+    dias.forEach((x) => {
+      linhas.push({
+        indicador: `  ${x.dia} ${x.data}`,
+        valor: `${fmtBrMax(x.ton, 1)} t`,
+        formula: "Σ PESO_RECEBIDO do dia",
+        fonte: "PESO RECEBIDO POR PERÍODO (Drive)",
+        observacao: `Meta: ${fmtBrMax(x.meta, 1)} t`,
+      });
+    });
+  }
+
+  if (d.turnos?.length) {
+    d.turnos.forEach((t) => {
+      linhas.push({
+        indicador: `  Turno ${t.nome}${t.faixa ? ` (${t.faixa})` : ""}`,
+        valor: `${fmtBrMax(t.pct, 1)}%${t.ton ? ` · ${fmtBrMax(t.ton, 1)} t` : ""}`,
+        formula: "ton = Σ PESO_RECEBIDO do turno; % = ton turno ÷ total × 100",
+        fonte: "PESO RECEBIDO POR PERÍODO (Drive)",
+      });
+    });
+  }
+
+  if (d.producaoSemanal?.length) {
+    const totalPrev = d.producaoSemanal.reduce((s, x) => s + x.previsto, 0);
+    const totalProduzido = d.producaoSemanal.reduce((s, x) => s + x.produzido, 0);
+    const totalEntregue = d.producaoSemanal.reduce((s, x) => s + x.entregue, 0);
+    const totalPendente = d.producaoSemanal.reduce((s, x) => s + x.pendente, 0);
+    const totalTonPrev = d.producaoSemanal.reduce((s, x) => s + x.tonPrevisto, 0);
+    const totalTonPend = d.producaoSemanal.reduce((s, x) => s + x.tonPendente, 0);
+    const totalOrdens = d.producaoSemanal.reduce((s, x) => s + x.ordens, 0);
+    linhas.push({
+      indicador: "Produção — programado",
+      valor: `${fmtInt(totalPrev)} un · ${fmtBrMax(totalTonPrev, 1)} t`,
+      formula: "previsto = QTDE ENTREGUE + QTDE PENDENTE; ton = PESO PREVISTO",
+      fonte: "PCP 003 — Análise de Realização Total (Drive)",
+    });
+    linhas.push({
+      indicador: "Produção — produzido",
+      valor: `${fmtInt(totalProduzido)} un`,
+      formula: "produzido = QTDE ENTREGUE da produção",
+      fonte: "PCP 003 — Análise de Realização Total (Drive)",
+    });
+    linhas.push({
+      indicador: "Produção — recebido no estoque",
+      valor: `${fmtInt(totalEntregue)} un`,
+      formula: "entregue = recebido da planilha PESO RECEBIDO POR PERÍODO",
+      fonte: "PESO RECEBIDO POR PERÍODO (Drive)",
+    });
+    linhas.push({
+      indicador: "Produção — pendente",
+      valor: `${fmtInt(totalPendente)} un · ${fmtBrMax(totalTonPend, 1)} t`,
+      formula: "pendente = previsto − produzido; ton = PESO PENDENTE",
+      fonte: "PCP 003 — Análise de Realização Total (Drive)",
+      observacao: `${fmtInt(totalOrdens)} ordens de produção`,
+    });
+  }
+
+  if (d.avarias) {
+    linhas.push({
+      indicador: "Avarias — total de volumes",
+      valor: fmtInt(d.avarias.total),
+      formula: "Soma de Quantidade (coluna Quantidade), não contagem de registros",
+      fonte: "Planilha de Avarias (Drive)",
+      observacao: `Custo: ${d.avarias.custo}${d.avarias.referenciaParcial ? " (parcial)" : ""}`,
+    });
+    d.avarias.meses.forEach((m) => {
+      linhas.push({
+        indicador: `  ${m.mes}`,
+        valor: fmtInt(m.qtd),
+        formula: "Soma de Quantidade do mês",
+        fonte: "Planilha de Avarias (Drive)",
+      });
+    });
+  }
+
+  if (d.pendentes) {
+    linhas.push({
+      indicador: "Pendências — tonelagem total",
+      valor: fmtTonDec(d.pendentes.totalTon),
+      formula: "Σ tonelagem pendente das ordens em aberto",
+      fonte: "PCP 004 — Pendências (Drive)",
+      observacao: `${fmtInt(d.pendentes.itens)} itens em aberto · média ${fmtTonDec(d.pendentes.mediaTon)}`,
+    });
+    d.pendentes.meses.forEach((m) => {
+      linhas.push({
+        indicador: `  ${m.mes}`,
+        valor: fmtTonDec(m.ton),
+        formula: "Σ tonelagem pendente do mês",
+        fonte: "PCP 004 — Pendências (Drive)",
+        observacao: `${fmtBrMax(m.pct, 0)}% · ${fmtInt(m.itens)} ordens${m.lotes ? ` · ${m.lotes} lotes` : ""}`,
+      });
+    });
+  }
+
+  if (d.reservados) {
+    const r = d.reservados;
+    linhas.push({
+      indicador: "Itens reservados — quantidade",
+      valor: fmtInt(r.totalQtd),
+      formula: "Σ qtd reservada de todos os itens",
+      fonte: "COMERCIAL 024 — Saldo de Itens com Reserva (Drive)",
+    });
+    linhas.push({
+      indicador: "Itens reservados — peso",
+      valor: fmtTonDec(r.totalTon),
+      formula: "peso reservado = qtd reservada × peso bruto do item",
+      fonte: "COMERCIAL 024 — Saldo de Itens com Reserva (Drive)",
+    });
+    linhas.push({
+      indicador: "Itens reservados — valor",
+      valor: fmtMoeda(r.totalValor),
+      formula: "valor reservado = qtd reservada × custo médio do item",
+      fonte: "COMERCIAL 024 — Saldo de Itens com Reserva (Drive)",
+      observacao: `${fmtBrMax(r.pctValor, 1)}% do valor do estoque`,
+    });
+  }
+
+  if (d.semReserva) {
+    linhas.push({
+      indicador: "Itens sem reserva — peso",
+      valor: fmtTonDec(d.semReserva.totalTon),
+      formula: "Σ peso dos itens sem reserva comercial",
+      fonte: "COMERCIAL 024 — Saldo de Itens com Reserva (Drive)",
+      observacao: fmtMoeda(d.semReserva.totalValor),
+    });
+  }
+
+  if (d.foraDeLinha) {
+    const f = d.foraDeLinha.posicaoForaDeLinha;
+    const e = d.foraDeLinha.posicaoEmLinha;
+    const t = d.foraDeLinha.posicaoTotal;
+    const pctPeso = t.pesoTon > 0 ? (f.pesoTon / t.pesoTon) * 100 : 0;
+    linhas.push({
+      indicador: "Fora de linha — peso",
+      valor: fmtTonDec(f.pesoTon),
+      formula: "Σ peso dos itens classificados como fora de linha",
+      fonte: "Posição de Estoque (classificação em linha/fora de linha)",
+      observacao: `${fmtInt(f.itens)} itens · ${fmtBrMax(pctPeso, 1)}% do peso total`,
+    });
+    linhas.push({
+      indicador: "Fora de linha — valor",
+      valor: fmtMoeda(f.valorEstoque),
+      formula: "Σ valor dos itens fora de linha (estimativa quando sem custo)",
+      fonte: "Posição de Estoque (Focco · estoque 001)",
+    });
+    linhas.push({
+      indicador: "Em linha — peso",
+      valor: fmtTonDec(e.pesoTon),
+      formula: "Σ peso dos itens classificados como em linha",
+      fonte: "Posição de Estoque (Focco · estoque 001)",
+      observacao: `${fmtInt(e.itens)} itens`,
+    });
+  }
+
+  if (d.saldoComparativo) {
+    const sc = d.saldoComparativo;
+    const c = sc.comparativo;
+    linhas.push({
+      indicador: "Saldo Full × Focco — acuracidade",
+      valor: `${fmtBrMax(c.pctAcuracia, 1)}%`,
+      formula: "itens com saldo exatamente igual ÷ itens em comum × 100",
+      fonte: "WF0112 (Full · estoque 112) × ESTOQUE 001 (Focco)",
+      observacao: `${fmtInt(c.qtdExata)} exatos de ${fmtInt(c.itensEmComum)} em comum`,
+    });
+    linhas.push({
+      indicador: "Saldo Full × Focco — só Full",
+      valor: fmtInt(c.itensSoFull),
+      formula: "itens que só existem no relatório WF0112 (peças/componentes)",
+      fonte: "WF0112 (Full · estoque 112)",
+    });
+    linhas.push({
+      indicador: "Saldo Full × Focco — só Focco",
+      valor: fmtInt(c.itensSoFocco),
+      formula: "itens que só existem na posição de estoque 001",
+      fonte: "ESTOQUE 001 (Focco)",
+    });
+    linhas.push({
+      indicador: "Saldo Full — itens e saldo",
+      valor: `${fmtInt(sc.full.itens)} itens · ${fmtInt(sc.full.saldo)} un`,
+      formula: "Σ Qtd. Atual do relatório WF0112 (somado por código)",
+      fonte: "WF0112 — Estoques (FullSoft WMS · estoque 112)",
+    });
+    linhas.push({
+      indicador: "Saldo Focco — itens e saldo",
+      valor: `${fmtInt(sc.focco.itens)} itens · ${fmtInt(sc.focco.saldo)} un`,
+      formula: "Σ SALDO da posição de estoque 001",
+      fonte: "ESTOQUE 001 — Posição de Estoque (Focco)",
+      observacao: fmtMoeda(sc.focco.valor),
+    });
+  }
+
+  if (d.paletas && d.paletas.totalPaletes > 0) {
+    linhas.push({
+      indicador: "Paletes em estoque",
+      valor: fmtInt(d.paletas.totalPaletes),
+      formula: "Σ paletes por tamanho (P, M, G, GG) dos itens mapeados",
+      fonte: "Posição de Estoque (Focco · estoque 001)",
+      observacao: `${fmtInt(d.paletas.totalItens)} itens mapeados`,
+    });
+    d.paletas.porTamanho.forEach((t) => {
+      linhas.push({
+        indicador: `  Tamanho ${t.tamanho}`,
+        valor: `${fmtInt(t.paletes)} paletes`,
+        formula: "paletes do tamanho = Σ ceil(saldo ÷ un por palete)",
+        fonte: "Posição de Estoque (Focco · estoque 001)",
+        observacao: `${fmtInt(t.und)} un · ${fmtInt(t.itens)} itens`,
+      });
+    });
+  }
+
+  const mes = (d.mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0);
+  if (mes.length) {
+    const rec = mes.reduce((s, m) => s + m.recebido, 0);
+    const car = mes.reduce((s, m) => s + m.carregado, 0);
+    const saude = rec > 0 ? (car / rec) * 100 : 0;
+    linhas.push({
+      indicador: "Saúde do estoque",
+      valor: `${fmtBrMax(saude, 1)}%`,
+      formula: "carregado ÷ recebido × 100 (acumulado do período)",
+      fonte: "Toneladas Mensal + PESO RECEBIDO",
+      observacao: `Recebido: ${fmtTonDec(rec)} · Carregado: ${fmtTonDec(car)}`,
+    });
+    mes.forEach((m) => {
+      linhas.push({
+        indicador: `  ${m.mes}`,
+        valor: `rec. ${fmtBrMax(m.recebido, 1)} t · carr. ${fmtBrMax(m.carregado, 1)} t`,
+        formula: "recebido e carregado somados do mês",
+        fonte: "Toneladas Mensal / Gerenciamento de Carregamento",
+      });
+    });
+  }
+
+  if (d.valorFaturado) {
+    linhas.push({
+      indicador: "Valor faturado (referência)",
+      valor: fmtMoeda(d.valorFaturado),
+      formula: "Consultado via API /api/valor-faturado (Supabase)",
+      fonte: "Supabase — store de valor faturado",
+    });
+  }
+
+  return linhas;
+}
 
 function Secao({ numero, titulo, children }: { numero: number; titulo: string; children: React.ReactNode }) {
   return (
@@ -274,6 +333,7 @@ export default function RelatorioAuditoria({ dados, onFechar }: { dados: VideoRe
     ? new Date(dados.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
     : null;
   const planilhas = dados.sincronizacao?.planilhas ?? [];
+  const calculos = montarCalculos(dados);
 
   return createPortal(
     <div onClick={(e) => e.stopPropagation()} className="relatorio-lopas-root fixed inset-0 z-[200] overflow-y-auto bg-neutral-100 text-neutral-900">
@@ -287,74 +347,49 @@ export default function RelatorioAuditoria({ dados, onFechar }: { dados: VideoRe
       </div>
 
       <article className="mx-auto my-4 max-w-3xl bg-white p-8 shadow sm:p-10">
-        {/* Cabeçalho com o trevo */}
         <header className="flex items-center gap-4 border-b-2 border-[#73ae37] pb-3">
           <img src="/lopas-logo-clover.png" alt="Lopas — Trevo" className="size-14" />
           <div>
-            <h1 className="font-serif text-2xl font-bold">Relatório de Auditoria Técnica</h1>
+            <h1 className="font-serif text-2xl font-bold">Relatório de Auditoria — Dados Atuais</h1>
             <p className="text-xs text-neutral-600">
               Painel de Estoque · CD Lopas 2026 · gerado em {agora}
             </p>
           </div>
         </header>
 
-        {/* Sumário */}
         <p className="mt-5 text-sm leading-relaxed text-neutral-800">
-          Este documento descreve, de forma transparente e verificável, cada cálculo
-          exibido no painel, a fonte de onde cada dado provém, a fórmula aplicada, o
-          horário de atualização e as métricas de acuracidade conhecidas. O objetivo é
-          eliminar qualquer dúvida sobre a autenticidade das informações e demonstrar
-          responsabilidade no tratamento dos dados do Centro de Distribuição.
+          Este documento lista cada indicador exibido no painel com o{" "}
+          <strong>valor atual</strong>, a <strong>fórmula</strong> aplicada e a{" "}
+          <strong>fonte</strong> de onde o dado provém. Todos os valores abaixo
+          correspondem aos dados carregados no momento da geração.
+          {sync ? ` Última sincronização: ${sync}.` : ""}
         </p>
 
-        {/* 1. Fontes de dados */}
-        <Secao numero={1} titulo="Fontes de dados">
-          <p className="mb-3 text-xs leading-snug text-neutral-600">
-            O painel consome dados de três sistemas distintos, todos acessados via
-            pasta do Google Drive do CD. A sincronização é automática.
-          </p>
-          <div className="space-y-3">
-            {FONTES.map((f) => (
-              <div key={f.nome} className="rounded-md border-l-2 border-[#73ae37] bg-neutral-50 px-3 py-2">
-                <p className="text-xs font-bold text-neutral-900">{f.nome}</p>
-                <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#4d7a1f]">
-                  Sistema: {f.sistema}
-                </p>
-                <p className="mt-1 text-[11px] leading-snug text-neutral-700">{f.descricao}</p>
-                <p className="mt-1 text-[10px] leading-snug text-neutral-500">
-                  <strong>Atualização:</strong> {f.atualizacao}
-                </p>
-              </div>
-            ))}
-          </div>
-        </Secao>
-
-        {/* 2. Cálculos e fórmulas */}
-        <Secao numero={2} titulo="Cálculos e fórmulas">
-          <p className="mb-3 text-xs leading-snug text-neutral-600">
-            Cada indicador do painel é derivado das fontes acima por meio das fórmulas
-            documentadas a seguir. Nenhum valor é estimado sem a fonte correspondente.
-          </p>
+        <Secao numero={1} titulo="Indicadores atuais — valor, fórmula e fonte">
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="border-b-2 border-neutral-300 bg-neutral-50">
                 <th className="py-1.5 pr-3 text-left font-bold text-neutral-700">Indicador</th>
+                <th className="py-1.5 pr-3 text-right font-bold text-neutral-700">Valor atual</th>
                 <th className="py-1.5 pr-3 text-left font-bold text-neutral-700">Fórmula</th>
                 <th className="py-1.5 text-left font-bold text-neutral-700">Fonte</th>
               </tr>
             </thead>
             <tbody>
-              {CALCULOS.map((c, i) => (
+              {calculos.map((c, i) => (
                 <tr key={i} className="border-b border-neutral-100 align-top">
                   <td className="py-1.5 pr-3 font-semibold text-neutral-900">
-                    {c.item}
+                    {c.indicador}
                     {c.observacao && (
                       <p className="mt-0.5 font-normal text-[10px] leading-snug text-neutral-500">
                         {c.observacao}
                       </p>
                     )}
                   </td>
-                  <td className="py-1.5 pr-3 font-mono text-[11px] leading-snug text-neutral-800">{c.formula}</td>
+                  <td className="py-1.5 pr-3 text-right font-mono font-bold tabular-nums text-[#4d7a1f] whitespace-nowrap">
+                    {c.valor}
+                  </td>
+                  <td className="py-1.5 pr-3 font-mono text-[11px] leading-snug text-neutral-700">{c.formula}</td>
                   <td className="py-1.5 text-[11px] leading-snug text-neutral-600">{c.fonte}</td>
                 </tr>
               ))}
@@ -362,23 +397,19 @@ export default function RelatorioAuditoria({ dados, onFechar }: { dados: VideoRe
           </table>
         </Secao>
 
-        {/* 3. Horários de atualização */}
-        <Secao numero={3} titulo="Horários de atualização e sincronização">
+        <Secao numero={2} titulo="Horários de atualização">
           <div className="space-y-2 text-xs leading-snug text-neutral-800">
             <p>
-              <strong className="text-[#4d7a1f]">Sincronização automática:</strong> o painel
-              verifica a pasta do Google Drive a cada <strong>15 segundos</strong> em segundo
-              plano e a cada chamada do endpoint de sincronização (com intervalo mínimo de 10 s).
+              <strong className="text-[#4d7a1f]">Sincronização automática:</strong> a cada{" "}
+              <strong>15 segundos</strong> com a pasta do Google Drive.
             </p>
             <p>
-              <strong className="text-[#4d7a1f]">Selo "Atualizado":</strong> o horário exibido no
-              topo do painel corresponde à <strong>modificação mais recente</strong> entre as
-              planilhas da pasta — não ao horário da checagem. Quando a modificação não traz
-              hora, o sistema usa a meia-noite do dia no fuso de São Paulo (UTC−3).
+              <strong className="text-[#4d7a1f]">Selo "Atualizado":</strong> mostra a{" "}
+              <strong>modificação mais recente</strong> entre as planilhas — não o horário da checagem.
             </p>
             {sync && (
               <p>
-                <strong className="text-[#4d7a1f]">Última sincronização registrada:</strong> {sync}.
+                <strong className="text-[#4d7a1f]">Última sincronização:</strong> {sync}.
               </p>
             )}
             {planilhas.length > 0 && (
@@ -389,84 +420,41 @@ export default function RelatorioAuditoria({ dados, onFechar }: { dados: VideoRe
                     <li key={p.nome} className="text-[11px] text-neutral-600">
                       • {p.nome}
                       {p.modificado && (
-                        <span className="text-neutral-400"> — modificado em {new Date(p.modificado).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}</span>
+                        <span className="text-neutral-400">
+                          {" "}— modificado em {new Date(p.modificado).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })}
+                        </span>
                       )}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            <p>
-              <strong className="text-[#4d7a1f]">Dados estáticos:</strong> QLP · CD e Produtividade
-              foram extraídos manualmente em 07/10/2026 e não são atualizados automaticamente.
-              O carregado mensal é estático e requer reextração para atualização.
-            </p>
           </div>
         </Secao>
 
-        {/* 4. Acuracidade */}
-        <Secao numero={4} titulo="Métricas de acuracidade">
-          <p className="mb-3 text-xs leading-snug text-neutral-600">
-            As métricas abaixo refletem o grau de confiança de cada bloco de dados.
-            Onde o casamento não é perfeito, o painel indica a lacuna e não oculta a
-            limitação.
-          </p>
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="border-b-2 border-neutral-300 bg-neutral-50">
-                <th className="py-1.5 pr-3 text-left font-bold text-neutral-700">Métrica</th>
-                <th className="py-1.5 pr-3 text-left font-bold text-neutral-700">Valor</th>
-                <th className="py-1.5 text-left font-bold text-neutral-700">Detalhe</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ACURACIDADE.map((a, i) => (
-                <tr key={i} className="border-b border-neutral-100 align-top">
-                  <td className="py-1.5 pr-3 font-semibold text-neutral-900">{a.metrica}</td>
-                  <td className="py-1.5 pr-3 font-mono font-bold text-[#4d7a1f]">{a.valor}</td>
-                  <td className="py-1.5 text-[11px] leading-snug text-neutral-600">{a.detalhe}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Secao>
-
-        {/* 5. Responsabilidade */}
-        <Secao numero={5} titulo="Responsabilidade e transparência">
+        <Secao numero={3} titulo="Responsabilidade e transparência">
           <div className="space-y-2 text-xs leading-relaxed text-neutral-800">
             <p>
               <strong className="text-[#4d7a1f]">Origem verificável.</strong> Todo número
-              exibido no painel é rastreável a uma planilha específica da pasta do Drive ou
-              a um relatório exportado do FullSoft ou Focco. Nenhum indicador é fabricado ou
-              interpolado sem fonte.
+              exibido é rastreável a uma planilha da pasta do Drive ou relatório do
+              FullSoft/Focco. Nenhum valor é fabricado sem fonte.
             </p>
             <p>
               <strong className="text-[#4d7a1f]">Limitações declaradas.</strong> O painel
-              rotula explicitamente o que é parcial — custo de avarias, meses com base
-              zerada, casamento de nomes incompleto, dados estáticos. O usuário é informado
-              da lacuna, nunca levado a crer que o dado é completo quando não é.
+              rotula o que é parcial — custo de avarias, meses com base zerada, dados
+              estáticos. O usuário é informado da lacuna.
             </p>
             <p>
-              <strong className="text-[#4d7a1f]">Fuso horário.</strong> Todos os horários são
-              exibidos no fuso de São Paulo (UTC−3), o mesmo do CD. O container do painel
-              roda configurado para este fuso para que datas sem hora não voltem um dia.
-            </p>
-            <p>
-              <strong className="text-[#4d7a1f]">Sem Supabase válido.</strong> Quando a chave
-              de serviço do Supabase não está configurada, as APIs falham de forma elegante
-              e o painel exibe os dados de exemplo embutidos (initialSyncData) — nunca
-              simula dados ao vivo.
+              <strong className="text-[#4d7a1f]">Fuso horário.</strong> Horários em Brasília
+              (UTC−3), mesmo fuso do CD.
             </p>
           </div>
         </Secao>
 
-        {/* Rodapé */}
         <footer className="mt-8 border-t-2 border-[#73ae37] pt-3">
           <p className="text-[10px] leading-snug text-neutral-500">
-            Documento gerado automaticamente pelo painel de estoque do CD Lopas em {agora}.
-            {sync ? ` Última sincronização com o Drive: ${sync}.` : ""}
-            {" "}Horários em Brasília (UTC−3). Este relatório descreve a metodologia vigente
-            na data de geração e pode ser reimpresso a qualquer momento para conferência.
+            Documento gerado em {agora}.{sync ? ` Dados sincronizados em ${sync}.` : ""}{" "}
+            Horários em Brasília (UTC−3).
           </p>
           <p className="mt-2 text-center text-[11px] font-semibold tracking-widest text-[#73ae37] uppercase">
             Móveis Lopas · Movidos pela Fé
