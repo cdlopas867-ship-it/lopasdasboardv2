@@ -287,6 +287,12 @@ export default function VideoResumoDashboard({
         {/* Topo — última sincronização + controle de saída */}
         <div className="flex items-center justify-end gap-3 px-5 pt-3 sm:px-8">
 
+          <a
+            href="/mobile"
+            className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20"
+          >
+            Jogo
+          </a>
           {onLogout && (
             <button
               type="button"
