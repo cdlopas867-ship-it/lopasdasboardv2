@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
-import type { SaldoComparativo } from "@/data/saldo-comparativo";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 import ResumoBg from "./ResumoBg";
 import RelatorioLopas from "./RelatorioLopas";
@@ -106,7 +105,6 @@ type Props = {
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
-  saldoComparativo?: SaldoComparativo | null;
   sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   onFechar?: () => void;
   onLogout?: () => void;
@@ -129,7 +127,6 @@ export default function VideoResumoDashboard({
   valorFaturado,
   foraDeLinha,
   resumo,
-  saldoComparativo,
   paletas,
   recebimentoSemanal,
   producaoSemanal,
@@ -144,9 +141,6 @@ export default function VideoResumoDashboard({
   const [relatorio, setRelatorio] = useState(false);
   const cenaAnteriorRef = useRef(0);
 
-
-  /* Troca de cena: guarda a cena anterior para o fade de saída e dispara
-     as animações da nova cena */
   useEffect(() => {
     const anterior = cenaAnteriorRef.current;
     if (anterior !== cena) {
@@ -162,7 +156,6 @@ export default function VideoResumoDashboard({
     };
   }, [cena]);
 
-  /* Reprodução automática — avança as cenas sozinho e reinicia no final (loop) */
   useEffect(() => {
     if (pausado) return;
     const t = setTimeout(() => {
@@ -171,7 +164,6 @@ export default function VideoResumoDashboard({
     return () => clearTimeout(t);
   }, [cena, pausado]);
 
-  /* Teclado: setas navegam, espaço pausa, Esc reinicia */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setCena(0);
@@ -179,7 +171,6 @@ export default function VideoResumoDashboard({
         e.preventDefault();
         setPausado((p) => !p);
       }
-      /* Na cena 0 o carrossel de cards trata as setas; nas demais, setas navegam cenas */
       if (cena !== 0) {
         if (e.key === "ArrowRight") setCena((s) => Math.min(s + 1, TOTAL_CENAS - 1));
         if (e.key === "ArrowLeft") setCena((s) => Math.max(s - 1, 0));
@@ -189,7 +180,6 @@ export default function VideoResumoDashboard({
     return () => window.removeEventListener("keydown", onKey);
   }, [cena]);
 
-  /* Trava o scroll enquanto o vídeo está aberto */
   useEffect(() => {
     const anterior = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -198,7 +188,6 @@ export default function VideoResumoDashboard({
     };
   }, []);
 
-  /* Payload único do relatório impresso e do Excel analítico. */
   const dadosPainel: VideoResumoProps = {
     kpis,
     unidades,
@@ -216,7 +205,6 @@ export default function VideoResumoDashboard({
     recebimentoSemanal,
     producaoSemanal,
     resumo,
-    saldoComparativo,
     sincronizacao,
   };
 
@@ -237,7 +225,6 @@ export default function VideoResumoDashboard({
     recebimentoSemanal,
     producaoSemanal,
     resumo,
-    saldoComparativo,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
     onPausar: () => setPausado(true),
@@ -258,13 +245,10 @@ export default function VideoResumoDashboard({
         else setPausado((p) => !p);
       }}
     >
-      {/* Cada cena recebe uma foto da Lopas com movimento e transição suave. */}
       <ResumoBg cena={cena} />
-      {/* Camadas de profundidade para legibilidade */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#4a6b20]/75 via-[#3a521a]/60 to-[#2e3f14]/85" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.35)_100%)]" />
 
-      {/* Dizeres da marca — watermark no canto inferior esquerdo */}
       <div className="pointer-events-none absolute bottom-8 left-4 z-[1] sm:bottom-10 sm:left-10">
         <p className="font-serif text-xs tracking-tight text-white/12 sm:text-lg sm:tracking-tight">
           Controle de Estoque CD Lopas
@@ -278,24 +262,20 @@ export default function VideoResumoDashboard({
         <RelatorioLopas dados={dadosPainel} onFechar={() => setRelatorio(false)} />
       )}
 
-      {/* Conteúdo */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-        {/* Topo — última sincronização + controle de saída */}
         <div className="flex items-center justify-end gap-3 px-5 pt-3 sm:px-8">
-
           {onLogout && (
             <button
               type="button"
               onClick={onLogout}
               aria-label="Sair"
-              className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/20"
+              className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/15"
             >
               Sair
             </button>
           )}
         </div>
 
-        {/* Cena atual + cena que sai como irmãos para evitar herança de filtros */}
         <div className="relative flex min-h-0 flex-grow items-center justify-center overflow-hidden px-4 py-2 sm:px-8">
           <div key={cena} className="video-entra absolute inset-0 overflow-y-auto px-4 py-2 pb-20 sm:px-8">
             <div className="flex min-h-full items-center justify-center">
@@ -311,7 +291,6 @@ export default function VideoResumoDashboard({
           )}
         </div>
 
-        {/* Rodapé mínimo */}
         <div className="flex items-center justify-between px-6 pb-2 text-[9px] font-bold tracking-[0.2em] text-white/45 uppercase sm:px-8">
           <span>{pausado ? "Pausado · espaço retoma" : "Reprodução automática · espaço pausa"}</span>
           <span className="font-mono">
@@ -320,8 +299,6 @@ export default function VideoResumoDashboard({
         </div>
       </div>
 
-      {/* Preload das imagens de avaria — escondido, baixa todas as fotos
-          assim que o vídeo inicia para que a Cena 7 já as tenha em cache. */}
       <div aria-hidden className="pointer-events-none absolute size-0 overflow-hidden opacity-0">
         {TODAS_IMAGENS_AVARIA.map((src) => (
           <img key={src} src={src} alt="" loading="eager" />
@@ -330,3 +307,619 @@ export default function VideoResumoDashboard({
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+မာ
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+n
+
+
+
+n
+
+
+
