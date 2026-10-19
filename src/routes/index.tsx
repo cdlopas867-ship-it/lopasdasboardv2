@@ -11,6 +11,7 @@ import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import LoadingApresentacao from "@/components/LoadingApresentacao";
 import MiniJanelaEstoque from "@/components/MiniJanelaEstoque";
 import { NotificacaoAtualizacao } from "@/components/NotificacaoAtualizacao";
+import { usePushNotification } from "@/hooks/use-push-notification";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
 import { normalizarDiasExibicao } from "@/lib/recebimento";
@@ -25,6 +26,7 @@ type Painel = typeof initialSyncData & Record<string, unknown>;
 function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();
   const { dados, loaded, notificacao, dispensarNotificacao } = useDadosSync<Painel>(initialSyncData as Painel);
+  usePushNotification();
   const [valorFaturado, setValorFaturado] = useState<number>();
   useEffect(() => { if (pronto && !autenticado) navigate({ to: "/login", replace: true }); }, [pronto, autenticado, navigate]);
   useEffect(() => { if (autenticado) fetch("/api/valor-faturado").then(r => r.json()).then(d => setValorFaturado(d.valor)).catch(() => {}); }, [autenticado]);
