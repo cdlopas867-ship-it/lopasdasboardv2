@@ -48,13 +48,130 @@ export default function RelatorioAuditoria({ dados, onFechar }: { dados: VideoRe
         </header>
 
         <p className="mt-5 text-sm leading-relaxed text-neutral-800">
-          Este documento apresenta os horários de atualização e a responsabilidade
-          do painel com as informações exibidas. Todos os valores correspondem aos
-          dados carregados no momento da geração.
+          Este documento lista todas as planilhas utilizadas pelo painel e os dados
+          que cada uma fornece, além dos horários de atualização e da responsabilidade
+          com as informações exibidas.
           {sync ? ` Última sincronização: ${sync}.` : ""}
         </p>
 
-        <Secao numero={1} titulo="Horários de atualização">
+        <Secao numero={1} titulo="Planilhas utilizadas e dados de cada uma">
+          <div className="space-y-4 text-xs leading-relaxed text-neutral-800">
+            <p className="font-semibold text-[#4d7a1f]">Planilhas do Google Drive (sincronização automática a cada 15 s)</p>
+            <table className="w-full border-collapse border border-neutral-300 text-[11px]">
+              <thead>
+                <tr className="bg-[#f4f6f3] text-left">
+                  <th className="border border-neutral-300 px-2 py-1 font-semibold">Planilha</th>
+                  <th className="border border-neutral-300 px-2 py-1 font-semibold">Dados fornecidos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">ESTOQUE 001 — Posição de Estoque<br /><span className="text-neutral-500">(estoque NN.xlsx)</span></td>
+                  <td className="border border-neutral-300 px-2 py-1">Peso e valor em estoque, itens ativos, ocupação do CD, itens fora de linha, peso unitário (PESO LIQ UN) para o comparativo Full × Focco</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">PCP 003 — Análise de Realização Total<br /><span className="text-neutral-500">(produção NN.xlsx)</span></td>
+                  <td className="border border-neutral-300 px-2 py-1">Produção da semana: produzido (QTDE ENTREGUE), pendente (previsto − produzido), peso previsto e realizado, ordens de produção</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">PESO RECEBIDO POR PERÍODO</td>
+                  <td className="border border-neutral-300 px-2 py-1">Recebimento diário (peso e quantidade recebida por data) — cruzado com a produção da semana</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">PCP 004 — Pendências</td>
+                  <td className="border border-neutral-300 px-2 py-1">Tonelagem e itens pendentes das ordens de produção em aberto</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">WF0112 — Estoques<br /><span className="text-neutral-500">(FullSoft WMS · estoque 112)</span></td>
+                  <td className="border border-neutral-300 px-2 py-1">Saldo do Full (Qtd. Atual por item/endereço) para o comparativo de acuracidade Full × Focco</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">COMERCIAL 024 — Saldo de Itens com Reserva</td>
+                  <td className="border border-neutral-300 px-2 py-1">Itens reservados: quantidade, valor (qtd × custo médio) e % do valor do estoque</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">Planilha de Avarias</td>
+                  <td className="border border-neutral-300 px-2 py-1">Volumes danificados: total (Soma de Quantidade), custo, breakdown mensal e por motivo</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">Toneladas Mensal / Gerenciamento de Carregamento</td>
+                  <td className="border border-neutral-300 px-2 py-1">Carregado mensal (toneladas por mês) — usado na saúde do estoque e no comparativo de produtividade</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p className="font-semibold text-[#4d7a1f] pt-2">Cópias locais de fallback (public/planilhas/) — usadas só se o Drive falhar</p>
+            <table className="w-full border-collapse border border-neutral-300 text-[11px]">
+              <thead>
+                <tr className="bg-[#f4f6f3] text-left">
+                  <th className="border border-neutral-300 px-2 py-1 font-semibold">Arquivo</th>
+                  <th className="border border-neutral-300 px-2 py-1 font-semibold">Dados fornecidos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td className="border border-neutral-300 px-2 py-1 font-medium">estoque.xlsx</td><td className="border border-neutral-300 px-2 py-1">Posição de estoque (fallback da ESTOQUE 001)</td></tr>
+                <tr><td className="border border-neutral-300 px-2 py-1 font-medium">producao.xlsx</td><td className="border border-neutral-300 px-2 py-1">PCP 003 — produção (fallback)</td></tr>
+                <tr><td className="border border-neutral-300 px-2 py-1 font-medium">peso-recebido.xlsx</td><td className="border border-neutral-300 px-2 py-1">PESO RECEBIDO POR PERÍODO (fallback)</td></tr>
+                <tr><td className="border border-neutral-300 px-2 py-1 font-medium">reservados.xlsx</td><td className="border border-neutral-300 px-2 py-1">COMERCIAL 024 — itens reservados (fallback)</td></tr>
+                <tr><td className="border border-neutral-300 px-2 py-1 font-medium">avarias.xlsx</td><td className="border border-neutral-300 px-2 py-1">Avarias (fallback)</td></tr>
+                <tr><td className="border border-neutral-300 px-2 py-1 font-medium">carregado.xlsx</td><td className="border border-neutral-300 px-2 py-1">Carregado mensal (fallback)</td></tr>
+                <tr><td className="border border-neutral-300 px-2 py-1 font-medium">ocupacao-cd.xlsx</td><td className="border border-neutral-300 px-2 py-1">Ocupação do CD (fonte autoritativa quando existe)</td></tr>
+                <tr><td className="border border-neutral-300 px-2 py-1 font-medium">paletes.xlsx</td><td className="border border-neutral-300 px-2 py-1">Resumo de paletes</td></tr>
+                <tr><td className="border border-neutral-300 px-2 py-1 font-medium">estoque-em-linha.xlsx</td><td className="border border-neutral-300 px-2 py-1">Estoque em linha</td></tr>
+              </tbody>
+            </table>
+
+            <p className="font-semibold text-[#4d7a1f] pt-2">Dados estáticos (src/data/ — não lidos automaticamente pelo Drive)</p>
+            <table className="w-full border-collapse border border-neutral-300 text-[11px]">
+              <thead>
+                <tr className="bg-[#f4f6f3] text-left">
+                  <th className="border border-neutral-300 px-2 py-1 font-semibold">Origem</th>
+                  <th className="border border-neutral-300 px-2 py-1 font-semibold">Dados fornecidos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">CD - QLP.xlsx (aba Base)<br /><span className="text-neutral-500">→ qlp-cd.ts</span></td>
+                  <td className="border border-neutral-300 px-2 py-1">Lotação de pessoal (QLP · CD): 252 registros por classe (Estoque, Carregamento, Liderança, Treinamento, Afastamento, Transferência, Desligamento), cidade, cargo, função, turma, setor, tempo de casa</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">PRODUTIVIDADE POR COLABORADOR<br /><span className="text-neutral-500">(4 planilhas: separação manual, empilhadeira, recebimento, movimentação) → produtividade.ts</span></td>
+                  <td className="border border-neutral-300 px-2 py-1">Produtividade por colaborador: tarefas, peso (kg), caixas, cargo e turma (casados com o QLP), totais por tipo de atividade e turma</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">Toneladas Mensal<br /><span className="text-neutral-500">→ carregado-mensal.ts</span></td>
+                  <td className="border border-neutral-300 px-2 py-1">Carregado mensal (jan–set/2026) — fallback estático quando o Drive não entrega</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">Valor faturado<br /><span className="text-neutral-500">→ valor-faturado.ts</span></td>
+                  <td className="border border-neutral-300 px-2 py-1">Valor faturado de referência (média quando a API do Supabase não responde)</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p className="font-semibold text-[#4d7a1f] pt-2">Supabase (API — quando configurado)</p>
+            <table className="w-full border-collapse border border-neutral-300 text-[11px]">
+              <thead>
+                <tr className="bg-[#f4f6f3] text-left">
+                  <th className="border border-neutral-300 px-2 py-1 font-semibold">Store</th>
+                  <th className="border border-neutral-300 px-2 py-1 font-semibold">Dados fornecidos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">/api/sync-data</td>
+                  <td className="border border-neutral-300 px-2 py-1">Snapshot do payload completo do painel (histórico de sincronização)</td>
+                </tr>
+                <tr>
+                  <td className="border border-neutral-300 px-2 py-1 font-medium">/api/valor-faturado</td>
+                  <td className="border border-neutral-300 px-2 py-1">Valor faturado atualizado (quando o Supabase está ativo)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Secao>
+
+        <Secao numero={2} titulo="Horários de atualização">
           <div className="space-y-2 text-xs leading-snug text-neutral-800">
             <p>
               <strong className="text-[#4d7a1f]">Sincronização automática:</strong> a cada{" "}
@@ -89,7 +206,7 @@ export default function RelatorioAuditoria({ dados, onFechar }: { dados: VideoRe
           </div>
         </Secao>
 
-        <Secao numero={2} titulo="Responsabilidade e transparência">
+        <Secao numero={3} titulo="Responsabilidade e transparência">
           <div className="space-y-2 text-xs leading-relaxed text-neutral-800">
             <p>
               <strong className="text-[#4d7a1f]">Origem verificável.</strong> Todo número
