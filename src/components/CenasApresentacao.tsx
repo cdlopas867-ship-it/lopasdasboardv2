@@ -13,7 +13,6 @@ import CenaReservados from "@/components/CenaReservados";
 import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
-import CenaSaldoComparativo from "@/components/CenaSaldoComparativo";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
 import { exportarExcelSaldo } from "@/lib/export-excel-saldo";
 
@@ -372,13 +371,8 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 11 — Controle de saldo Full × Focco */}
+      {/* Cena 11 — encerramento */}
       {cena === 9 && (
-        <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} reservados={reservados} />
-      )}
-
-      {/* Cena 12 — encerramento */}
-      {cena === 10 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
