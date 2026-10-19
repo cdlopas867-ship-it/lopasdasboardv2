@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, X } from "lucide-react";
+import { Bell, X } from "lucide-react";
 
 /* Banner de notificação de atualização — estilo WhatsApp Web.
  *
@@ -28,10 +28,10 @@ export function NotificacaoAtualizacao({
     setMostrar(false);
   }, [notificacao]);
 
-  /* Badge no título da aba — "(1) Painel..." enquanto a notificação está visível */
+  /* Símbolo no título da aba — "🔔 Painel..." enquanto a notificação está visível */
   useEffect(() => {
     if (notificacao?.visivel) {
-      document.title = `(1) ${TITULO_BASE}`;
+      document.title = `🔔 ${TITULO_BASE}`;
       return () => { document.title = TITULO_BASE; };
     }
     document.title = TITULO_BASE;
@@ -59,7 +59,7 @@ export function NotificacaoAtualizacao({
     >
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-lg shadow-emerald-900/10 dark:border-emerald-800 dark:bg-emerald-950">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
-          <CheckCircle2 className="h-5 w-5" />
+          <Bell className="notif-salto h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">

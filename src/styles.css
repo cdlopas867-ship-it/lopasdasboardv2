@@ -1297,3 +1297,15 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
   transform-origin: center;
   animation: qlp-pulso 2.6s ease-out infinite;
 }
+
+/* Notificação de atualização — ícone "pula" para chamar atenção. */
+@keyframes notif-salto {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  20% { transform: translateY(-6px) rotate(-12deg); }
+  40% { transform: translateY(0) rotate(10deg); }
+  60% { transform: translateY(-4px) rotate(-6deg); }
+  80% { transform: translateY(0) rotate(4deg); }
+}
+.notif-salto {
+  animation: notif-salto 1.2s ease-in-out infinite;
+}
