@@ -38,13 +38,11 @@ export default function CenaTonelagemEstoque({ anim, tonAtual }: Props) {
   const plotTop = 28;
   const plotBottom = 126;
   const plotH = plotBottom - plotTop;
-  const startX = 24;
-  const endX = 684;
-  const stepX = (endX - startX) / (dados.length - 1);
+  const colW = vbW / dados.length;
   const range = maxTon - minTon || 1;
 
   const pts = dados.map((d, i) => ({
-    x: startX + i * stepX,
+    x: colW * (i + 0.5),
     y: plotBottom - ((d.ton - minTon) / range) * plotH,
   }));
 

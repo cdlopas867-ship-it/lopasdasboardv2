@@ -241,7 +241,6 @@ export default function VideoResumoDashboard({
     recebimentoSemanal,
     producaoSemanal,
     resumo,
-    saldoComparativo,
     comparativoCcr,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },

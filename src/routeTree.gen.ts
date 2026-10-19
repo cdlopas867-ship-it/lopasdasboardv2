@@ -25,6 +25,8 @@ import { Route as ApiSyncEventsRouteImport } from './routes/api/sync-events'
 import { Route as ApiSyncReloadRouteImport } from './routes/api/sync-reload'
 import { Route as ApiValorFaturadoRouteImport } from './routes/api/valor-faturado'
 import { Route as ApiViagensRouteImport } from './routes/api/viagens'
+import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
+import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -106,6 +108,16 @@ const ApiViagensRoute = ApiViagensRouteImport.update({
   path: '/api/viagens',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPushPublicKeyRoute = ApiPushPublicKeyRouteImport.update({
+  id: '/api/push/public-key',
+  path: '/api/push/public-key',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPushSubscribeRoute = ApiPushSubscribeRouteImport.update({
+  id: '/api/push/subscribe',
+  path: '/api/push/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -124,6 +136,8 @@ export interface FileRoutesByFullPath {
   '/api/sync-reload': typeof ApiSyncReloadRoute
   '/api/valor-faturado': typeof ApiValorFaturadoRoute
   '/api/viagens': typeof ApiViagensRoute
+  '/api/push/public-key': typeof ApiPushPublicKeyRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -142,6 +156,8 @@ export interface FileRoutesByTo {
   '/api/sync-reload': typeof ApiSyncReloadRoute
   '/api/valor-faturado': typeof ApiValorFaturadoRoute
   '/api/viagens': typeof ApiViagensRoute
+  '/api/push/public-key': typeof ApiPushPublicKeyRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -161,6 +177,8 @@ export interface FileRoutesById {
   '/api/sync-reload': typeof ApiSyncReloadRoute
   '/api/valor-faturado': typeof ApiValorFaturadoRoute
   '/api/viagens': typeof ApiViagensRoute
+  '/api/push/public-key': typeof ApiPushPublicKeyRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -181,6 +199,8 @@ export interface FileRouteTypes {
     | '/api/sync-reload'
     | '/api/valor-faturado'
     | '/api/viagens'
+    | '/api/push/public-key'
+    | '/api/push/subscribe'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -199,6 +219,8 @@ export interface FileRouteTypes {
     | '/api/sync-reload'
     | '/api/valor-faturado'
     | '/api/viagens'
+    | '/api/push/public-key'
+    | '/api/push/subscribe'
   id:
     | '__root__'
     | '/'
@@ -217,6 +239,8 @@ export interface FileRouteTypes {
     | '/api/sync-reload'
     | '/api/valor-faturado'
     | '/api/viagens'
+    | '/api/push/public-key'
+    | '/api/push/subscribe'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -236,6 +260,8 @@ export interface RootRouteChildren {
   ApiSyncReloadRoute: typeof ApiSyncReloadRoute
   ApiValorFaturadoRoute: typeof ApiValorFaturadoRoute
   ApiViagensRoute: typeof ApiViagensRoute
+  ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
+  ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -352,6 +378,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiViagensRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/push/public-key': {
+      id: '/api/push/public-key'
+      path: '/api/push/public-key'
+      fullPath: '/api/push/public-key'
+      preLoaderRoute: typeof ApiPushPublicKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/subscribe': {
+      id: '/api/push/subscribe'
+      path: '/api/push/subscribe'
+      fullPath: '/api/push/subscribe'
+      preLoaderRoute: typeof ApiPushSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -372,6 +412,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSyncReloadRoute: ApiSyncReloadRoute,
   ApiValorFaturadoRoute: ApiValorFaturadoRoute,
   ApiViagensRoute: ApiViagensRoute,
+  ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
+  ApiPushSubscribeRoute: ApiPushSubscribeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

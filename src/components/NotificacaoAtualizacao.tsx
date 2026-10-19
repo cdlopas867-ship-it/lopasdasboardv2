@@ -6,7 +6,10 @@ import { CheckCircle2, X } from "lucide-react";
  * Quando o painel recebe novos dados da planilha do Drive, este banner
  * desliza do topo e fica visível até o usuário dispensar (não some sozinho,
  * como um toast). Mostra o horário em que a atualização chegou.
+ * Também adiciona um badge "(1)" no título da aba enquanto visível.
  */
+const TITULO_BASE = "Painel de Estoque · Lopas 2026";
+
 export function NotificacaoAtualizacao({
   notificacao,
   onDispensar,
@@ -23,6 +26,15 @@ export function NotificacaoAtualizacao({
       return () => cancelAnimationFrame(t);
     }
     setMostrar(false);
+  }, [notificacao]);
+
+  /* Badge no título da aba — "(1) Painel..." enquanto a notificação está visível */
+  useEffect(() => {
+    if (notificacao?.visivel) {
+      document.title = `(1) ${TITULO_BASE}`;
+      return () => { document.title = TITULO_BASE; };
+    }
+    document.title = TITULO_BASE;
   }, [notificacao]);
 
   if (!notificacao?.visivel) return null;

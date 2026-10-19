@@ -1,6 +1,7 @@
 import "./lib/error-capture";
 import { consumeLastCapturedError, describeError, isRequestAborted } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { iniciarPushMonitor } from "./lib/push-monitor";
 
 /* O servidor principal precisa ser leve e compatível com o runtime do Lovable.
    Importações do Drive e leitura de arquivos não devem acontecer no carregamento
@@ -25,6 +26,8 @@ function ensureAutoImport() {
   import("@/lib/drive-auto-import")
     .then(({ iniciarAutoImport }) => iniciarAutoImport())
     .catch((e) => console.error("[server] falha ao iniciar auto-import:", e));
+  /* Inicia o monitor que envia push notifications quando o Drive muda */
+  iniciarPushMonitor();
 }
 
 async function getServerEntry(): Promise<ServerEntry> {
