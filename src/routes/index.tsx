@@ -9,7 +9,6 @@ import type { SaldoComparativo } from "@/data/saldo-comparativo";
 import type { ComparativoCcr } from "@/data/comparativo-ccr";
 
 import LoadingApresentacao from "@/components/LoadingApresentacao";
-import MiniJanelaEstoque from "@/components/MiniJanelaEstoque";
 import { NotificacaoAtualizacao } from "@/components/NotificacaoAtualizacao";
 import { usePushNotification } from "@/hooks/use-push-notification";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
@@ -80,6 +79,5 @@ function DashboardHome() {
   return (<>
     <NotificacaoAtualizacao notificacao={notificacao} onDispensar={dispensarNotificacao} />
     <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />
-    {r && <MiniJanelaEstoque pesoTon={r.ton ?? 0} valor={r.valor ?? 0} itens={r.itens} atualizadoEm={atualizadoEm} />}
   </>);
 }
