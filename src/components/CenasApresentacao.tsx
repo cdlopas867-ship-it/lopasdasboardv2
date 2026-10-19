@@ -15,6 +15,7 @@ import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 import CenaSaldoComparativo from "@/components/CenaSaldoComparativo";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
+import { exportarExcelSaldo } from "@/lib/export-excel-saldo";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -95,6 +96,21 @@ export default function CenasApresentacao({
      carregado no Drive (jan–abr) agora têm valores da planilha do usuário. */
   const listaMes = (mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0);
   const totRecebido = listaMes.reduce((s, m) => s + m.recebido, 0);
+
+  /* Exportação Excel do Saldo Full × Focco na cena de encerramento */
+  const [exportandoSaldo, setExportandoSaldo] = useState(false);
+  const handleExportSaldo = async () => {
+    if (!saldoComparativo) return;
+    onPausar?.();
+    setExportandoSaldo(true);
+    try {
+      await exportarExcelSaldo(saldoComparativo, reservados);
+    } catch (e) {
+      console.error("Erro ao exportar Excel:", e);
+    } finally {
+      setExportandoSaldo(false);
+    }
+  };
 
   /* Filtro por data das pendências (DT FINAL entre "de" e "até") */
   const [pendDe, setPendDe] = useState("");
@@ -378,6 +394,16 @@ export default function CenasApresentacao({
             >
               ↻ Reiniciar agora
             </button>
+            {saldoComparativo && (
+              <button
+                type="button"
+                onClick={handleExportSaldo}
+                disabled={exportandoSaldo}
+                className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-8 py-3 text-xs font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-transform hover:scale-105 disabled:opacity-50"
+              >
+                {exportandoSaldo ? "Gerando Excel…" : "⬇ Saldo Full × Focco"}
+              </button>
+            )}
           </div>
         </div>
       )}
