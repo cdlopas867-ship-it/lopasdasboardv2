@@ -109,10 +109,10 @@ function parseModificado(mod: string): Date | undefined {
     const isPM = /pm/i.test(timeMatch[3]!);
     if (isPM && hours !== 12) hours += 12;
     if (!isPM && hours === 12) hours = 0;
-    /* Hora exibida pelo Drive está no fuso de São Paulo (UTC-3), mesmo quando
-       o servidor publicado roda em UTC. */
-    const sp = new Date(now.getTime() - 3 * 3600_000);
-    return new Date(Date.UTC(sp.getUTCFullYear(), sp.getUTCMonth(), sp.getUTCDate(), hours + 3, minutes));
+    /* Hora exibida pelo Drive (embeddedfolderview) está no fuso do Pacífico
+       (PT, UTC-7) — fuso do Google. Converte para UTC somando 7 horas. */
+    const pt = new Date(now.getTime() - 7 * 3600_000);
+    return new Date(Date.UTC(pt.getUTCFullYear(), pt.getUTCMonth(), pt.getUTCDate(), hours + 7, minutes));
   }
   const meses: Record<string, number> = {
     Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
@@ -122,8 +122,8 @@ function parseModificado(mod: string): Date | undefined {
   if (dateMatch) {
     const month = meses[dateMatch[1]!];
     const day = parseInt(dateMatch[2]!, 10);
-    const year = dateMatch[3] ? parseInt(dateMatch[3]!, 10) : now.getFullYear();
-    if (month !== undefined) return new Date(year, month, day);
+    const year = dateMatch[3] ? parseInt(dateMatch[3]!, 10) : new Date(now.getTime() - 7 * 3600_000).getUTCFullYear();
+    if (month !== undefined) return new Date(Date.UTC(year, month, day, 7, 0));
   }
   return undefined;
 }
