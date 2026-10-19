@@ -1213,13 +1213,19 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 13px 18px;
+  gap: 6px;
+  padding: 9px 14px;
   border: 1px solid rgba(234, 88, 12, 0.22);
   border-radius: 15px;
   background: linear-gradient(112deg, #f59e0b 0%, #f97316 54%, #ea580c 100%);
   box-shadow: 0 5px 14px rgba(154, 52, 18, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.26);
   white-space: nowrap;
+}
+@media (min-width: 640px) {
+  .destaque-gradiente {
+    gap: 8px;
+    padding: 13px 18px;
+  }
 }
 .destaque-gradiente::before {
   content: "";
@@ -1241,17 +1247,21 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
 }
 .destaque-gradiente-numero {
   color: #fff;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 1;
 }
 .destaque-gradiente-rotulo {
   color: #fff7ed;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 750;
   letter-spacing: 0.075em;
   line-height: 1.2;
+}
+@media (min-width: 640px) {
+  .destaque-gradiente-numero { font-size: 18px; }
+  .destaque-gradiente-rotulo { font-size: 11px; }
 }
 /* Mini-janela de estoque (desktop) — faixa que "passa" sinalizando ao vivo. */
 @keyframes mini-janela-passa {

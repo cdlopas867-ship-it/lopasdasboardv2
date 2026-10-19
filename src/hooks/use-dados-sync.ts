@@ -175,8 +175,16 @@ function dataKey(payload: unknown, incluirSync = true): string {
         : "";
     })(),
     fl: (() => {
-      const f = p["foraDeLinha"] as { importadoEm?: string; itens?: unknown[]; posicaoTotal?: { pesoTon?: number } } | undefined;
-      return f ? `${f.importadoEm ?? ""}|${f.itens?.length ?? 0}|${f.posicaoTotal?.pesoTon ?? 0}` : "";
+      const f = p["foraDeLinha"] as {
+        importadoEm?: string;
+        itens?: unknown[];
+        posicaoEmLinha?: { pesoTon?: number; saldoFocco?: number; itens?: number; valorEstoque?: number };
+        posicaoForaDeLinha?: { pesoTon?: number; saldoFocco?: number; itens?: number; valorEstoque?: number };
+        posicaoTotal?: { pesoTon?: number; saldoFocco?: number; itens?: number; valorEstoque?: number };
+      } | undefined;
+      return f
+        ? `${f.importadoEm ?? ""}|${f.itens?.length ?? 0}|${f.posicaoEmLinha?.pesoTon ?? 0}|${f.posicaoEmLinha?.saldoFocco ?? 0}|${f.posicaoEmLinha?.itens ?? 0}|${f.posicaoForaDeLinha?.pesoTon ?? 0}|${f.posicaoForaDeLinha?.saldoFocco ?? 0}|${f.posicaoForaDeLinha?.itens ?? 0}|${f.posicaoTotal?.pesoTon ?? 0}|${f.posicaoTotal?.saldoFocco ?? 0}|${f.posicaoTotal?.itens ?? 0}|${f.posicaoTotal?.valorEstoque ?? 0}`
+        : "";
     })(),
     ...(incluirSync ? { sy: (p["sincronizacao"] as { em?: string } | undefined)?.em } : {}),
   });

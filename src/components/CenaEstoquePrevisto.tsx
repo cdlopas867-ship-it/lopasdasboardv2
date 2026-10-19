@@ -84,7 +84,7 @@ export default function CenaEstoquePrevisto({
   return (
     <div className="flex w-full flex-col items-center">
       <div className="flex items-center gap-2">
-        <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
+        <p className="video-sobe text-[10px] sm:text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Estoque × Previsto
         </p>
         <InfoTooltip
@@ -110,13 +110,13 @@ export default function CenaEstoquePrevisto({
       </div>
 
       {/* Tabela de detalhes da seção ativa */}
-      <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>
-        <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+      <div className="video-sobe mt-2 w-full max-w-sm mx-auto" style={{ animationDelay: "0.5s" }}>
+        <p className="mb-0.5 text-[8px] sm:text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
           {foco === 0 ? "Em linha" : foco === 1 ? "Fora de linha" : "Total"}
         </p>
-        <table className="w-full text-left text-[11px] text-white">
+        <table className="w-full text-left text-[10px] sm:text-[11px] text-white">
           <thead>
-            <tr className="border-b border-white/20 text-[8px] font-bold tracking-widest text-white/55 uppercase">
+            <tr className="border-b border-white/20 text-[7px] sm:text-[8px] font-bold tracking-widest text-white/55 uppercase">
               <th className="pb-0.5 font-bold">Indicador</th>
               <th className="pb-0.5 text-right font-bold">Valor</th>
             </tr>
@@ -125,7 +125,7 @@ export default function CenaEstoquePrevisto({
             {linhasBase.map((l, i) => (
               <tr key={i} className="border-b border-white/10 last:border-0">
                 <td className="py-0.5 text-white/80">{l.rotulo}</td>
-                <td className={cn("py-0.5 text-right font-mono", l.destaque ? "font-extrabold text-base text-white" : "font-semibold text-white")}>{l.valor}</td>
+                <td className={cn("py-0.5 text-right font-mono", l.destaque ? "font-extrabold text-sm sm:text-base text-white" : "font-semibold text-white")}>{l.valor}</td>
               </tr>
             ))}
             {/* Total geral */}
@@ -134,7 +134,7 @@ export default function CenaEstoquePrevisto({
               <td className="py-1 text-right font-mono text-white">
                 {fmtInt(posicaoTotal.itens)} itens
                 {" · "}
-                <span className="text-base font-extrabold">{fmtBrMax(posicaoTotal.pesoTon, 1)} t</span>
+                <span className="text-sm sm:text-base font-extrabold">{fmtBrMax(posicaoTotal.pesoTon, 1)} t</span>
               </td>
             </tr>
           </tbody>
@@ -142,11 +142,11 @@ export default function CenaEstoquePrevisto({
       </div>
 
       {/* Resumo Estoque × Previsto */}
-      <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.6s" }}>
-        <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+      <div className="video-sobe mt-2 w-full max-w-sm mx-auto" style={{ animationDelay: "0.6s" }}>
+        <p className="mb-0.5 text-[8px] sm:text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
           Estoque × Previsto
         </p>
-        <table className="w-full text-left text-[11px] text-white">
+        <table className="w-full text-left text-[10px] sm:text-[11px] text-white">
           <tbody>
             <tr className="border-b border-white/10">
               <td className="py-0.5 text-white/80">Valor em estoque</td>
@@ -172,11 +172,11 @@ export default function CenaEstoquePrevisto({
 
       {/* Breakdown por categoria */}
       {temCategorias && (
-        <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.7s" }}>
-          <p className="mb-0.5 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+        <div className="video-sobe mt-2 w-full max-w-sm mx-auto" style={{ animationDelay: "0.7s" }}>
+          <p className="mb-0.5 text-[8px] sm:text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
             % por categoria
           </p>
-          <table className="w-full text-left text-[11px] text-white">
+          <table className="w-full text-left text-[10px] sm:text-[11px] text-white">
             <tbody>
               {cats.map((u, i) => {
                 const saldo = statNum(u.stats, "Saldo");
@@ -218,7 +218,7 @@ export default function CenaEstoquePrevisto({
         </div>
       )}
 
-      <p className="mt-1.5 text-[8px] leading-tight text-white/40">
+      <p className="mt-1 text-[7px] sm:text-[8px] leading-tight text-white/40">
         * Ocupação: tonelagem em linha ÷ tonelagem total × 100. {fmtBrMax(pctEmLinha, 1)}% em linha · {fmtBrMax(pctFora, 1)}% fora de linha · total {fmtBrMax(totalTon, 1)} t. Clique no gráfico para alternar.
       </p>
 
