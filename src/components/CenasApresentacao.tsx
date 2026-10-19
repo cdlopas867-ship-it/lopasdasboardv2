@@ -14,6 +14,8 @@ import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
+import type { ComparativoCcr } from "@/data/comparativo-ccr";
+import CenaComparativoCcr from "@/components/CenaComparativoCcr";
 import { exportarExcelSaldo } from "@/lib/export-excel-saldo";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
@@ -62,6 +64,7 @@ type Props = {
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   saldoComparativo?: SaldoComparativo | null | undefined;
+  comparativoCcr?: ComparativoCcr | null | undefined;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
   onPausar?: (() => void) | undefined;
@@ -87,6 +90,7 @@ export default function CenasApresentacao({
   producaoSemanal,
   resumo,
   saldoComparativo,
+  comparativoCcr,
   onReiniciar,
   onGerarRelatorio,
   onPausar,
@@ -366,13 +370,18 @@ export default function CenasApresentacao({
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
+      {/* Cena 9 — Comparativo CCR × Estoque 001 (peso em toneladas) */}
       {cena === 8 && (
+        <CenaComparativoCcr anim={anim} cena={cena} onPausar={onPausar} comparativoCcr={comparativoCcr} />
+      )}
+
+      {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
+      {cena === 9 && (
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
       {/* Cena 11 — encerramento */}
-      {cena === 9 && (
+      {cena === 10 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
