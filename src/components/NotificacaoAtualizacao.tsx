@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
+import { iniciarSinoFavicon, pararSinoFavicon } from "@/lib/favicon-sino";
 
 /* Banner de notificação de atualização — estilo WhatsApp Web.
  *
@@ -28,6 +29,22 @@ export function NotificacaoAtualizacao({
       return () => cancelAnimationFrame(t);
     }
     setMostrar(false);
+  }, [notificacao]);
+
+  /* Sino animado no ícone da aba + badge numérico no ícone do app instalado
+     (Badging API, estilo WhatsApp) enquanto a notificação está visível. */
+  useEffect(() => {
+    if (!notificacao?.visivel) return;
+    iniciarSinoFavicon();
+    const nav = navigator as Navigator & {
+      setAppBadge?: (n?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    nav.setAppBadge?.(1).catch(() => {});
+    return () => {
+      pararSinoFavicon();
+      nav.clearAppBadge?.().catch(() => {});
+    };
   }, [notificacao]);
 
   /* Badge no título da aba — "(1) Painel..." enquanto a notificação está visível */
