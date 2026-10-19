@@ -6,7 +6,7 @@ import { initialSyncData } from "@/lib/initial-sync-data";
 import { POSICAO_EM_LINHA, POSICAO_FORA_DE_LINHA } from "@/data/fora-de-linha";
 import { fmtInt, fmtMi, fmtTonDec, fmtPct } from "@/lib/format";
 import { normalizarDiasExibicao } from "@/lib/recebimento";
-import JogoVaiCaber from "@/components/JogoVaiCaber";
+
 
 type Painel = typeof initialSyncData & Record<string, unknown>;
 
@@ -168,11 +168,6 @@ function MobileConteudo({ onLogout }: { onLogout: () => Promise<void> }) {
               })}
             </div>
           </div>
-        </section>
-
-        <section>
-          <TituloSecao>Jogo · Vai caber?</TituloSecao>
-          <JogoVaiCaber />
         </section>
 
         <footer className="flex items-center justify-between pt-2 pb-6 text-[10px] text-white/30">
