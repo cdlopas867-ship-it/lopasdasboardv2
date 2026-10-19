@@ -793,14 +793,14 @@ declare global {
   var __driveImportState: { ultimo: number; assinatura: string; emAndamento: Promise<boolean> | null } | undefined;
 }
 
-/* Versão com controle: verifica a pasta no máximo a cada 10 s, só reprocessa
+/* Versão com controle: verifica a pasta no máximo a cada 1 s, só reprocessa
    quando algum arquivo mudou e evita importações simultâneas. Quando nada
    mudou, a checagem é barata (só a listagem da pasta). */
 export async function importarSeMudou(forcar = false): Promise<boolean> {
   const st = (globalThis.__driveImportState ??= { ultimo: 0, assinatura: "", emAndamento: null });
   if (st.emAndamento) return st.emAndamento;
   const agora = Date.now();
-  if (!forcar && agora - st.ultimo < 5_000) return false;
+  if (!forcar && agora - st.ultimo < 1_000) return false;
   st.ultimo = agora;
   st.emAndamento = (async () => {
     try {
@@ -1518,12 +1518,12 @@ export function iniciarAutoImport() {
     );
   }, 3_000);
 
-  /* A cada 5 s — detecta mudanças no Drive o mais rápido possível */
+  /* A cada 1 s — detecta mudanças no Drive o mais rápido possível */
   globalThis.__driveAutoImportInterval = setInterval(() => {
     importarSeMudou().catch((e) =>
       console.error("[auto-import] falha no ciclo:", e),
     );
-  }, 5 * 1000);
+  }, 1_000);
 
-  console.info("[auto-import] ciclo de importação automática do Drive iniciado (a cada 5 s)");
+  console.info("[auto-import] ciclo de importação automática do Drive iniciado (a cada 1 s)");
 }

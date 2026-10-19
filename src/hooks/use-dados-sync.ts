@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 /* Hook que mantém os dados do painel sincronizados entre todos os dispositivos.
  *
- * - Busca os dados mais recentes via GET /api/sync-data ao montar e a cada
- *   10 s (polling) — garante que dispositivos que abram o link depois da
+ * - Busca os dados recentes via GET /api/sync-data ao montar e a cada
+ *   1 s (polling) — garante que dispositivos que abram o link depois da
  *   importação recebam os valores corretos mesmo se o SSE for bloqueado
  *   por proxies/CDN.
  * - Conecta a um EventSource (SSE) para atualizações em tempo real quando
@@ -204,7 +204,7 @@ export function useDadosSync<T>(initial: T) {
       }
     };
     fetchLatest();
-    const interval = setInterval(fetchLatest, 5000);
+    const interval = setInterval(fetchLatest, 1000);
     /* Ao voltar para a aba/tela, busca na hora (o navegador atrasa timers em segundo plano). */
     const onVisivel = () => { if (document.visibilityState === "visible") fetchLatest(); };
     document.addEventListener("visibilitychange", onVisivel);
