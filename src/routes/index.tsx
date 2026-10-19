@@ -9,6 +9,7 @@ import type { SaldoComparativo } from "@/data/saldo-comparativo";
 
 import LoadingApresentacao from "@/components/LoadingApresentacao";
 import MiniJanelaEstoque from "@/components/MiniJanelaEstoque";
+import { NotificacaoAtualizacao } from "@/components/NotificacaoAtualizacao";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
 import { normalizarDiasExibicao } from "@/lib/recebimento";
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Pain
 type Painel = typeof initialSyncData & Record<string, unknown>;
 function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();
-  const { dados, loaded } = useDadosSync<Painel>(initialSyncData as Painel);
+  const { dados, loaded, notificacao, dispensarNotificacao } = useDadosSync<Painel>(initialSyncData as Painel);
   const [valorFaturado, setValorFaturado] = useState<number>();
   useEffect(() => { if (pronto && !autenticado) navigate({ to: "/login", replace: true }); }, [pronto, autenticado, navigate]);
   useEffect(() => { if (autenticado) fetch("/api/valor-faturado").then(r => r.json()).then(d => setValorFaturado(d.valor)).catch(() => {}); }, [autenticado]);
@@ -74,6 +75,7 @@ function DashboardHome() {
     ? new Date(presentation.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
     : dados.atualizadoEm;
   return (<>
+    <NotificacaoAtualizacao notificacao={notificacao} onDispensar={dispensarNotificacao} />
     <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />
     {r && <MiniJanelaEstoque pesoTon={r.ton ?? 0} valor={r.valor ?? 0} itens={r.itens} atualizadoEm={atualizadoEm} />}
   </>);

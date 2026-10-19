@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 /* Hook que mantém os dados do painel sincronizados entre todos os dispositivos.
  *
@@ -161,6 +160,9 @@ function dataKey(payload: unknown, incluirSync = true): string {
 export function useDadosSync<T>(initial: T) {
   const [dados, setDados] = useState<T>(initial);
   const [loaded, setLoaded] = useState(false);
+  /* Notificação de atualização (estilo WhatsApp) — persiste até o usuário
+     dispensar, ao contrário do toast que some em 6s. */
+  const [notificacao, setNotificacao] = useState<{ visivel: boolean; horario: number } | null>(null);
   const skipNext = useRef(false);
   const appliedKey = useRef<string>("");
   /* Chave só do conteúdo (sem o carimbo de sincronização) — o carimbo muda a
@@ -179,10 +181,7 @@ export function useDadosSync<T>(initial: T) {
     /* Avisa quando chegam dados novos depois da primeira carga —
        ou seja, quando a planilha da pasta foi atualizada. */
     if (appliedContentKey.current && contentKey !== appliedContentKey.current) {
-      toast.success("Dados atualizados", {
-        description: "O painel recebeu novos dados da planilha.",
-        duration: 6000,
-      });
+      setNotificacao({ visivel: true, horario: Date.now() });
     }
     appliedKey.current = key;
     appliedContentKey.current = contentKey;
@@ -264,5 +263,7 @@ export function useDadosSync<T>(initial: T) {
     return () => clearTimeout(t);
   }, []);
 
-  return { dados, atualizarDados, loaded };
+  const dispensarNotificacao = useCallback(() => setNotificacao(null), []);
+
+  return { dados, atualizarDados, loaded, notificacao, dispensarNotificacao };
 }
