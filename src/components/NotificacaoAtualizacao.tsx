@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, X } from "lucide-react";
+import { Bell, X } from "lucide-react";
 
 /* Banner de notificação de atualização — estilo WhatsApp Web.
  *
@@ -7,6 +7,8 @@ import { CheckCircle2, X } from "lucide-react";
  * desliza do topo e fica visível até o usuário dispensar (não some sozinho,
  * como um toast). Mostra o horário em que a atualização chegou.
  * Também adiciona um badge "(1)" no título da aba enquanto visível.
+ * O ícone é um sininho que balança continuamente (classe .sino-toca) com um
+ * badge vermelho pulsante, para chamar atenção à atualização.
  */
 const TITULO_BASE = "Painel de Estoque · Lopas 2026";
 
@@ -58,8 +60,9 @@ export function NotificacaoAtualizacao({
       }}
     >
       <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-lg shadow-emerald-900/10 dark:border-emerald-800 dark:bg-emerald-950">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
-          <CheckCircle2 className="h-5 w-5" />
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+          <Bell className="sino-toca h-5 w-5" />
+          <span className="sino-badge-pulsa absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-emerald-50 dark:ring-emerald-950" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
