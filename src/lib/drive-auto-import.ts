@@ -589,10 +589,43 @@ function extrairOcupacao(wb: XLSX.WorkBook): OcupacaoData | null {
     }
   }
 
-  /* Formato 2: aba "Resultado" do WF0126 — suporta dois subformatos:
-     a) Tabela pivô com coluna "Quantidade" (sumarizada por Situação).
-     b) Dados crus: uma linha por endereço (Situação, Tipo LA, Endereço) —
-        conta as linhas por Situação quando não há coluna Quantidade. */
+  /* Formato 2: tabela pivô com colunas "Situação" + "Quantidade" —
+     pode estar em qualquer aba (Planilha1, Resultado, etc.).
+     O pivô tem os números corretos sumarizados pelo WMS; os dados crus
+     do "Resultado" nem sempre batem com o pivô (diferenças de filtro/status). */
+  for (const sheetName of wb.SheetNames) {
+    if (sheetName === "Resumo") continue;
+    const wsPivot = wb.Sheets[sheetName];
+    if (!wsPivot) continue;
+    const rowsP = XLSX.utils.sheet_to_json<unknown[]>(wsPivot, { header: 1, defval: null });
+    const hiP = rowsP.findIndex((r) =>
+      r?.some((c) => /SITUAÇ/i.test(String(c ?? "").trim())) &&
+      r?.some((c) => /QUANTIDADE/i.test(String(c ?? "").trim())),
+    );
+    if (hiP < 0) continue;
+    const headersP = (rowsP[hiP] ?? []).map((c) => String(c ?? "").toUpperCase().trim());
+    const colSitP = headersP.findIndex((h) => /SITUAÇ/i.test(h));
+    const colQtdP = headersP.findIndex((h) => /QUANTIDADE/i.test(h));
+    if (colSitP < 0 || colQtdP < 0) continue;
+    let ocupados = 0, livres = 0, bloqueados = 0, total = 0;
+    for (let i = hiP + 1; i < rowsP.length; i++) {
+      const r = rowsP[i] ?? [];
+      const situacao = String(r[colSitP] ?? "").toUpperCase().trim();
+      if (!situacao || situacao.includes("SUBTOTAL")) {
+        total = Number(r[colQtdP] ?? 0) || total;
+        continue;
+      }
+      const qtd = Number(r[colQtdP] ?? 0) || 0;
+      if (situacao.includes("OCUPAD")) ocupados += qtd;
+      else if (situacao.includes("LIVRE")) livres += qtd;
+      else if (situacao.includes("BLOQUE")) bloqueados += qtd;
+    }
+    if (total <= 0) total = ocupados + livres + bloqueados;
+    if (total > 0) return { pct: ocupados / total, ocupados, livres, bloqueados, total };
+  }
+
+  /* Formato 2b: aba "Resultado" com dados crus (sem coluna Quantidade) —
+     conta as linhas por Situação. Fallback menos confiável que o pivô. */
   const wsResultado = wb.Sheets["Resultado"];
   if (wsResultado) {
     const rows = XLSX.utils.sheet_to_json<unknown[]>(wsResultado, { header: 1, defval: null });
