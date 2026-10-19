@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 /* Hook que mantém os dados do painel sincronizados entre todos os dispositivos.
  *
- * - Busca os dados mais recentes via GET /api/sync-data ao montar e a cada
- *   10 s (polling) — garante que dispositivos que abram o link depois da
+ * - Busca os dados recentes via GET /api/sync-data ao montar e a cada
+ *   1 s (polling) — garante que dispositivos que abram o link depois da
  *   importação recebam os valores corretos mesmo se o SSE for bloqueado
  *   por proxies/CDN.
  * - Conecta a um EventSource (SSE) para atualizações em tempo real quando
@@ -161,6 +160,9 @@ function dataKey(payload: unknown, incluirSync = true): string {
 export function useDadosSync<T>(initial: T) {
   const [dados, setDados] = useState<T>(initial);
   const [loaded, setLoaded] = useState(false);
+  /* Notificação de atualização (estilo WhatsApp) — persiste até o usuário
+     dispensar, ao contrário do toast que some em 6s. */
+  const [notificacao, setNotificacao] = useState<{ visivel: boolean; horario: number } | null>(null);
   const skipNext = useRef(false);
   const appliedKey = useRef<string>("");
   /* Chave só do conteúdo (sem o carimbo de sincronização) — o carimbo muda a
@@ -177,12 +179,12 @@ export function useDadosSync<T>(initial: T) {
     if (key === appliedKey.current) return;
     const contentKey = dataKey(payload, false);
     /* Avisa quando chegam dados novos depois da primeira carga —
-       ou seja, quando a planilha da pasta foi atualizada. */
-    if (appliedContentKey.current && contentKey !== appliedContentKey.current) {
-      toast.success("Dados atualizados", {
-        description: "O painel recebeu novos dados da planilha.",
-        duration: 6000,
-      });
+       ou seja, quando a planilha da pasta foi atualizada. Só notifica
+       quando TODAS as cenas estão atualizadas (payload completo). */
+    const ocupacao = (payload as Record<string, unknown>)?.["ocupacao"] as { total?: number } | undefined;
+    const payloadCompleto = !!ocupacao && (ocupacao.total ?? 0) > 0;
+    if (appliedContentKey.current && contentKey !== appliedContentKey.current && payloadCompleto) {
+      setNotificacao({ visivel: true, horario: Date.now() });
     }
     appliedKey.current = key;
     appliedContentKey.current = contentKey;
@@ -205,7 +207,7 @@ export function useDadosSync<T>(initial: T) {
       }
     };
     fetchLatest();
-    const interval = setInterval(fetchLatest, 5000);
+    const interval = setInterval(fetchLatest, 1000);
     /* Ao voltar para a aba/tela, busca na hora (o navegador atrasa timers em segundo plano). */
     const onVisivel = () => { if (document.visibilityState === "visible") fetchLatest(); };
     document.addEventListener("visibilitychange", onVisivel);
@@ -264,5 +266,7 @@ export function useDadosSync<T>(initial: T) {
     return () => clearTimeout(t);
   }, []);
 
-  return { dados, atualizarDados, loaded };
+  const dispensarNotificacao = useCallback(() => setNotificacao(null), []);
+
+  return { dados, atualizarDados, loaded, notificacao, dispensarNotificacao };
 }

@@ -12,7 +12,6 @@ import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
 import CenaReservados from "@/components/CenaReservados";
 import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 
-import CenaPaletes from "@/components/CenaPaletes";
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 import CenaSaldoComparativo from "@/components/CenaSaldoComparativo";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
@@ -146,23 +145,18 @@ export default function CenasApresentacao({
         <CenaRecebimentoTurno anim={anim} turnos={turnos} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 4 — Paletes em Estoque (donut interativo com toggle por tamanho) */}
-      {cena === 3 && paletas && paletas.totalPaletes > 0 && (
-        <CenaPaletes anim={anim} paletas={paletas} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 5 — Produção da Semana (donut interativo com toggle Entregue/Pendente) */}
-      {cena === 4 && producaoSemanal && producaoSemanal.length > 0 && (
+      {/* Cena 4 — Produção da Semana (donut interativo com toggle Entregue/Pendente) */}
+      {cena === 3 && producaoSemanal && producaoSemanal.length > 0 && (
         <CenaProducaoSemana anim={anim} dias={producaoSemanal} recebimentoSemanal={recebimentoSemanal} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 6 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
-      {cena === 5 && (
+      {/* Cena 5 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
+      {cena === 4 && (
         <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
       )}
 
-      {/* Cena 7 — pendências de produção */}
-      {cena === 6 && (
+      {/* Cena 6 — pendências de produção */}
+      {cena === 5 && (
         <div className="w-full">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -330,12 +324,12 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 8 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
-      {cena === 7 && reservados && (
+      {cena === 6 && reservados && (
         <CenaReservados anim={anim} reservados={reservados} semReserva={semReserva} valorFaturado={valorFaturado} cena={cena} onPausar={onPausar} />
       )}
 
       {/* Cena 8 fallback — sem dados de reservados */}
-      {cena === 7 && !reservados && (
+      {cena === 6 && !reservados && (
         <div className="flex flex-col items-center py-6 text-center">
           <div className="flex items-center gap-2">
             <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
@@ -353,22 +347,22 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 9 — Fora de linha por categoria */}
-      {cena === 8 && (
+      {cena === 7 && (
         <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
       )}
 
       {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 9 && (
+      {cena === 8 && (
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
       {/* Cena 11 — Controle de saldo Full × Focco */}
-      {cena === 10 && (
+      {cena === 9 && (
         <CenaSaldoComparativo anim={anim} cena={cena} onPausar={onPausar} saldoComparativo={saldoComparativo} reservados={reservados} />
       )}
 
       {/* Cena 12 — encerramento */}
-      {cena === 11 && (
+      {cena === 10 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
