@@ -179,8 +179,11 @@ export function useDadosSync<T>(initial: T) {
     if (key === appliedKey.current) return;
     const contentKey = dataKey(payload, false);
     /* Avisa quando chegam dados novos depois da primeira carga —
-       ou seja, quando a planilha da pasta foi atualizada. */
-    if (appliedContentKey.current && contentKey !== appliedContentKey.current) {
+       ou seja, quando a planilha da pasta foi atualizada. Só notifica
+       quando TODAS as cenas estão atualizadas (payload completo). */
+    const ocupacao = (payload as Record<string, unknown>)?.["ocupacao"] as { total?: number } | undefined;
+    const payloadCompleto = !!ocupacao && (ocupacao.total ?? 0) > 0;
+    if (appliedContentKey.current && contentKey !== appliedContentKey.current && payloadCompleto) {
       setNotificacao({ visivel: true, horario: Date.now() });
     }
     appliedKey.current = key;
