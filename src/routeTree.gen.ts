@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ForaDeLinhaRouteImport } from './routes/fora-de-linha'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MobileRouteImport } from './routes/mobile'
 import { Route as ViagensRouteImport } from './routes/viagens'
 import { Route as WidgetRouteImport } from './routes/widget'
 import { Route as ApiAutoImportRouteImport } from './routes/api/auto-import'
@@ -38,6 +39,11 @@ const ForaDeLinhaRoute = ForaDeLinhaRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MobileRoute = MobileRouteImport.update({
+  id: '/mobile',
+  path: '/mobile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ViagensRoute = ViagensRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
+  '/mobile': typeof MobileRoute
   '/viagens': typeof ViagensRoute
   '/widget': typeof WidgetRoute
   '/api/auto-import': typeof ApiAutoImportRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
+  '/mobile': typeof MobileRoute
   '/viagens': typeof ViagensRoute
   '/widget': typeof WidgetRoute
   '/api/auto-import': typeof ApiAutoImportRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/fora-de-linha': typeof ForaDeLinhaRoute
   '/login': typeof LoginRoute
+  '/mobile': typeof MobileRoute
   '/viagens': typeof ViagensRoute
   '/widget': typeof WidgetRoute
   '/api/auto-import': typeof ApiAutoImportRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/'
     | '/fora-de-linha'
     | '/login'
+    | '/mobile'
     | '/viagens'
     | '/widget'
     | '/api/auto-import'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/fora-de-linha'
     | '/login'
+    | '/mobile'
     | '/viagens'
     | '/widget'
     | '/api/auto-import'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/fora-de-linha'
     | '/login'
+    | '/mobile'
     | '/viagens'
     | '/widget'
     | '/api/auto-import'
@@ -211,6 +223,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ForaDeLinhaRoute: typeof ForaDeLinhaRoute
   LoginRoute: typeof LoginRoute
+  MobileRoute: typeof MobileRoute
   ViagensRoute: typeof ViagensRoute
   WidgetRoute: typeof WidgetRoute
   ApiAutoImportRoute: typeof ApiAutoImportRoute
@@ -246,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mobile': {
+      id: '/mobile'
+      path: '/mobile'
+      fullPath: '/mobile'
+      preLoaderRoute: typeof MobileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/viagens': {
@@ -339,6 +359,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ForaDeLinhaRoute: ForaDeLinhaRoute,
   LoginRoute: LoginRoute,
+  MobileRoute: MobileRoute,
   ViagensRoute: ViagensRoute,
   WidgetRoute: WidgetRoute,
   ApiAutoImportRoute: ApiAutoImportRoute,
