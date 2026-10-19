@@ -186,7 +186,7 @@ async function listarPlanilhasDaPasta(folderId: string): Promise<ArquivoDrive[]>
   }
 
   const res = await fetch(
-    `https://drive.google.com/embeddedfolderview?id=${folderId}#list`,
+    `https://drive.google.com/embeddedfolderview?id=${folderId}&_=${Date.now()}#list`,
     { redirect: "follow", cache: "no-store" },
   );
   if (!res.ok) throw new Error(`Pasta ${folderId}: ${res.status}`);
