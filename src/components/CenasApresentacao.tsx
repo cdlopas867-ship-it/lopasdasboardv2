@@ -1,48 +1,94 @@
-import { useEffect, useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
-import { fmtBrMax, fmtInt, fmtMoeda, fmtPct, fmtPeso } from "@/lib/format";
-import InfoTooltip from "@/components/InfoTooltip";
-import { calcularPendentesResumo } from "@/lib/pendentes-resumo";
-import type { PendenteProducao } from "@/lib/pendentes";
-import CenaForaDeLinha from "@/components/CenaForaDeLinha";
-import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
-import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
-import CenaOcupacao from "@/components/CenaOcupacao";
-import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
-import CenaReservados from "@/components/CenaReservados";
-import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
+import { useEffect, useRef, useState } from "react";
+import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
+import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
+import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
+import ResumoBg from "./ResumoBg";
+import RelatorioLopas from "./RelatorioLopas";
 
-import CenaProducaoSemana from "@/components/CenaProducaoSemana";
+/* Vídeo-resumo do dashboard — cenas animadas com gráficos e o mínimo de texto,
+   sobre o fundo da marca Móveis Lopas, tocando automaticamente ao iniciar o app.
+   Na troca de cenas, a anterior sai suave (fade + desfoque) enquanto a nova entra. */
 
-import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
-
-export type VideoForaDeLinha = {
-  itens: ItemForaDeLinha[];
-  posicaoEmLinha: PosicaoEstoque;
-  posicaoForaDeLinha: PosicaoEstoque;
-  posicaoTotal: PosicaoEstoque;
+export type VideoKpi = { id?: string; rotulo: string; valor: string; detalhe?: string; extra?: [string, string][] };
+export type VideoUnidade = { nome: string; share: number; valor: string; stats?: [string, string][]; previsto?: string };
+export type VideoOcupacao = { pct: number; ocupados: number; livres: number; bloqueados?: number; detalhes?: { atributo: string; unidade: string; cd1: number; cd2: number; total: number }[] };
+export type VideoDia = { dia: string; data: string; ton: number; meta: number; iso?: string };
+export type VideoTurno = { nome: string; faixa?: string; ton?: number; pct: number };
+export type VideoMes = { mes: string; recebido: number; carregado: number };
+export type VideoAvariaTipo = {
+  tipo: string;
+  imagem: string;
+  cor: string;
+  total: number;
+  pct: number;
+  meses: { mes: string; qtd: number }[];
+};
+export type VideoAvarias = {
+  total: number;
+  referenciaParcial?: boolean;
+  custo: string;
+  meses: { mes: string; qtd: number; peso?: number; custo?: number; ordem?: number }[];
+  motivoMes: { mes: string; motivo: string; qtd: number }[];
+  tipos?: VideoAvariaTipo[];
 } | null;
-import type {
-  VideoAvarias,
-  VideoDia,
-  VideoKpi,
-  VideoMes,
-  VideoOcupacao,
-  VideoPaletas,
-  VideoPendentes,
-  VideoReservados,
-  VideoTurno,
-  VideoUnidade,
-  RecebimentoSemanalDia,
-} from "./VideoResumoDashboard";
-import { semanaAtual, type ProducaoSemanalDia } from "@/lib/producao-semanal";
+export type VideoPendentes = {
+  itens: number;
+  totalTon: number;
+  mediaTon: number;
+  fatias: { rotulo: string; ton: number; cor: string }[];
+  meses: { mes: string; ton: number; pct: number; itens: number; dtInicial?: string; dtFinal?: string; lotes?: number }[];
+  registros?: unknown[];
+} | null;
+export type VideoReservados = {
+  totalQtd: number;
+  totalTon: number;
+  totalValor: number;
+  custoMedioPonderado: number;
+  totalSaldo: number;
+  totalValorEstoque: number;
+  totalPesoEstoque: number;
+  pctQtd: number;
+  pctValor: number;
+  pctPeso: number;
+  previsao: number;
+  topItens: {
+    cod: string;
+    desc: string;
+    mascara: string;
+    qtdReservada: number;
+    pesoReservado: number;
+    valorReservado: number;
+    saldoAtual: number;
+    pctReservado: number;
+  }[];
+} | null;
+export type VideoPaletas = {
+  porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
+  totalPaletes: number;
+  totalItens: number;
+  itensPorTamanho?: Record<string, { item: string; desc: string; saldo: number; paletes: number; undPorPalete: number; enderecos: string[] }[]>;
+  recebimento?: { porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[]; totalPaletes: number; totalItens: number } | null;
+  diasRecebidos?: number;
+  diasQtd?: { dia: string; data: string; qtd: number; iso?: string }[];
+  mensalQtd?: { mes: string; qtd: number }[];
+  totalQtdRecebido?: number;
+} | null;
 
-/* Cenas da apresentação — conteúdo de cada slide, isolado em um componente
-   para permitir renderizar também a cópia da cena que sai na transição suave. */
+export type RecebimentoSemanalDia = {
+  iso: string;
+  dia: string;
+  data: string;
+  ton: number;
+  meta: number;
+  pctMeta: number;
+  porTamanho: { tamanho: string; paletes: number; itens: number; und: number }[];
+  totalQtd: number;
+  totalPaletes: number;
+};
+
+export type VideoResumoProps = Props;
 
 type Props = {
-  cena: number;
-  anim: boolean;
   kpis: VideoKpi[];
   unidades: VideoUnidade[];
   ocupacao: VideoOcupacao;
@@ -59,14 +105,15 @@ type Props = {
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
-  onReiniciar: () => void;
-  onGerarRelatorio?: (() => void) | undefined;
-  onPausar?: (() => void) | undefined;
+  sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
+  onFechar?: () => void;
+  onLogout?: () => void;
 };
 
-export default function CenasApresentacao({
-  cena,
-  anim,
+const TOTAL_CENAS = 10;
+const DURACOES = [8000, 5000, 6500, 8000, 9000, 5500, 8000, 7000, 7000, 12000];
+
+export default function VideoResumoDashboard({
   kpis,
   unidades,
   ocupacao,
@@ -79,1636 +126,184 @@ export default function CenasApresentacao({
   semReserva,
   valorFaturado,
   foraDeLinha,
+  resumo,
   paletas,
   recebimentoSemanal,
   producaoSemanal,
-  resumo,
-  onReiniciar,
-  onGerarRelatorio,
-  onPausar,
+  sincronizacao,
+  onFechar,
+  onLogout,
 }: Props) {
-  /* Mostra todos os meses com recebimento ou carregamento — meses sem
-      carregado no Drive (jan–abr) agora têm valores da planilha do usuário. */
-  const listaMes = (mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0);
-  const totRecebido = listaMes.reduce((s, m) => s + m.recebido, 0);
-
-  /* Filtro por data das pendências (DT FINAL entre "de" e "até") */
-  const [pendDe, setPendDe] = useState("");
-  const [pendAte, setPendAte] = useState("");
-  const pend = useMemo(() => {
-    if (!pendentes || (!pendDe && !pendAte)) return pendentes;
-    const dentro = (d?: string) => !!d && (!pendDe || d >= pendDe) && (!pendAte || d <= pendAte);
-    const regs = pendentes.registros as PendenteProducao[] | undefined;
-    if (regs?.length) return calcularPendentesResumo(regs.filter((r) => dentro(r.dtFinal)));
-    const meses = pendentes.meses.filter((m) => dentro(m.dtFinal));
-    if (!meses.length) return null;
-    const totalTon = meses.reduce((s, m) => s + m.ton, 0);
-    return {
-      ...pendentes,
-      itens: meses.reduce((s, m) => s + m.itens, 0),
-      totalTon,
-      mediaTon: totalTon / meses.length,
-      meses: meses.map((m) => ({ ...m, pct: totalTon > 0 ? (m.ton / totalTon) * 100 : 0 })),
-    };
-  }, [pendentes, pendDe, pendAte]);
-
-  return (
-    <>
-      {/* Cena 1 — Estoque × Previsto (donut interativo com toggle) */}
-      {cena === 0 && resumo && (
-        <CenaEstoquePrevisto anim={anim} resumo={resumo} valorFaturado={valorFaturado} unidades={unidades} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 1 fallback — sem dados de resumo */}
-      {cena === 0 && !resumo && (
-        <div className="flex flex-col items-center py-6 text-center">
-          <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-            Estoque × Previsto
-          </p>
-          <p className="video-sobe font-serif text-3xl text-white/70">
-            Sem dados de estoque.
-          </p>
-        </div>
-      )}
-
-      {/* Cena 2 — ocupação (donut interativo) */}
-      {cena === 1 && (
-        <CenaOcupacao anim={anim} ocupacao={ocupacao} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 3 — recebimento por turno (donut interativo) */}
-      {cena === 2 && (
-        <CenaRecebimentoTurno anim={anim} turnos={turnos} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 4 — Produção da Semana (donut interativo com toggle Entregue/Pendente) */}
-      {cena === 3 && producaoSemanal && producaoSemanal.length > 0 && (
-        <CenaProducaoSemana anim={anim} dias={producaoSemanal} recebimentoSemanal={recebimentoSemanal} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 5 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
-      {cena === 4 && (
-        <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
-      )}
-
-      {/* Cena 6 — pendências de produção */}
-      {cena === 5 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Pendências de produção
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Saúde da produção = toneladas recebidas no estoque ÷ toneladas pendentes + recebidas." />
-          </div>
-          <div
-            className="video-sobe mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/70"
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <span className="font-bold tracking-widest uppercase text-white/55">Filtrar data final</span>
-            <label className="flex items-center gap-1">de
-              <input type="date" value={pendDe} onChange={(e) => { setPendDe(e.target.value); onPausar?.(); }}
-                className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
-            </label>
-            <label className="flex items-center gap-1">até
-              <input type="date" value={pendAte} onChange={(e) => { setPendAte(e.target.value); onPausar?.(); }}
-                className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
-            </label>
-            {(pendDe || pendAte) && (
-              <button type="button" onClick={() => { setPendDe(""); setPendAte(""); }}
-                className="rounded border border-white/20 px-2 py-0.5 text-white/80 hover:bg-white/10">Limpar</button>
-            )}
-            {(pendDe || pendAte) && pend && (
-              <span className="font-bold text-brand-amber">
-                · Peso total: {fmtBrMax(pend.totalTon, 1)} t
-              </span>
-            )}
-          </div>
-          {pend ? (
-            <>
-              <p className="video-sobe mt-3 font-serif text-3xl text-white sm:text-5xl">
-                {fmtBrMax(pend.totalTon, 1)} t{" "}
-                <span className="text-base text-white/60 sm:text-lg">
-                  · {fmtInt(pend.itens)} ordens
-                </span>
-              </p>
-              {(pendDe || pendAte) && (
-                <p className="video-sobe mt-1 text-sm text-white/50">
-                  {pendDe && pendAte
-                    ? `${pendDe.slice(8, 10)}/${pendDe.slice(5, 7)} – ${pendAte.slice(8, 10)}/${pendAte.slice(5, 7)}`
-                    : pendDe
-                      ? `A partir de ${pendDe.slice(8, 10)}/${pendDe.slice(5, 7)}`
-                      : `Até ${pendAte.slice(8, 10)}/${pendAte.slice(5, 7)}`}
-                </p>
-              )}
-              <p className="video-sobe mt-1 text-sm text-white/50">
-                Média mensal: <span className="font-bold text-brand-amber">{fmtBrMax(pend.mediaTon, 1)} t</span>
-              </p>
-
-              {/* Saúde da produção — toneladas pendentes × recebidas no estoque */}
-              {(() => {
-                const pendente = pend.totalTon;
-                const produzido = totRecebido;
-                const total = pendente + produzido;
-                const saudePct = total > 0 ? (produzido / total) * 100 : 0;
-                const Rs = 70;
-                const CIRCs = 2 * Math.PI * Rs;
-                return (
-                  <div
-                    className="video-sobe mt-4 flex items-center gap-5 rounded-xl border border-white/10 bg-white/5 p-3.5"
-                    style={{ animationDelay: "0.4s" }}
-                  >
-                    <div className="relative flex shrink-0 items-center justify-center">
-                      <svg viewBox="0 0 200 200" className="size-20 sm:size-24">
-                        <circle cx="100" cy="100" r={Rs} fill="none" strokeWidth="18" className="stroke-white/15" />
-                        <circle
-                          cx="100" cy="100" r={Rs} fill="none" strokeWidth="18" strokeLinecap="round"
-                          stroke="white"
-                          transform="rotate(-90 100 100)"
-                          style={{
-                            strokeDasharray: CIRCs,
-                            strokeDashoffset: anim ? CIRCs * (1 - saudePct / 100) : CIRCs,
-                            transition: "stroke-dashoffset 1.3s cubic-bezier(0.22,1,0.36,1)",
-                            filter: "drop-shadow(0 0 8px rgba(255,255,255,0.35))",
-                          }}
-                        />
-                      </svg>
-                      <div className="absolute text-center">
-                        <p className="font-serif text-lg text-white sm:text-xl">{fmtBrMax(saudePct, 1)}%</p>
-                        <p className="text-[7px] font-bold tracking-widest text-white/55 uppercase">saúde</p>
-                      </div>
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <p className="text-[10px] font-bold tracking-[0.3em] text-white/60 uppercase">Saúde da Produção</p>
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-[11px] text-white/70">
-                          <span className="size-2.5 rounded-sm bg-brand-amber" />
-                          Toneladas pendentes
-                        </span>
-                        <span className="font-mono text-sm font-bold text-brand-amber">{fmtBrMax(pendente, 1)} t</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-[11px] text-white/70">
-                          <span className="size-2.5 rounded-sm bg-white" />
-                          Toneladas recebidas no estoque
-                        </span>
-                        <span className="font-mono text-sm font-bold text-white">{fmtBrMax(produzido, 1)} t</span>
-                      </div>
-                      <p className="text-[9px] leading-tight text-white/40">
-                        Crítico = 3 meses ou mais de atraso · No prazo = até 2 meses, mês atual ou futuro
-                      </p>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Detalhe por mês — tonelagem, %, data final, lotes e ordens */}
-              {pend.meses?.length > 0 && (
-                <div className="mt-4">
-                  <p className="mb-2 text-[10px] font-bold tracking-[0.3em] text-white/50 uppercase">
-                    Por mês
-                  </p>
-                  <div className="space-y-2">
-                    {pend.meses.map((m, i) => {
-                      const maxMes = Math.max(...pend.meses.map((x) => x.ton), 1);
-                      return (
-                        <div
-                          key={m.mes}
-                          className="video-sobe flex items-center gap-3"
-                          style={{ animationDelay: `${0.12 * i + 0.3}s` }}
-                        >
-                          <span className="w-14 shrink-0 font-mono text-[11px] font-bold text-white/80">
-                            {m.mes}
-                          </span>
-                          <div className="h-5 flex-1 overflow-hidden rounded-md bg-white/15">
-                            <div
-                              className={cn("video-barra-x h-full rounded-md bg-gradient-to-r from-brand-amber/70 to-brand-amber", !anim && "video-pausada")}
-                              style={{
-                                width: `${(m.ton / maxMes) * 100}%`,
-                                animationDelay: `${0.12 * i + 0.4}s`,
-                              }}
-                            />
-                          </div>
-                          <span className="w-14 text-right font-mono text-[11px] font-bold text-white">
-                            {fmtBrMax(m.ton, 1)} t
-                          </span>
-                          <span className="w-12 text-right font-mono text-[10px] font-bold text-brand-amber">
-                            {fmtBrMax(m.pct, 0)}%
-                          </span>
-                          <span className="w-28 shrink-0 whitespace-nowrap rounded bg-white/10 px-1.5 py-0.5 text-center font-mono text-[10px] font-semibold text-white/75">
-                            {m.dtFinal ? `${m.dtInicial ? `${m.dtInicial.slice(8, 10)}/${m.dtInicial.slice(5, 7)} – ` : ""}${m.dtFinal.slice(8, 10)}/${m.dtFinal.slice(5, 7)}` : "—"}
-                          </span>
-                          <span className="w-10 text-right text-[9px] text-white/45">
-                            {m.lotes ?? 0} lot
-                          </span>
-                          <span className="w-10 text-right text-[9px] text-white/45">
-                            {fmtInt(m.itens)} ord
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="video-sobe mt-8 font-serif text-3xl text-white/70">
-              {pendDe || pendAte ? "Nenhuma pendência nesse período." : "Nenhuma pendência de produção."}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Cena 8 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
-      {cena === 6 && reservados && (
-        <CenaReservados anim={anim} reservados={reservados} semReserva={semReserva} valorFaturado={valorFaturado} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 8 fallback — sem dados de reservados */}
-      {cena === 6 && !reservados && (
-        <div className="flex flex-col items-center py-6 text-center">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Estoque Reservado
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Itens com reserva comercial. % do valor = valor reservado ÷ valor total do estoque × 100. Cálculo por item: qtd reservada × custo médio = valor reservado." />
-          </div>
-          <p className="video-sobe font-serif text-3xl text-white/70">
-            Sem dados de itens reservados.
-          </p>
-          <p className="video-sobe mt-2 text-sm text-white/50" style={{ animationDelay: "0.15s" }}>
-            Adicione a planilha de reservados na pasta do Google Drive.
-          </p>
-        </div>
-      )}
-
-      {/* Cena 9 — Fora de linha por categoria */}
-      {cena === 7 && (
-        <CenaForaDeLinha anim={anim} foraDeLinha={foraDeLinha} cena={cena} onPausar={onPausar} />
-      )}
-
-      {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 8 && (
-        <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
-      )}
-
-      {/* Cena 11 — encerramento */}
-      {cena === 9 && (
-        <div className="flex flex-col items-center py-4 text-center">
-          <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
-            Fim do <span className="italic text-brand-amber">resumo</span>.
-          </p>
-          <p className="video-sobe mt-2 text-sm text-white/60" style={{ animationDelay: "0.35s" }}>
-            A apresentação reinicia automaticamente.
-          </p>
-          <div className="video-sobe mt-6 flex flex-wrap items-center justify-center gap-3" style={{ animationDelay: "0.45s" }}>
-            <button
-              type="button"
-              onClick={onReiniciar}
-              className="cursor-pointer rounded-full bg-white px-8 py-3 text-xs font-bold tracking-widest text-brand-dark uppercase shadow-xl transition-transform hover:scale-105"
-            >
-              ↻ Reiniciar agora
-            </button>
-          </div>
-        </div>
-      )}
-
-    </>
-  );
-}
-
-/* Cena 1 — carrossel de destaque: os cards abrem um a um e só o card aberto
-   aparece centralizado na tela, ganhando todo o destaque. Avança sozinho e
-   também por clique nos indicadores; clicar no card pausa/retoma o ciclo. */
-function CenaKpisFoco({
-  kpis,
-  foraDeLinha,
-  paletas,
-  producaoSemanal,
-  onPausar,
-}: {
-  kpis: VideoKpi[];
-  foraDeLinha?: VideoForaDeLinha | undefined;
-  paletas?: VideoPaletas | undefined;
-  producaoSemanal?: ProducaoSemanalDia[] | undefined;
-  onPausar?: (() => void) | undefined;
-}) {
-  const temProducao = !!(producaoSemanal && producaoSemanal.length > 0);
-  const total = kpis.length + 1 + (paletas && paletas.totalPaletes > 0 ? 1 : 0) + (temProducao ? 1 : 0); // +1 Fora de linha, +1 Paletes, +1 Produção
-  const [foco, setFoco] = useState(0);
+  const [cena, setCena] = useState(0);
   const [pausado, setPausado] = useState(false);
+  const [anim, setAnim] = useState(false);
+  const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
+  const [relatorio, setRelatorio] = useState(false);
+  const cenaAnteriorRef = useRef(0);
+
+  useEffect(() => {
+    const anterior = cenaAnteriorRef.current;
+    if (anterior !== cena) {
+      setCenaSaindo(anterior);
+      cenaAnteriorRef.current = cena;
+    }
+    setAnim(false);
+    const t = setTimeout(() => setAnim(true), 60);
+    const tSai = setTimeout(() => setCenaSaindo(null), 600);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(tSai);
+    };
+  }, [cena]);
 
   useEffect(() => {
     if (pausado) return;
-    const t = setTimeout(() => setFoco((f) => (f + 1) % total), 4800);
+    const t = setTimeout(() => {
+      setCena((c) => (c + 1) % TOTAL_CENAS);
+    }, DURACOES[cena]!);
     return () => clearTimeout(t);
-  }, [foco, pausado, total]);
+  }, [cena, pausado]);
 
-  /* Navegação por teclado: seta direita = próximo, seta esquerda = anterior,
-      espaço pausa/retoma o carrossel de cards */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCena(0);
       if (e.key === " ") {
         e.preventDefault();
         setPausado((p) => !p);
-      } else if (e.key === "ArrowRight") setFoco((f) => (f + 1) % total);
-      else if (e.key === "ArrowLeft") setFoco((f) => (f - 1 + total) % total);
+      }
+      if (cena !== 0) {
+        if (e.key === "ArrowRight") setCena((s) => Math.min(s + 1, TOTAL_CENAS - 1));
+        if (e.key === "ArrowLeft") setCena((s) => Math.max(s - 1, 0));
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [total]);
+  }, [cena]);
 
-  const ehForaDeLinha = foco === kpis.length;
-  const ehPaletas = foco === kpis.length + 1;
-  const ehProducao = temProducao && foco === kpis.length + 2;
-  const kpi = foco < kpis.length ? kpis[foco] : null;
-  const togglePausar = () => {
-    const next = !pausado;
-    setPausado(next);
-    if (next) onPausar?.();
+  useEffect(() => {
+    const anterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = anterior;
+    };
+  }, []);
+
+  const dadosPainel: VideoResumoProps = {
+    kpis,
+    unidades,
+    ocupacao,
+    semana,
+    turnos,
+    mensal,
+    avarias,
+    pendentes,
+    reservados,
+    semReserva,
+    valorFaturado,
+    foraDeLinha,
+    paletas,
+    recebimentoSemanal,
+    producaoSemanal,
+    resumo,
+    sincronizacao,
   };
-  const avancar = () => setFoco((f) => (f + 1) % total);
+
+  const propsCena = {
+    kpis,
+    unidades,
+    ocupacao,
+    semana,
+    turnos,
+    mensal,
+    avarias,
+    pendentes,
+    reservados,
+    semReserva,
+    valorFaturado,
+    foraDeLinha,
+    paletas,
+    recebimentoSemanal,
+    producaoSemanal,
+    resumo,
+    onReiniciar: () => setCena(0),
+    onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
+    onPausar: () => setPausado(true),
+  };
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="flex items-center justify-center gap-2">
-        <p className="video-sobe text-[11px] font-medium tracking-[0.4em] text-white/70 uppercase">
-          Resumo do CD · {new Date().getFullYear()}
+    <div
+      role="dialog"
+      aria-label="Vídeo resumo do dashboard"
+      className="dashboard-entrar fixed inset-0 z-[120] flex flex-col overflow-hidden"
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest("button, a, input, select, textarea, [role='button']")) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        if (x < rect.width * 0.35) setCena((s) => Math.max(s - 1, 0));
+        else if (x > rect.width * 0.65) setCena((s) => Math.min(s + 1, TOTAL_CENAS - 1));
+        else setPausado((p) => !p);
+      }}
+    >
+      <ResumoBg cena={cena} />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#4a6b20]/75 via-[#3a521a]/60 to-[#2e3f14]/85" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.35)_100%)]" />
+
+      <div className="pointer-events-none absolute bottom-8 left-4 z-[1] sm:bottom-10 sm:left-10">
+        <p className="font-serif text-xs tracking-tight text-white/12 sm:text-lg sm:tracking-tight">
+          Controle de Estoque CD Lopas
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Indicadores principais do CD Lopas. Valor em estoque = custo médio × saldo de cada item. Peças e massa somadas de todos os itens ativos. Ocupaçã[...]
+        <p className="mt-0.5 text-[8px] font-semibold tracking-[0.3em] text-primary/15 uppercase sm:text-[11px]">
+          Movidos pela fé
+        </p>
       </div>
 
-      {/* Apenas o card aberto aparece, centralizado e em destaque */}
-      <div className="relative mt-10 flex w-full max-w-[23rem] items-center justify-center">
-        {/* halo suave atrás do card para destacar sem peso */}
-        <div className="card-foco-halo pointer-events-none absolute inset-0" aria-hidden />
-        {/* Seta esquerda */}
-        <button
-          type="button"
-          onClick={() => setFoco((f) => (f - 1 + total) % total)}
-          className="absolute -left-10 z-10 flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/[...]
-          aria-label="Card anterior"
-        >
-          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        </button>
-        <div key={foco} className="card-foco-entra relative w-full">
-          {kpi ? (
-            <CardFocoKpi kpi={kpi} onTogglePausar={togglePausar} />
-          ) : ehPaletas ? (
-            <CardFocoPaletas paletas={paletas} onTogglePausar={togglePausar} />
-          ) : ehProducao ? (
-            <CardFocoProducao dias={producaoSemanal} onTogglePausar={togglePausar} />
-          ) : (
-            <CardFocoForaDeLinha foraDeLinha={foraDeLinha} onTogglePausar={togglePausar} />
+      {relatorio && (
+        <RelatorioLopas dados={dadosPainel} onFechar={() => setRelatorio(false)} />
+      )}
+
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        <div className="flex items-center justify-end gap-3 px-5 pt-3 sm:px-8">
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              aria-label="Sair"
+              className="cursor-pointer rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase backdrop-blur-sm transition-colors hover:bg-white/15"
+            >
+              Sair
+            </button>
           )}
         </div>
-        {/* Seta direita */}
-        <button
-          type="button"
-          onClick={avancar}
-          className="absolute -right-10 z-10 flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white[...]
-          aria-label="Próximo card"
-        >
-          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-        </button>
+
+        <div className="relative flex min-h-0 flex-grow items-center justify-center overflow-hidden px-4 py-2 sm:px-8">
+          <div key={cena} className="video-entra absolute inset-0 overflow-y-auto px-4 py-2 pb-20 sm:px-8">
+            <div className="flex min-h-full items-center justify-center">
+              <CenasApresentacao cena={cena} anim={anim} {...propsCena} />
+            </div>
+          </div>
+          {cenaSaindo !== null && (
+            <div key={`sai-${cenaSaindo}`} className="video-sai video-congelada absolute inset-0 overflow-y-auto px-4 py-2 pb-20 sm:px-8" aria-hidden>
+              <div className="flex min-h-full items-center justify-center">
+                <CenasApresentacao cena={cenaSaindo} anim {...propsCena} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between px-6 pb-2 text-[9px] font-bold tracking-[0.2em] text-white/45 uppercase sm:px-8">
+          <span>{pausado ? "Pausado · espaço retoma" : "Reprodução automática · espaço pausa"}</span>
+          <span className="font-mono">
+            {String(cena + 1).padStart(2, "0")} / {String(TOTAL_CENAS).padStart(2, "0")}
+          </span>
+        </div>
       </div>
 
-      {/* Indicadores — pílulas delicadas, a ativa alonga-se */}
-      <div className="mt-8 flex items-center gap-1.5">
-        {Array.from({ length: total }).map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setFoco(i)}
-            aria-label={`Card ${i + 1}`}
-            className={cn(
-              "h-1 rounded-full transition-all duration-500",
-              i === foco ? "w-7 bg-primary" : "w-3 bg-white/20 hover:bg-white/40",
-            )}
-          />
+      <div aria-hidden className="pointer-events-none absolute size-0 overflow-hidden opacity-0">
+        {TODAS_IMAGENS_AVARIA.map((src) => (
+          <img key={src} src={src} alt="" loading="eager" />
         ))}
       </div>
-      <p className="mt-4 text-[8px] font-medium tracking-[0.4em] text-white/30 uppercase">
-        Clique no card para pausar · use as setas ← →
-      </p>
     </div>
   );
 }
-
-/* Vidro refinado compartilhado pelos cards de destaque */
-const cardFocoBase =
-  "group block w-full cursor-pointer rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-5 text-center backdrop-blur-xl shadow-[0_20px_50px_-36px_rgba(0,0,0,0.7)] transition-all duration-500 hover:border-white/20 hover:bg-white/[0.06]";
-
-/* Card de KPI em destaque — centralizado, grande, com o resumo sempre aberto */
-function CardFocoKpi({
-  kpi,
-  onTogglePausar,
-}: {
-  kpi: VideoKpi;
-  onTogglePausar: () => void;
-}) {
-  return (
-    <button type="button" onClick={onTogglePausar} className={cardFocoBase}>
-      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
-        {kpi.valor}
-      </p>
-      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-primary/80 uppercase">
-        {kpi.rotulo}
-      </p>
-      {kpi.detalhe && (
-        <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
-          {kpi.detalhe}
-        </p>
-      )}
-      {kpi.extra?.length ? (
-        <dl className="mt-3 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
-          {kpi.extra.map(([k, v], ki) => (
-            <div key={`${k}-${ki}`} className="flex items-baseline justify-between py-1.5 text-[10px] sm:text-[11px]">
-              <dt className="flex items-center gap-2 text-white/45">
-                {k.split(" · ")[0]}
-                {k.includes(" · ") && (
-                  <span className="whitespace-nowrap rounded bg-white/10 px-1.5 py-0.5 text-center font-mono text-[10px] font-semibold text-white/75">
-                    {k.split(" · ")[1]}
-                  </span>
-                )}
-              </dt>
-              <dd className="font-medium text-white/90">{v}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-    </button>
-  );
-}
-
-/* Card de "fora de linha" em destaque — acento âmbar, resumo aberto */
-function CardFocoForaDeLinha({
-  foraDeLinha,
-  onTogglePausar,
-}: {
-  foraDeLinha?: VideoForaDeLinha | undefined;
-  onTogglePausar: () => void;
-}) {
-  const pos = foraDeLinha?.posicaoForaDeLinha ?? POSICAO_FORA_DE_LINHA;
-  const total = foraDeLinha?.posicaoTotal ?? POSICAO_TOTAL;
-  const pctPeso = total.pesoTon > 0 ? pos.pesoTon / total.pesoTon : 0;
-  return (
-    <button
-      type="button"
-      onClick={onTogglePausar}
-      className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
-    >
-      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
-        {fmtPct(pctPeso)}
-      </p>
-      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-brand-amber/80 uppercase">
-        Fora de linha
-      </p>
-      <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
-        {fmtInt(pos.itens)} itens descontinuados ainda ocupam o CD — {fmtPeso(pos.pesoTon * 1000)} de
-        massa ({fmtPct(pctPeso)} do peso total) e {fmtMoeda(pos.valorEstoque)} em custo.
-      </p>
-      <dl className="mt-2.5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Itens fora de linha</dt>
-          <dd className="font-medium text-white/90">{fmtInt(pos.itens)}</dd>
-        </div>
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Valor em estoque</dt>
-          <dd className="font-medium text-white/90">{fmtMoeda(pos.valorEstoque)}</dd>
-        </div>
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Valor reservado</dt>
-          <dd className="font-medium text-white/90">{fmtMoeda(pos.valorReservado)}</dd>
-        </div>
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Massa total</dt>
-          <dd className="font-medium text-brand-amber">{fmtPeso(pos.pesoTon * 1000)}</dd>
-        </div>
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Massa reservada</dt>
-          <dd className="font-medium text-brand-amber">{fmtPeso(pos.pesoReservadoTon * 1000)}</dd>
-        </div>
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Saldo físico</dt>
-          <dd className="font-medium text-white/90">{fmtInt(pos.saldoFocco)} un</dd>
-        </div>
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Disponível</dt>
-          <dd className="font-medium text-white/90">{fmtInt(pos.disponivel)} un</dd>
-        </div>
-      </dl>
-    </button>
-  );
-}
-
-/* Card de "paletes em estoque" em destaque — mostra o total de paletes
-   e o breakdown por tamanho (P, M, G, GG). */
-const CORES_TAMANHO: Record<string, string> = {
-  P: "#22c55e",
-  M: "#3b82f6",
-  G: "#f97316",
-  GG: "#a855f7",
-};
-
-function CardFocoPaletas({
-  paletas,
-  onTogglePausar,
-}: {
-  paletas?: VideoPaletas | undefined;
-  onTogglePausar: () => void;
-}) {
-  const total = paletas?.totalPaletes ?? 0;
-  const itens = paletas?.totalItens ?? 0;
-  return (
-    <button
-      type="button"
-      onClick={onTogglePausar}
-      className={cn(cardFocoBase, "border-primary/20 bg-primary/[0.05] hover:border-primary/35 hover:bg-primary/[0.08]")}
-    >
-      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
-        {fmtInt(total)}
-      </p>
-      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-primary/80 uppercase">
-        Paletes em Estoque
-      </p>
-      <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
-        {fmtInt(itens)} itens mapeados distribuídos em {fmtInt(total)} paletes,
-        organizados por tamanho de pallet.
-      </p>
-      {paletas?.porTamanho?.length ? (
-        <dl className="mt-3 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
-          {paletas.porTamanho.map((t) => {
-            const cor = CORES_TAMANHO[t.tamanho] ?? "#6b7280";
-            const pct = total > 0 ? (t.paletes / total) * 100 : 0;
-            return (
-              <div key={t.tamanho} className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-                <dt className="flex items-center gap-1.5 text-white/45">
-                  <span className="size-2 rounded-full" style={{ background: cor }} />
-                  Tamanho {t.tamanho}
-                </dt>
-                <dd className="font-medium text-white/90">
-                  {fmtInt(t.paletes)} <span className="text-white/40">({fmtBrMax(pct, 0)}%)</span>
-                </dd>
-              </div>
-            );
-          })}
-        </dl>
-      ) : null}
-    </button>
-  );
-}
-
-/* Card de "produção da semana" em destaque — mostra tonelagem prevista,
-   pendente, % entregue e breakdown por dia. */
-function CardFocoProducao({
-  dias,
-  onTogglePausar,
-}: {
-  dias?: ProducaoSemanalDia[] | undefined;
-  onTogglePausar: () => void;
-}) {
-  const semana = semanaAtual(dias);
-  const totalPrevisto = semana.reduce((s, d) => s + d.previsto, 0);
-  const totalEntregue = semana.reduce((s, d) => s + d.entregue, 0);
-  const totalPendente = semana.reduce((s, d) => s + d.pendente, 0);
-  const totalTonPrev = semana.reduce((s, d) => s + d.tonPrevisto, 0);
-  const totalTonPend = semana.reduce((s, d) => s + d.tonPendente, 0);
-  const totalOrdens = semana.reduce((s, d) => s + d.ordens, 0);
-  const pctEntregue = totalPrevisto > 0 ? (totalEntregue / totalPrevisto) * 100 : 0;
-
-  return (
-    <button
-      type="button"
-      onClick={onTogglePausar}
-      className={cn(cardFocoBase, "border-brand-amber/20 bg-brand-amber/[0.05] hover:border-brand-amber/35 hover:bg-brand-amber/[0.08]")}
-    >
-      <p className="font-serif text-[1.75rem] leading-none tracking-tight text-white sm:text-[2.125rem]">
-        {fmtBrMax(totalTonPrev, 1)} t
-      </p>
-      <p className="mt-1.5 text-[8px] font-medium tracking-[0.4em] text-brand-amber/80 uppercase">
-        Produção da Semana
-      </p>
-      <p className="mt-3 text-left text-[11px] leading-relaxed text-white/60 sm:text-[12px]">
-        {fmtInt(totalOrdens)} ordens de produção programadas para os próximos{" "}
-        {semana.length} dias — {fmtBrMax(totalTonPend, 1)} t a descer.
-      </p>
-      <dl className="mt-2.5 divide-y divide-white/[0.07] border-t border-white/[0.07] text-left">
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Programado</dt>
-          <dd className="font-medium text-white/90">{fmtInt(totalPrevisto)} un · {fmtBrMax(totalTonPrev, 1)} t</dd>
-        </div>
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Recebido</dt>
-          <dd className="font-medium text-green-400">{fmtInt(totalEntregue)} un ({fmtBrMax(pctEntregue, 0)}%)</dd>
-        </div>
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Previsto</dt>
-          <dd className="font-medium text-brand-amber">{fmtInt(totalPendente)} un · {fmtBrMax(totalTonPend, 1)} t</dd>
-        </div>
-        <div className="flex items-baseline justify-between py-1 text-[10px] sm:text-[11px]">
-          <dt className="text-white/45">Ordens</dt>
-          <dd className="font-medium text-white/90">{fmtInt(totalOrdens)}</dd>
-        </div>
-      </dl>
-    </button>
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-n
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-nop
-
-
-
-
-
-
-n
-
-
-
-
-
-n
-
-
-
-n
-
-
-n
-
-
-n
-
-
-n
-
-
-n
-
-
-n
-
-
