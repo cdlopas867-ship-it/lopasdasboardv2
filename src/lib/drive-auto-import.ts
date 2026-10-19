@@ -27,7 +27,7 @@ import { fmtInt, fmtTonDec, fmtMi } from "./format";
 import { processarViagensWb } from "./viagens-store";
 import { lerForaDeLinha, aplicarCustos, rebuildForaDeLinhaFromItens } from "./fora-de-linha-import";
 import { lerItensFull, lerPesosPosicao, calcularSaldoComparativo } from "./saldo-comparativo-import";
-import { lerItensCcr, calcularComparativoCcr } from "./ccr-import";
+import { lerItensCcr, calcularComparativoCcr, comparativoMistoCcr } from "./ccr-import";
 
 /* Planilha analise-estoque não traz custo: usa o custo médio da planilha de reservas. */
 function comCustos(
@@ -51,7 +51,7 @@ import type { Avaria } from "./avarias";
 import type { PendenteProducao } from "./pendentes";
 import type { ItemEstoque } from "./base-estoque";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
-import type { ComparativoCcr } from "@/data/comparativo-ccr";
+import { COMPARATIVO_CCR, type ComparativoCcr } from "@/data/comparativo-ccr";
 
 const FOLDER_ID = "16WJaYavcR8B1QgpVsT51Kg0_ADJsSGtQ";
 const DRIVE_GATEWAY = "https://connector-gateway.lovable.dev/google_drive/drive/v3";
@@ -1392,6 +1392,20 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       );
     } else {
       console.warn("[auto-import] CCR: relatório encontrado mas nada casou com o estoque 001");
+    }
+  } else if (melhorItens) {
+    /* Sem relatório do CCR na pasta: o lado do Estoque 001 fica ao vivo com
+       a posição atual e o lado do CCR na última base extraída. */
+    const d001 = melhorItensMod;
+    const dataBase001 = d001
+      ? `${String(d001.getDate()).padStart(2, "0")}/${String(d001.getMonth() + 1).padStart(2, "0")}/${d001.getFullYear()}`
+      : melhorResumo.data || "";
+    comparativoCcr = comparativoMistoCcr(melhorItens, COMPARATIVO_CCR, dataBase001);
+    if (comparativoCcr) {
+      console.info(
+        `[auto-import] CCR (misto): 001 ao vivo ${fmtInt(comparativoCcr.estoque001.itens)} itens / ` +
+          `${fmtTonDec(comparativoCcr.estoque001.pesoTon)} × base CCR de ${COMPARATIVO_CCR.dataBase}`,
+      );
     }
   }
 
