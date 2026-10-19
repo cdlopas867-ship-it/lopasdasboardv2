@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 /* Hook que mantém os dados do painel sincronizados entre todos os dispositivos.
  *
  * - Busca os dados recentes via GET /api/sync-data ao montar e a cada
- *   1 s (polling) — garante que dispositivos que abram o link depois da
+ *   15 s (polling) — garante que dispositivos que abram o link depois da
  *   importação recebam os valores corretos mesmo se o SSE for bloqueado
  *   por proxies/CDN.
  * - Conecta a um EventSource (SSE) para atualizações em tempo real quando
@@ -71,6 +71,31 @@ function recSig(arr: unknown[] | undefined): string {
   return `${a.length}:${first}:${last}:${Math.round(ton)}:${qtd}:${paletes}`;
 }
 
+/* Assinatura dos dias de recebimento (Base Recebimento) — barra semanal de
+   toneladas. Precisa entrar na chave: a Base Recebimento muda as tonelagens
+   dos dias sem alterar o número de barras nem o estoque/resumo, e sem isso o
+   painel ignorava a atualização (a cena ficava congelada). */
+function recDiasSig(arr: unknown[] | undefined): string {
+  if (!arr?.length) return "0";
+  const a = arr as Record<string, unknown>[];
+  let ton = 0;
+  for (const d of a) ton += (typeof d["ton"] === "number" ? d["ton"] : 0);
+  const first = a[0]?.["iso"] ?? "";
+  const last = a[a.length - 1]?.["iso"] ?? "";
+  return `${a.length}:${first}:${last}:${Math.round(ton)}`;
+}
+
+/* Assinatura dos turnos de recebimento (Dia/Noite) — tonelagem e % de cada
+   turno. Muda quando a Base Recebimento atualiza os pesos, sem alterar a
+   contagem de turnos (sempre 2). */
+function recTurnosSig(arr: unknown[] | undefined): string {
+  if (!arr?.length) return "0";
+  const a = arr as Record<string, unknown>[];
+  return a
+    .map((t) => `${t["nome"] ?? ""}:${Math.round(typeof t["ton"] === "number" ? t["ton"] : 0)}:${typeof t["pct"] === "number" ? t["pct"] : 0}`)
+    .join("|");
+}
+
 /* Assinatura da produção da semana (PCP 003) — dias e totais de toneladas/
    unidades. Precisa entrar na chave: a planilha de produção muda sem alterar
    estoque/resumo, e sem isso o painel ignorava a atualização (a cena ficava
@@ -103,8 +128,8 @@ function dataKey(payload: unknown, incluirSync = true): string {
     ri: r["itens"],
     k: (p["kpis"] as unknown[])?.length,
     u: (p["unidades"] as unknown[])?.length,
-    d: (p["dias"] as unknown[])?.length,
-    t: (p["turnos"] as unknown[])?.length,
+    d: recDiasSig(p["dias"] as unknown[] | undefined),
+    t: recTurnosSig(p["turnos"] as unknown[] | undefined),
     pe: arrSig(p["pendentes"] as unknown[] | undefined),
     av: arrSig(p["avarias"] as unknown[] | undefined),
     it: (p["itens"] as unknown[])?.length,
@@ -207,7 +232,7 @@ export function useDadosSync<T>(initial: T) {
       }
     };
     fetchLatest();
-    const interval = setInterval(fetchLatest, 1000);
+    const interval = setInterval(fetchLatest, 15000);
     /* Ao voltar para a aba/tela, busca na hora (o navegador atrasa timers em segundo plano). */
     const onVisivel = () => { if (document.visibilityState === "visible") fetchLatest(); };
     document.addEventListener("visibilitychange", onVisivel);

@@ -1,5 +1,7 @@
-// Service worker mínimo — permite a instalação como PWA
-const CACHE = "lopas-cd-v2";
+// Service worker — permite a instalação como PWA.
+// As rotas de API (/api/*) e SSE passam direto (sem cache/interceptação)
+// para o painel instalado sempre buscar dados frescos do servidor.
+const CACHE = "lopas-cd-v3";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -15,7 +17,14 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Estratégia network-first — sempre tenta a rede, usa cache como fallback
+  const url = new URL(event.request.url);
+
+  // Rotas de API e SSE: sempre direto ao servidor, sem cache do SW.
+  if (url.pathname.startsWith("/api/")) {
+    return; // não chama respondWith — o navegador faz a requisição normal
+  }
+
+  // Estratégia network-first — sempre tenta a rede, usa cache como fallback.
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
   );

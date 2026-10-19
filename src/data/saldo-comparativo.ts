@@ -16,7 +16,7 @@
  * alertas. A acuracidade é a parcela dos itens em comum com saldo exatamente
  * igual.
  *
- * Os valores abaixo são o FALLBACK estático (data-base 14/10/2026). Em execução
+ * Os valores abaixo são o FALLBACK estático (data-base 19/10/2026). Em execução
  * o painel usa o comparativo calculado pelo drive-auto-import a partir das
  * planilhas da pasta do Drive (src/lib/saldo-comparativo-import.ts). Para
  * atualizar o fallback, reextrair as duas planilhas da pasta (ST QUARTA e
@@ -80,120 +80,120 @@ export type SaldoComparativo = {
 };
 
 export const SALDO_COMPARATIVO: SaldoComparativo = {
-  dataBase: "14/10/2026",
+  dataBase: "19/10/2026",
   full: {
-    itens: 657,
-    saldo: 134304
+    itens: 663,
+    saldo: 138747
   },
   focco: {
-    itens: 612,
-    saldo: 136125,
-    valor: 17061917.77
+    itens: 611,
+    saldo: 141617,
+    valor: 18144692.33
   },
   comparativo: {
-    itensEmComum: 589,
-    itensSoFull: 68,
-    itensSoFocco: 23,
-    qtdExata: 171,
-    qtdDiferenca: 418,
-    pctAcuracia: 29,
-    tonExato: 224.1,
-    tonDiferenca: 3761.4,
-    tonSoFocco: 2.2,
-    tonFullExato: 224.1,
-    tonFullDiferenca: 3693,
-    tonFullSoFull: 18.5
+    itensEmComum: 594,
+    itensSoFull: 69,
+    itensSoFocco: 17,
+    qtdExata: 168,
+    qtdDiferenca: 426,
+    pctAcuracia: 28.3,
+    tonExato: 249.2,
+    tonDiferenca: 4065.1,
+    tonSoFocco: 1.2,
+    tonFullExato: 249.2,
+    tonFullDiferenca: 3987.1,
+    tonFullSoFull: 18.4
   },
   alertas: {
-    soFull: 68,
-    soFocco: 23,
-    diferencaTotal: 1821
+    soFull: 69,
+    soFocco: 17,
+    diferencaTotal: 2870
   },
   todosItens: [],
   topDiferencas: [
     {
-      item: "2194.16652",
-      desc: "VOL KIT PES C/10 PES LOPAS PVC 0,420X0,160X0,140",
-      full: 2493,
-      focco: 3169,
-      diff: 676
-    },
-    {
-      item: "72596",
-      desc: "VOL CX ESPELHO C/4 ESP 900X235X3 C/8 SUP CROMADO 0,960X0,295X0,046",
-      full: 1404,
-      focco: 1974,
-      diff: 570
-    },
-    {
-      item: "72594.12814",
-      desc: "VOL CX GR 8 PTS EASY SLIM/ANDARA TAMPO/LATERAL 2,430X0,460X0,128",
-      full: 1372,
-      focco: 1840,
-      diff: 468
+      item: "87470.91617",
+      desc: "VOL CX KIT C/8 PUXADORES GR SERENATA 0,370X0,140X0,075",
+      full: 378,
+      focco: 1138,
+      diff: 760
     },
     {
       item: "154.16634",
       desc: "VOL KIT PES C/8 PES LOPAS PVC 0,338X0,140X0,069",
-      full: 3317,
-      focco: 3546,
-      diff: 229
+      full: 2247,
+      focco: 2666,
+      diff: 419
     },
     {
-      item: "154.16635",
-      desc: "VOL KIT PES C/8 PES LOPAS PVC 0,338X0,140X0,069",
-      full: 187,
-      focco: 381,
-      diff: 194
-    },
-    {
-      item: "2085.12720",
-      desc: "VOL CX GR 4 PTS ALONZO LAT/DIV 2,315X0,460X0,075",
-      full: 615,
-      focco: 789,
-      diff: 174
+      item: "2194.16652",
+      desc: "VOL KIT PES C/10 PES LOPAS PVC 0,420X0,160X0,140",
+      full: 1097,
+      focco: 1416,
+      diff: 319
     },
     {
       item: "187.15487",
       desc: "VOL KIT PES C/6 PES LOPAS PVC 0,282X0,140X0,069",
-      full: 1575,
-      focco: 1742,
-      diff: 167
+      full: 1906,
+      focco: 2142,
+      diff: 236
     },
     {
-      item: "72595.12820",
-      desc: "VOL CX GR 8 PTS EASY SLIM/ANDARA SOFT PORTAS/COSTAS 1,950X0,600X0,096",
-      full: 822,
-      focco: 971,
-      diff: 149
+      item: "72594.12814",
+      desc: "VOL CX GR 8 PTS EASY SLIM/ANDARA TAMPO/LATERAL 2,430X0,460X0,128",
+      full: 2900,
+      focco: 3133,
+      diff: 233
     },
     {
-      item: "73026.16485",
-      desc: "VOL KIT PES C/4 PES LOPAS PVC 0,185X0,140X0,075",
-      full: 494,
-      focco: 610,
-      diff: 116
+      item: "217.16140",
+      desc: "VOL CX ASSENTO/ENCOSTO CAD APOGEU/TESSERA C/20,585X0,370X0,430",
+      full: 1427,
+      focco: 1626,
+      diff: 199
     },
     {
-      item: "74198.31905",
-      desc: "VOL CX MESA DE CABECEIRA C/3 GAV BAIAO 2021 0,665X0,385X0,140",
-      full: 237,
-      focco: 349,
-      diff: 112
+      item: "154.16635",
+      desc: "VOL KIT PES C/8 PES LOPAS PVC 0,338X0,140X0,069",
+      full: 150,
+      focco: 348,
+      diff: 198
     },
     {
-      item: "85462.46365",
-      desc: "VOL CX CADEIRA APOGEU/RAYLA 2025 C/06 0,545X0,435X0,183",
-      full: 1021,
-      focco: 1127,
-      diff: 106
+      item: "72596",
+      desc: "VOL CX ESPELHO C/4 ESP 900X235X3 C/8 SUP CROMADO 0,960X0,295X0,046",
+      full: 1766,
+      focco: 1932,
+      diff: 166
     },
     {
-      item: "2084.12865",
-      desc: "VOL CX GR 4 PTS ALONZO 2021 T/F 1,345X0,460X0,110",
-      full: 665,
-      focco: 765,
-      diff: 100
+      item: "85594.67929",
+      desc: "VOL CX CADEIRA BONNA C/2 0,580X0,440X0,365",
+      full: 348,
+      focco: 493,
+      diff: 145
+    },
+    {
+      item: "97189.99485",
+      desc: "VOL CX GR SUAVITA 6PTS COSTAS 2,185X0,905X0,010",
+      full: 735,
+      focco: 880,
+      diff: 145
+    },
+    {
+      item: "308",
+      desc: "VOL CX ESPELHO C/4 ESP 900X300X3 C/8 SUP CROMADO 0,960X0,360X0,036",
+      full: 834,
+      focco: 978,
+      diff: 144
+    },
+    {
+      item: "2085.12720",
+      desc: "VOL CX GR 4 PTS ALONZO LAT/DIV 2,315X0,460X0,075",
+      full: 433,
+      focco: 569,
+      diff: 136
     }
   ]
 };
