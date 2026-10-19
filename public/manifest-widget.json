@@ -1,13 +1,12 @@
 {
-  "name": "Lopas · Desempenho",
-  "short_name": "Desempenho",
-  "description": "Widget de desempenho do CD Lopas — peso do estoque, valor previsto e reservas em linha e fora de linha.",
+  "name": "Lopas · Estoque",
+  "short_name": "Estoque",
+  "description": "Widget de estoque do CD Lopas — peso e valor em tempo real.",
   "start_url": "/widget",
   "scope": "/widget",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone"],
-  "background_color": "#0a1306",
-  "theme_color": "#0c1408",
+  "background_color": "#212132",
+  "theme_color": "#3a2e4c",
   "orientation": "any",
   "icons": [
     {

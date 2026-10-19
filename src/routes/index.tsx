@@ -18,7 +18,7 @@ import { MENSAL_FIXO_JAN_ABR, PENDENTES_RESUMO_FIXO, PALETAS_FIXO } from "@/data
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 
-export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Painel de Estoque · Lopas 2026" }, { name: "description", content: "Indicadores de estoque, ocupação e recebimento do Centro de Distribuição Lopas." }, { property: "og:title", content: "Painel de Estoque · Lopas 2026" }, { property: "og:description", content: "Indicadores do Centro de Distribuição Lopas em uma apresentação interativa." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: DashboardHome });
+export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Painel de Estoque · Lopas 2026" }, { name: "description", content: "Indicadores de estoque, ocupação e recebimento do Centro de Distribuição Lopas." }, { property: "og:title", content: "Painel de Estoque · Lopas 2026" }, { property: "og:description", content: "Indicadores do Centro de Distribuição Lopas em uma apresentação interativa." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }], links: [{ rel: "manifest", href: "/manifest.json" }] }), component: DashboardHome });
 type Painel = typeof initialSyncData & Record<string, unknown>;
 function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();

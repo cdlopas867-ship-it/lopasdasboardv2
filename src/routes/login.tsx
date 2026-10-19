@@ -15,6 +15,7 @@ export const Route = createFileRoute("/login")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "manifest", href: "/manifest.json" }],
   }),
   component: LoginPage,
 });

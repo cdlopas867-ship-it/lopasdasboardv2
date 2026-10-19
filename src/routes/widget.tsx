@@ -1,187 +1,255 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
-import { POSICAO_EM_LINHA, POSICAO_FORA_DE_LINHA, POSICAO_TOTAL } from "@/data/fora-de-linha";
 import { fmtTonDec } from "@/lib/format";
 
 type Painel = typeof initialSyncData & Record<string, unknown>;
+type Resumo = { ton?: number; valor?: number; itens?: number };
+type Mensal = { mes: string; recebido: number; carregado: number };
 
 export const Route = createFileRoute("/widget")({
   head: () => ({
     meta: [
-      { title: "Desempenho · Lopas" },
-      { name: "description", content: "Widget de desempenho do estoque do CD Lopas." },
+      { title: "Estoque · Lopas" },
+      { name: "description", content: "Widget de estoque do CD Lopas." },
     ],
-    links: [
-      { rel: "manifest", href: "/manifest-widget.json" },
-    ],
+    links: [{ rel: "manifest", href: "/manifest-widget.json" }],
   }),
-  component: WidgetDesempenho,
+  component: WidgetEstoque,
 });
 
-/* ── Tipos do payload ─────────────────────────────────────────────── */
-
-type Resumo = { ton?: number; valor?: number; previsto?: number; saldo?: number; itens?: number };
-type Posicao = { reservas?: number; pesoReservadoTon?: number };
-type ForaDeLinha = {
-  posicaoEmLinha?: Posicao;
-  posicaoForaDeLinha?: Posicao;
-  posicaoTotal?: Posicao;
-} | null;
-
-/* ── Widget ───────────────────────────────────────────────────────── */
-
-function WidgetDesempenho() {
+function WidgetEstoque() {
   const { autenticado, pronto, login } = useAuth();
 
-  if (!pronto) return <TelaCarregando />;
-  if (!autenticado) return <TelaLogin onLogin={login} />;
-
-  return <WidgetConteudo />;
-}
-
-function WidgetConteudo() {
-  const { dados } = useDadosSync<Painel>(initialSyncData as Painel);
-  const [instalavel, setInstalavel] = useState<BeforeInstallPromptEvent | null>(null);
-  const [instalado, setInstalado] = useState(false);
-
+  // Garante que só o manifest-widget.json esteja ativo (cobre navegação client-side)
   useEffect(() => {
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      setInstalado(true);
-      return;
-    }
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstalavel(e as BeforeInstallPromptEvent);
-    };
-    const onInstalled = () => {
-      setInstalado(true);
-      setInstalavel(null);
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
+    const main = document.querySelector('link[rel="manifest"]:not([href*="manifest-widget"])');
+    if (main) main.remove();
   }, []);
 
-  const p = dados as unknown as Record<string, unknown>;
-  const resumo = (p["resumo"] ?? {}) as Resumo;
-  const foraDeLinha = (p["foraDeLinha"] ?? null) as ForaDeLinha;
+  // Registra o service worker — sem ele o navegador não oferece instalar o widget
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
 
-  const pesoTon = resumo.ton ?? 0;
-  const pesoReservadoEmLinha = foraDeLinha?.posicaoEmLinha?.pesoReservadoTon ?? POSICAO_EM_LINHA.pesoReservadoTon;
-  const pesoReservadoForaLinha = foraDeLinha?.posicaoForaDeLinha?.pesoReservadoTon ?? POSICAO_FORA_DE_LINHA.pesoReservadoTon;
-  const pesoReservadoTotal = foraDeLinha?.posicaoTotal?.pesoReservadoTon ?? POSICAO_TOTAL.pesoReservadoTon;
-  const pesoDisponivel = pesoTon - pesoReservadoTotal;
+  // Ao abrir como PWA instalada, força a janela no tamanho do widget (só o card)
+  useEffect(() => {
+    const W = 360;
+    const H = 440;
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      window.resizeTo(W, H);
+    }
+  }, []);
 
-  const atualizadoEm = (p["sincronizacao"] as { em?: string } | undefined)?.em
-    ? new Date((p["sincronizacao"] as { em: string }).em).toLocaleString("pt-BR", {
-        dateStyle: "short",
-        timeStyle: "short",
-        timeZone: "America/Sao_Paulo",
-      })
-    : (p["atualizadoEm"] as string | undefined);
+  if (!pronto) return null;
+  if (!autenticado) return <TelaLogin onLogin={login} />;
+  return (
+    <>
+      <Card />
+      <BotaoInstalar />
+    </>
+  );
+}
 
-  const instalar = async () => {
-    if (!instalavel) return;
-    await instalavel.prompt();
-    await instalavel.userChoice;
-    setInstalavel(null);
-  };
+/* ── Card principal — estilo System Monitor ────────────────────────── */
+
+type Reservado = { pesoReservado?: number };
+
+function Card() {
+  const { dados } = useDadosSync<Painel>(initialSyncData as Painel);
+  const resumo = ((dados as Record<string, unknown>)["resumo"] ?? {}) as Resumo;
+  const mensal = ((dados as Record<string, unknown>)["mensal"] ?? []) as Mensal[];
+  const reservados = ((dados as Record<string, unknown>)["reservados"] ?? []) as Reservado[];
+
+  const tonEstoque = resumo.ton ?? 0;
+  const tonReservado = reservados.reduce((s, r) => s + (r.pesoReservado ?? 0), 0) / 1000;
+  const tonLinha = Math.max(0, tonEstoque - tonReservado);
+  const pctReservado = tonEstoque > 0 ? (tonReservado / tonEstoque) * 100 : 0;
+
+  // Série do gráfico: carregado mensal (toneladas)
+  const serie = mensal.map((m) => m.carregado).filter((v) => v > 0);
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-gradient-to-b from-[#0f1a0b] to-[#0a1306] text-white">
-      {/* cabeçalho */}
-      <header className="flex items-center justify-between px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <span className="size-2 animate-pulse rounded-full bg-[#00FFCC] shadow-[0_0_8px_#00FFCC]" />
-          <span className="text-[10px] font-bold tracking-[0.22em] text-white/80 uppercase">
-            Desempenho · CD Lopas
-          </span>
+    <div className="flex h-screen w-screen items-center justify-center bg-transparent">
+      <div
+        className="flex w-[320px] flex-col gap-4 rounded-[20px] p-5"
+        style={{ background: "linear-gradient(160deg, #3a2e4c 0%, #212132 100%)" }}
+      >
+        {/* ── Seção 1: Peso de Estoque (com gráfico) ── */}
+        <div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <IconeCaixa />
+              <span className="text-[13px] font-semibold text-white">
+                Estoque: {fmtTonDec(tonEstoque)}
+              </span>
+            </div>
+            <span className="text-[13px] font-semibold tabular-nums" style={{ color: "#00d4ff" }}>
+              {resumo.itens ?? 0} un
+            </span>
+          </div>
+          <div className="mt-2 flex h-[44px] items-center rounded-lg bg-black/25 px-2">
+            <GraficoLinha serie={serie} />
+          </div>
         </div>
-        {!instalado && instalavel && (
-          <button
-            type="button"
-            onClick={instalar}
-            className="rounded-full border border-[#00FFCC]/30 bg-[#00FFCC]/10 px-3 py-1 text-[9px] font-bold tracking-widest text-[#00FFCC] uppercase transition hover:bg-[#00FFCC]/20"
-          >
-            ⬇ Fixar
-          </button>
-        )}
-      </header>
 
-      <div className="h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+        {/* Divisor */}
+        <div className="h-px bg-white/10" />
 
-      {/* métricas */}
-      <main className="flex flex-1 flex-col gap-3 px-4 py-4">
-        <Metrica rotulo="Peso do Estoque" valor={fmtTonDec(pesoTon)} destaque />
-        <Metrica rotulo="Peso Disponível" valor={fmtTonDec(pesoDisponivel)} destaque />
-        <div className="grid grid-cols-2 gap-3">
-          <Metrica rotulo="Peso Reserv. em Linha" valor={fmtTonDec(pesoReservadoEmLinha)} compacta />
-          <Metrica rotulo="Peso Reserv. Fora de Linha" valor={fmtTonDec(pesoReservadoForaLinha)} compacta />
+        {/* ── Seção 2: Peso Reservado + Peso em Linha ── */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span style={{ color: "#00d4ff" }}>▼</span>
+              <span className="text-[13px] font-medium text-white/80">Reservado</span>
+            </div>
+            <span className="text-[13px] font-semibold tabular-nums text-white">
+              {fmtTonDec(tonReservado)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span style={{ color: "#ff9e80" }}>▲</span>
+              <span className="text-[13px] font-medium text-white/80">Em Linha</span>
+            </div>
+            <span className="text-[13px] font-semibold tabular-nums text-white">
+              {fmtTonDec(tonLinha)}
+            </span>
+          </div>
         </div>
-      </main>
 
-      {/* rodapé */}
-      <footer className="flex items-center justify-between px-4 pb-3 pt-1 text-[9px] text-white/35">
-        <span className="tracking-wide">Atualizado {atualizadoEm ?? "—"}</span>
-        <span className="tracking-wide">{resumo.itens ?? "—"} itens</span>
-      </footer>
+        {/* Divisor */}
+        <div className="h-px bg-white/10" />
 
-      {/* faixa animada */}
-      <div className="h-0.5 w-full overflow-hidden bg-white/5">
-        <div className="mini-janela-passa h-full w-1/3 bg-gradient-to-r from-transparent via-[#00FFCC] to-transparent" />
+        {/* ── Seção 3: Barra de progresso — % reservado ── */}
+        <div>
+          <div className="flex items-center gap-2">
+            <IconeGrafico />
+            <span className="text-[13px] font-medium text-white/80">
+              Reservado: {pctReservado.toFixed(0).replace(".", ",")}%
+            </span>
+          </div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#4e4e5e]">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${pctReservado}%`, background: "#00d4ff" }}
+            />
+          </div>
+        </div>
+
+        {/* Rodapé */}
+        <p className="text-center text-[10px] font-medium uppercase tracking-wider text-white/25">
+          CD Lopas
+        </p>
       </div>
     </div>
   );
 }
 
-/* ── Subcomponentes ────────────────────────────────────────────────── */
+/* ── Ícones SVG minimalistas ────────────────────────────────────────── */
 
-function Metrica({
-  rotulo,
-  valor,
-  destaque,
-  compacta,
-}: {
-  rotulo: string;
-  valor: string;
-  destaque?: boolean;
-  compacta?: boolean;
-}) {
+function IconeCaixa() {
   return (
-    <div
-      className={[
-        "rounded-xl border border-[#00FFCC]/15 bg-[#0c1408]/60 px-3.5",
-        compacta ? "py-2.5" : "py-3",
-      ].join(" ")}
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  );
+}
+
+function IconeGrafico() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2">
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  );
+}
+
+/* ── Gráfico de linha minimalista (SVG) — ciano ────────────────────── */
+
+function GraficoLinha({ serie }: { serie: number[] }) {
+  if (serie.length < 2) {
+    return <div className="h-full w-full" />;
+  }
+
+  const W = 280;
+  const H = 36;
+  const pad = 2;
+  const cor = "#00d4ff";
+
+  const min = Math.min(...serie);
+  const max = Math.max(...serie);
+  const range = max - min || 1;
+
+  const pontos = serie.map((v, i) => {
+    const x = pad + (i / (serie.length - 1)) * (W - pad * 2);
+    const y = pad + (1 - (v - min) / range) * (H - pad * 2);
+    return [x, y] as const;
+  });
+
+  const path = pontos.map((p, i) => `${i === 0 ? "M" : "L"}${p[0]},${p[1]}`).join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-full w-full">
+      <path
+        d={path}
+        fill="none"
+        stroke={cor}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
+/* ── Botão de instalação da PWA do widget ───────────────────────────── */
+
+function BotaoInstalar() {
+  const [deferred, setDeferred] = useState<{ prompt: () => Promise<void> } | null>(null);
+  const [instalado, setInstalado] = useState(false);
+
+  useEffect(() => {
+    // Já está como PWA instalada — não mostra o botão
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setInstalado(true);
+      return;
+    }
+    const onBefore = (e: Event) => {
+      e.preventDefault();
+      setDeferred(e as { prompt: () => Promise<void> });
+    };
+    window.addEventListener("beforeinstallprompt", onBefore);
+    return () => window.removeEventListener("beforeinstallprompt", onBefore);
+  }, []);
+
+  if (instalado || !deferred) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        await deferred.prompt();
+        setDeferred(null);
+        setInstalado(true);
+      }}
+      className="fixed bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-white/20 px-4 py-1.5 text-[11px] font-semibold text-white/70 shadow-lg"
+      style={{ background: "linear-gradient(160deg, #3a2e4c 0%, #212132 100%)" }}
     >
-      <span className="text-[9px] font-semibold tracking-[0.15em] text-white/45 uppercase">
-        {rotulo}
-      </span>
-      <p
-        className={[
-          "font-mono font-bold tabular-nums",
-          destaque ? "text-2xl text-[#00FFCC] [text-shadow:0_0_12px_rgba(0,255,204,0.3)]" : "text-lg text-white",
-        ].join(" ")}
-      >
-        {valor}
-      </p>
-    </div>
+      ⬇ Instalar widget
+    </button>
   );
 }
 
-function TelaCarregando() {
-  return (
-    <div className="flex h-screen w-screen items-center justify-center bg-[#0a1306]">
-      <span className="size-3 animate-pulse rounded-full bg-[#00FFCC] shadow-[0_0_12px_#00FFCC]" />
-    </div>
-  );
-}
+/* ── Login minimalista ─────────────────────────────────────────────── */
 
 function TelaLogin({ onLogin }: { onLogin: (u: string, s: string) => Promise<boolean> }) {
   const [usuario, setUsuario] = useState("");
@@ -191,34 +259,44 @@ function TelaLogin({ onLogin }: { onLogin: (u: string, s: string) => Promise<boo
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const ok = await onLogin(usuario, senha);
-    if (!ok) setErro(true);
+    if (!(await onLogin(usuario, senha))) setErro(true);
   };
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-gradient-to-b from-[#0f1a0b] to-[#0a1306] px-6">
-      <form onSubmit={submit} className="w-full max-w-xs space-y-4">
-        <div className="flex items-center gap-2">
-          <span className="size-2.5 animate-pulse rounded-full bg-[#00FFCC] shadow-[0_0_8px_#00FFCC]" />
-          <span className="text-xs font-bold tracking-[0.22em] text-white/80 uppercase">
-            Desempenho · CD Lopas
-          </span>
+    <div className="flex h-screen w-screen items-center justify-center bg-transparent">
+      <form
+        onSubmit={submit}
+        className="flex w-[320px] flex-col gap-3 rounded-[20px] p-5"
+        style={{ background: "linear-gradient(160deg, #3a2e4c 0%, #212132 100%)" }}
+      >
+        <div className="flex items-center gap-1.5">
+          <span className="text-[13px] font-semibold text-white">Estoque · CD Lopas</span>
         </div>
-        <Campo label="Usuário" value={usuario} onChange={setUsuario} />
-        <Campo label="Senha" type="password" value={senha} onChange={setSenha} />
-        {erro && (
-          <p className="text-[11px] text-red-400">Credenciais inválidas. Tente novamente.</p>
-        )}
+        <input
+          value={usuario}
+          onChange={(e) => setUsuario(e.target.value)}
+          placeholder="Usuário"
+          className="w-full rounded-xl bg-white/10 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/40"
+        />
+        <input
+          type="password"
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          placeholder="Senha"
+          className="w-full rounded-xl bg-white/10 px-3.5 py-2.5 text-sm text-white outline-none placeholder:text-white/40"
+        />
+        {erro && <p className="text-[11px] text-red-400">Credenciais inválidas.</p>}
         <button
           type="submit"
-          className="w-full rounded-lg bg-[#00FFCC] py-2.5 text-sm font-bold text-[#0a1306] transition hover:bg-[#00FFCC]/90"
+          className="w-full rounded-xl py-2.5 text-sm font-semibold text-white"
+          style={{ background: "#00d4ff", color: "#1a1a2e" }}
         >
           Entrar
         </button>
         <button
           type="button"
           onClick={() => navigate({ to: "/" })}
-          className="w-full text-center text-[11px] text-white/40 underline hover:text-white/60"
+          className="w-full text-center text-[11px] text-white/30 hover:text-white/50"
         >
           Voltar ao painel
         </button>
@@ -226,40 +304,3 @@ function TelaLogin({ onLogin }: { onLogin: (u: string, s: string) => Promise<boo
     </div>
   );
 }
-
-function Campo({
-  label,
-  value,
-  onChange,
-  type = "text",
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="text-[10px] font-semibold tracking-widest text-white/40 uppercase">
-        {label}
-      </span>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-lg border border-white/15 bg-[#0c1408]/80 px-3 py-2 text-sm text-white outline-none transition focus:border-[#00FFCC]/50"
-      />
-    </label>
-  );
-}
-
-/* ── Tipos auxiliares ──────────────────────────────────────────────── */
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
-/* Evita aviso de variável não usada — `ReactNode` é re-exportado para
-   futuras expansões do widget sem precisar re-importar. */
-export type _WidgetReactNode = ReactNode;
