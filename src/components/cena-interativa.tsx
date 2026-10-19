@@ -56,7 +56,7 @@ export function DonutInterativo({
       className="video-pop group relative flex items-center justify-center cursor-pointer"
       aria-label="Alternar seção"
     >
-      <svg viewBox="0 0 200 200" className="size-28 sm:size-32 transition-transform group-hover:scale-105">
+      <svg viewBox="0 0 200 200" className="size-20 sm:size-32 transition-transform group-hover:scale-105">
         <circle cx="100" cy="100" r={R} fill="none" strokeWidth="16" className="stroke-white/15" />
         <circle
           cx="100"
@@ -76,10 +76,10 @@ export function DonutInterativo({
         />
       </svg>
       <div className="absolute text-center pointer-events-none">
-        <p className="font-serif text-2xl text-white" style={{ textShadow: `0 0 12px ${ativa.cor}44` }}>
+        <p className="font-serif text-lg sm:text-2xl text-white" style={{ textShadow: `0 0 12px ${ativa.cor}44` }}>
           {fmtBrMax(contagem, 1)}%
         </p>
-        <p className="text-[8px] font-bold tracking-widest uppercase" style={{ color: ativa.cor }}>
+        <p className="text-[7px] sm:text-[8px] font-bold tracking-widest uppercase" style={{ color: ativa.cor }}>
           {ativa.label}
         </p>
       </div>
@@ -105,7 +105,7 @@ export function ToggleSecoes({
           type="button"
           onClick={() => onChange(i)}
           className={cn(
-            "rounded-full px-4 py-1.5 text-[10px] font-bold tracking-widest uppercase transition-all duration-300",
+            "rounded-full px-3 py-1 sm:px-4 sm:py-1.5 text-[9px] sm:text-[10px] font-bold tracking-widest uppercase transition-all duration-300",
             i === foco
               ? "text-brand-dark"
               : "text-white/80 border border-white/30 hover:text-white hover:border-white/50",
