@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell, X } from "lucide-react";
 
 /* Banner de notificação de atualização — estilo WhatsApp Web.
@@ -6,9 +6,82 @@ import { Bell, X } from "lucide-react";
  * Quando o painel recebe novos dados da planilha do Drive, este banner
  * desliza do topo e fica visível até o usuário dispensar (não some sozinho,
  * como um toast). Mostra o horário em que a atualização chegou.
- * Também adiciona um badge "(1)" no título da aba enquanto visível.
+ *
+ * O ícone do sino "pula" continuamente para chamar atenção (notif-salto).
+ * O favicon da aba recebe um badge vermelho com número (estilo WhatsApp)
+ * e o título ganha "(1)" enquanto a notificação está visível.
  */
 const TITULO_BASE = "Painel de Estoque · Lopas 2026";
+const FAVICON_ORIGINAL = "/favicon.png";
+
+/* Desenha o favicon original + badge vermelho com número no canto superior
+   direito, estilo WhatsApp. Retorna um data URL ou null se não conseguir. */
+function gerarFaviconComBadge(numero: number): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const size = 64;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(null);
+
+      // favicon original
+      ctx.drawImage(img, 0, 0, size, size);
+
+      // badge vermelho (estilo WhatsApp)
+      const badgeR = size * 0.28;
+      const badgeX = size - badgeR - 2;
+      const badgeY = badgeR + 2;
+
+      // círculo vermelho
+      ctx.beginPath();
+      ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+      ctx.fillStyle = "#FF3B30";
+      ctx.fill();
+      // borda branca
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+
+      // número
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${Math.round(badgeR * 1.1)}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(numero), badgeX, badgeY + 1);
+
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = () => resolve(null);
+    img.src = FAVICON_ORIGINAL;
+  });
+}
+
+/* Troca o href do <link rel="icon"> pelo favicon com badge e guarda o
+   href original para restaurar depois. */
+function aplicarFaviconBadge(dataUrl: string) {
+  const link =
+    document.querySelector<HTMLLinkElement>("link[rel='icon']") ??
+    document.createElement("link");
+  if (!link.rel) {
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }
+  link.dataset.faviconOriginal = link.dataset.faviconOriginal ?? link.href;
+  link.href = dataUrl;
+  link.type = "image/png";
+}
+
+function restaurarFavicon() {
+  const link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+  if (link?.dataset.faviconOriginal) {
+    link.href = link.dataset.faviconOriginal;
+    delete link.dataset.faviconOriginal;
+  }
+}
 
 export function NotificacaoAtualizacao({
   notificacao,
@@ -18,6 +91,7 @@ export function NotificacaoAtualizacao({
   onDispensar: () => void;
 }) {
   const [mostrar, setMostrar] = useState(false);
+  const badgeGerado = useRef(false);
 
   useEffect(() => {
     if (notificacao?.visivel) {
@@ -28,13 +102,24 @@ export function NotificacaoAtualizacao({
     setMostrar(false);
   }, [notificacao]);
 
-  /* Símbolo no título da aba — "🔔 Painel..." enquanto a notificação está visível */
+  /* Badge vermelho no favicon + "(1)" no título da aba enquanto visível */
   useEffect(() => {
     if (notificacao?.visivel) {
-      document.title = `🔔 ${TITULO_BASE}`;
-      return () => { document.title = TITULO_BASE; };
+      document.title = `(1) ${TITULO_BASE}`;
+      if (!badgeGerado.current) {
+        badgeGerado.current = true;
+        gerarFaviconComBadge(1).then((url) => {
+          if (url && notificacao?.visivel) aplicarFaviconBadge(url);
+        });
+      }
+      return () => {
+        document.title = TITULO_BASE;
+        restaurarFavicon();
+        badgeGerado.current = false;
+      };
     }
     document.title = TITULO_BASE;
+    restaurarFavicon();
   }, [notificacao]);
 
   if (!notificacao?.visivel) return null;
