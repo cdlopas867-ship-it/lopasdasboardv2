@@ -26,6 +26,26 @@ export function usePushNotification() {
 
     let sw: ServiceWorkerRegistration | null = null;
 
+    /* Limpa o badge do ícone do app (estilo WhatsApp) quando o app abre
+       ou volta ao foco — o usuário já está vendo o painel. */
+    async function clearBadge() {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        reg.active?.postMessage({ type: "CLEAR_BADGE" });
+        if ("clearAppBadge" in navigator) await navigator.clearAppBadge();
+      } catch {
+        /* best-effort */
+      }
+    }
+    clearBadge();
+
+    const onFocus = () => clearBadge();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") clearBadge();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+
     async function registerAndSubscribe() {
       try {
         sw = await navigator.serviceWorker.register("/sw-push.js", { scope: "/" });
@@ -74,5 +94,10 @@ export function usePushNotification() {
         registerAndSubscribe();
       }
     });
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 }
