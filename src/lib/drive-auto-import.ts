@@ -833,7 +833,7 @@ export async function importarSeMudou(forcar = false): Promise<boolean> {
   const st = (globalThis.__driveImportState ??= { ultimo: 0, assinatura: "", emAndamento: null });
   if (st.emAndamento) return st.emAndamento;
   const agora = Date.now();
-  if (!forcar && agora - st.ultimo < 10_000) return false;
+  if (!forcar && agora - st.ultimo < 4_000) return false;
   st.ultimo = agora;
   st.emAndamento = (async () => {
     try {
@@ -1529,7 +1529,7 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
 }
 
 /* Inicia o ciclo de importação automática no servidor.
-   Roda imediatamente e a cada 15 s. Usa IDs globais para limpar timers antigos
+   Roda imediatamente e a cada 5 s. Usa IDs globais para limpar timers antigos
    antes de recriar — sobrevive a program reload do Vite SSR (HMR), que limpa
    os timers antigos mas deixava __driveAutoImportStarted=true, impedindo o
    ciclo de reiniciar. */
@@ -1551,12 +1551,15 @@ export function iniciarAutoImport() {
     );
   }, 3_000);
 
-  /* A cada 15 s — detecta mudanças no Drive sem sobrecarregar o Google */
+  /* A cada 5 s — detecta mudanças no Drive quase instantaneamente. O check
+     vazio faz só 1 requisição leve à listagem da pasta; os downloads das
+     planilhas só rodam quando a assinatura muda. (1 s chegou a disparar
+     rate-limit do Google — 5 s é seguro.) */
   globalThis.__driveAutoImportInterval = setInterval(() => {
     importarSeMudou().catch((e) =>
       console.error("[auto-import] falha no ciclo:", e),
     );
-  }, 15_000);
+  }, 5_000);
 
-  console.info("[auto-import] ciclo de importação automática do Drive iniciado (a cada 15 s)");
+  console.info("[auto-import] ciclo de importação automática do Drive iniciado (a cada 5 s)");
 }
