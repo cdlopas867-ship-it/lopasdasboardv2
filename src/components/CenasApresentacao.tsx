@@ -64,6 +64,7 @@ type Props = {
   comparativoCcr?: ComparativoCcr | null | undefined;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
+  onGerarAuditoria?: (() => void) | undefined;
   onPausar?: (() => void) | undefined;
 };
 
@@ -89,6 +90,7 @@ export default function CenasApresentacao({
   comparativoCcr,
   onReiniciar,
   onGerarRelatorio,
+  onGerarAuditoria,
   onPausar,
 }: Props) {
   /* Mostra todos os meses com recebimento ou carregamento — meses sem
@@ -378,7 +380,15 @@ export default function CenasApresentacao({
             >
               ↻ Reiniciar agora
             </button>
-
+            {onGerarAuditoria && (
+              <button
+                type="button"
+                onClick={onGerarAuditoria}
+                className="cursor-pointer rounded-full border border-white/30 bg-white/10 px-8 py-3 text-xs font-bold tracking-widest text-white uppercase shadow-xl backdrop-blur-sm transition-transform hover:scale-105 hover:bg-white/20"
+              >
+                📋 Relatório de Auditoria
+              </button>
+            )}
           </div>
         </div>
       )}

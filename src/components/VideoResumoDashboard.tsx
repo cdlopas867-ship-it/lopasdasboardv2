@@ -6,6 +6,7 @@ import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 import ResumoBg from "./ResumoBg";
 import RelatorioLopas from "./RelatorioLopas";
+import RelatorioAuditoria from "./RelatorioAuditoria";
 
 /* Vídeo-resumo do dashboard — cenas animadas com gráficos e o mínimo de texto,
    sobre o fundo da marca Móveis Lopas, tocando automaticamente ao iniciar o app.
@@ -145,6 +146,7 @@ export default function VideoResumoDashboard({
   const [anim, setAnim] = useState(false);
   const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
   const [relatorio, setRelatorio] = useState(false);
+  const [auditoria, setAuditoria] = useState(false);
   const cenaAnteriorRef = useRef(0);
 
 
@@ -244,6 +246,7 @@ export default function VideoResumoDashboard({
     comparativoCcr,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
+    onGerarAuditoria: () => { setPausado(true); setAuditoria(true); },
     onPausar: () => setPausado(true),
   };
 
@@ -280,6 +283,10 @@ export default function VideoResumoDashboard({
 
       {relatorio && (
         <RelatorioLopas dados={dadosPainel} onFechar={() => setRelatorio(false)} />
+      )}
+
+      {auditoria && (
+        <RelatorioAuditoria dados={dadosPainel} onFechar={() => setAuditoria(false)} />
       )}
 
       {/* Conteúdo */}
