@@ -59,6 +59,9 @@ export type ItemSaldoCompleto = {
   risco?: MotivoRisco | null;
   /* Tonelada da reserva do item (peso unitário × qtd. reservada). */
   tonReservada?: number;
+  /* Endereços do item no relatório do Full (WF0112), com a quantidade em
+     cada um — alimenta a aba "Endereços" da exportação Excel. */
+  enderecos?: { endereco: string; qtd: number }[];
 };
 
 export type SaldoComparativo = {

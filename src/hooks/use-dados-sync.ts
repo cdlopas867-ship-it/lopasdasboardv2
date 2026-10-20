@@ -170,9 +170,11 @@ function dataKey(payload: unknown, incluirSync = true): string {
         };
         todosItens?: unknown[];
         risco?: { itens?: number; qtdReservada?: number };
+        itensRisco?: { enderecos?: unknown[] }[];
       } | undefined;
+      const endSig = (sc?.itensRisco ?? []).reduce((s, it) => s + (it.enderecos?.length ?? 0), 0);
       return sc
-        ? `${sc.full?.saldo ?? 0}|${sc.focco?.saldo ?? 0}|${sc.comparativo?.qtdExata ?? 0}|${sc.comparativo?.qtdDiferenca ?? 0}|${sc.comparativo?.tonExato ?? 0}|${sc.comparativo?.tonDiferenca ?? 0}|${sc.comparativo?.tonSoFocco ?? 0}|${sc.comparativo?.tonFullExato ?? 0}|${sc.comparativo?.tonFullDiferenca ?? 0}|${sc.comparativo?.tonFullSoFull ?? 0}|${sc.todosItens?.length ?? 0}|${sc.risco?.itens ?? 0}|${sc.risco?.qtdReservada ?? 0}`
+        ? `${sc.full?.saldo ?? 0}|${sc.focco?.saldo ?? 0}|${sc.comparativo?.qtdExata ?? 0}|${sc.comparativo?.qtdDiferenca ?? 0}|${sc.comparativo?.tonExato ?? 0}|${sc.comparativo?.tonDiferenca ?? 0}|${sc.comparativo?.tonSoFocco ?? 0}|${sc.comparativo?.tonFullExato ?? 0}|${sc.comparativo?.tonFullDiferenca ?? 0}|${sc.comparativo?.tonFullSoFull ?? 0}|${sc.todosItens?.length ?? 0}|${sc.risco?.itens ?? 0}|${sc.risco?.qtdReservada ?? 0}|${endSig}`
         : "";
     })(),
     cc: (() => {

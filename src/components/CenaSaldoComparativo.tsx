@@ -39,7 +39,7 @@ export default function CenaSaldoComparativo({
     onPausar?.();
     setExportando(true);
     try {
-      await exportarExcelSaldo(d, reservados);
+      await exportarExcelSaldo(d);
     } catch (e) {
       console.error("Erro ao exportar Excel:", e);
     } finally {

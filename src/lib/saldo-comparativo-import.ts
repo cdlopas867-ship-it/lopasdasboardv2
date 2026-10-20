@@ -229,6 +229,20 @@ export function calcularSaldoComparativo(
   /* Relação completa de todos os itens para a exportação Excel. */
   const todosItens: ItemSaldoCompleto[] = [];
 
+  /* Endereços do item no relatório do Full (uma linha por endereço lá),
+     ordenados pela quantidade — alimentam a aba "Endereços" do Excel. */
+  const enderecosDoItem = (
+    fu: { enderecosQtd?: Map<string, number> },
+  ): { enderecos?: { endereco: string; qtd: number }[] } => {
+    const qtds = fu.enderecosQtd;
+    if (!qtds || qtds.size === 0) return {};
+    const lista = [...qtds.entries()]
+      .filter(([end]) => !!end)
+      .sort((a, b) => b[1] - a[1])
+      .map(([endereco, qtd]) => ({ endereco, qtd }));
+    return lista.length ? { enderecos: lista } : {};
+  };
+
   /* Peso (kg) da reserva do item: vem da planilha de reservas (pesoReservado)
      quando disponível; senão, peso unitário da posição × qtd. reservada. */
   const tonReservadaDoItem = (chave: string, reserv: number) => {
@@ -254,6 +268,7 @@ export function calcularSaldoComparativo(
       situacao: diff === 0 ? "exato" : "diferenca",
       risco: motivoRisco(fu.saldo, f.saldo, reserv),
       tonReservada: tonReservadaDoItem(chave, reserv),
+      ...enderecosDoItem(fu),
     });
   }
   /* Só Full */
@@ -271,6 +286,7 @@ export function calcularSaldoComparativo(
       situacao: "so-full",
       risco: motivoRisco(fu.saldo, 0, reserv),
       tonReservada: tonReservadaDoItem(chave, reserv),
+      ...enderecosDoItem(fu),
     });
   }
   /* Só Focco */
