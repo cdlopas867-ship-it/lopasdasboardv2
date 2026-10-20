@@ -13,6 +13,7 @@ import CenaReservados from "@/components/CenaReservados";
 import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
 
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
+import CenaPendentes from "@/components/CenaPendentes";
 import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import CenaComparativoCcr from "@/components/CenaComparativoCcr";
 
@@ -155,172 +156,19 @@ export default function CenasApresentacao({
         <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
       )}
 
-      {/* Cena 6 — pendências de produção */}
+      {/* Cena 6 — pendências de produção (padrão cena-interativa: donut + toggle + legenda) */}
       {cena === 5 && (
-        <div className="w-full">
-          <div className="flex items-center gap-2">
-            <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
-              Pendências de produção
-            </p>
-            <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Saúde da produção = toneladas recebidas no estoque ÷ (recebidas + pendentes). Toneladas recebidas vêm do recebimento do CD. Crítico = ordens com data final 3 meses ou mais antes do mês atual. No prazo = ordens com até 2 meses de atraso, mês atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
-          </div>
-          <div
-            className="video-sobe mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/70"
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <span className="font-bold tracking-widest uppercase text-white/55">Filtrar data final</span>
-            <label className="flex items-center gap-1">de
-              <input type="date" value={pendDe} onChange={(e) => { setPendDe(e.target.value); onPausar?.(); }}
-                className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
-            </label>
-            <label className="flex items-center gap-1">até
-              <input type="date" value={pendAte} onChange={(e) => { setPendAte(e.target.value); onPausar?.(); }}
-                className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-white [color-scheme:dark]" />
-            </label>
-            {(pendDe || pendAte) && (
-              <button type="button" onClick={() => { setPendDe(""); setPendAte(""); }}
-                className="rounded border border-white/20 px-2 py-0.5 text-white/80 hover:bg-white/10">Limpar</button>
-            )}
-            {(pendDe || pendAte) && pend && (
-              <span className="font-bold text-brand-amber">
-                · Peso total: {fmtBrMax(pend.totalTon, 1)} t
-              </span>
-            )}
-          </div>
-          {pend ? (
-            <>
-              <p className="video-sobe mt-3 font-serif text-3xl text-white sm:text-5xl">
-                {fmtBrMax(pend.totalTon, 1)} t{" "}
-                <span className="text-base text-white/60 sm:text-lg">
-                  · {fmtInt(pend.itens)} ordens
-                </span>
-              </p>
-              {(pendDe || pendAte) && (
-                <p className="video-sobe mt-1 text-sm text-white/50">
-                  {pendDe && pendAte
-                    ? `${pendDe.slice(8, 10)}/${pendDe.slice(5, 7)} – ${pendAte.slice(8, 10)}/${pendAte.slice(5, 7)}`
-                    : pendDe
-                      ? `A partir de ${pendDe.slice(8, 10)}/${pendDe.slice(5, 7)}`
-                      : `Até ${pendAte.slice(8, 10)}/${pendAte.slice(5, 7)}`}
-                </p>
-              )}
-              <p className="video-sobe mt-1 text-sm text-white/50">
-                Média mensal: <span className="font-bold text-brand-amber">{fmtBrMax(pend.mediaTon, 1)} t</span>
-              </p>
-
-              {/* Saúde da produção — toneladas pendentes × recebidas no estoque */}
-              {(() => {
-                const pendente = pend.totalTon;
-                const produzido = totRecebido;
-                const total = pendente + produzido;
-                const saudePct = total > 0 ? (produzido / total) * 100 : 0;
-                const Rs = 70;
-                const CIRCs = 2 * Math.PI * Rs;
-                return (
-                  <div
-                    className="video-sobe mt-4 flex items-center gap-5 rounded-xl border border-white/10 bg-white/5 p-3.5"
-                    style={{ animationDelay: "0.4s" }}
-                  >
-                    <div className="relative flex shrink-0 items-center justify-center">
-                      <svg viewBox="0 0 200 200" className="size-20 sm:size-24">
-                        <circle cx="100" cy="100" r={Rs} fill="none" strokeWidth="18" className="stroke-white/15" />
-                        <circle
-                          cx="100" cy="100" r={Rs} fill="none" strokeWidth="18" strokeLinecap="round"
-                          stroke="white"
-                          transform="rotate(-90 100 100)"
-                          style={{
-                            strokeDasharray: CIRCs,
-                            strokeDashoffset: anim ? CIRCs * (1 - saudePct / 100) : CIRCs,
-                            transition: "stroke-dashoffset 1.3s cubic-bezier(0.22,1,0.36,1)",
-                            filter: "drop-shadow(0 0 8px rgba(255,255,255,0.35))",
-                          }}
-                        />
-                      </svg>
-                      <div className="absolute text-center">
-                        <p className="font-serif text-lg text-white sm:text-xl">{fmtBrMax(saudePct, 1)}%</p>
-                        <p className="text-[7px] font-bold tracking-widest text-white/55 uppercase">saúde</p>
-                      </div>
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <p className="text-[10px] font-bold tracking-[0.3em] text-white/60 uppercase">Saúde da Produção</p>
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-[11px] text-white/70">
-                          <span className="size-2.5 rounded-sm bg-brand-amber" />
-                          Toneladas pendentes
-                        </span>
-                        <span className="font-mono text-sm font-bold text-brand-amber">{fmtBrMax(pendente, 1)} t</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1.5 text-[11px] text-white/70">
-                          <span className="size-2.5 rounded-sm bg-white" />
-                          Toneladas recebidas no estoque
-                        </span>
-                        <span className="font-mono text-sm font-bold text-white">{fmtBrMax(produzido, 1)} t</span>
-                      </div>
-                      <p className="text-[9px] leading-tight text-white/40">
-                        Crítico = 3 meses ou mais de atraso · No prazo = até 2 meses, mês atual ou futuro
-                      </p>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Detalhe por mês — tonelagem, %, data final, lotes e ordens */}
-              {pend.meses?.length > 0 && (
-                <div className="mt-4">
-                  <p className="mb-2 text-[10px] font-bold tracking-[0.3em] text-white/50 uppercase">
-                    Por mês
-                  </p>
-                  <div className="space-y-2">
-                    {pend.meses.map((m, i) => {
-                      const maxMes = Math.max(...pend.meses.map((x) => x.ton), 1);
-                      return (
-                        <div
-                          key={m.mes}
-                          className="video-sobe flex items-center gap-3"
-                          style={{ animationDelay: `${0.12 * i + 0.3}s` }}
-                        >
-                          <span className="w-14 shrink-0 font-mono text-[11px] font-bold text-white/80">
-                            {m.mes}
-                          </span>
-                          <div className="h-5 flex-1 overflow-hidden rounded-md bg-white/15">
-                            <div
-                              className={cn("video-barra-x h-full rounded-md bg-gradient-to-r from-brand-amber/70 to-brand-amber", !anim && "video-pausada")}
-                              style={{
-                                width: `${(m.ton / maxMes) * 100}%`,
-                                animationDelay: `${0.12 * i + 0.4}s`,
-                              }}
-                            />
-                          </div>
-                          <span className="w-14 text-right font-mono text-[11px] font-bold text-white">
-                            {fmtBrMax(m.ton, 1)} t
-                          </span>
-                          <span className="w-12 text-right font-mono text-[10px] font-bold text-brand-amber">
-                            {fmtBrMax(m.pct, 0)}%
-                          </span>
-                          <span className="w-28 shrink-0 whitespace-nowrap rounded bg-white/10 px-1.5 py-0.5 text-center font-mono text-[10px] font-semibold text-white/75">
-                            {m.dtFinal ? `${m.dtInicial ? `${m.dtInicial.slice(8, 10)}/${m.dtInicial.slice(5, 7)} – ` : ""}${m.dtFinal.slice(8, 10)}/${m.dtFinal.slice(5, 7)}` : "—"}
-                          </span>
-                          <span className="w-10 text-right text-[9px] text-white/45">
-                            {m.lotes ?? 0} lot
-                          </span>
-                          <span className="w-10 text-right text-[9px] text-white/45">
-                            {fmtInt(m.itens)} ord
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="video-sobe mt-8 font-serif text-3xl text-white/70">
-              {pendDe || pendAte ? "Nenhuma pendência nesse período." : "Nenhuma pendência de produção."}
-            </p>
-          )}
-        </div>
+        <CenaPendentes
+          anim={anim}
+          cena={cena}
+          pend={pend}
+          totRecebido={totRecebido}
+          pendDe={pendDe}
+          pendAte={pendAte}
+          setPendDe={setPendDe}
+          setPendAte={setPendAte}
+          onPausar={onPausar}
+        />
       )}
 
       {/* Cena 8 — itens reservados: donut interativo com toggle Peso/Qtd/Valor */}
