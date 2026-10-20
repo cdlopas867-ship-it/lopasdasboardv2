@@ -18,7 +18,6 @@ export default function CenaPendentes({
   anim,
   cena,
   pend,
-  totRecebido,
   pendDe,
   pendAte,
   setPendDe,
@@ -28,7 +27,6 @@ export default function CenaPendentes({
   anim: boolean;
   cena: number;
   pend: VideoPendentes | null | undefined;
-  totRecebido: number;
   pendDe: string;
   pendAte: string;
   setPendDe: (v: string) => void;
@@ -47,15 +45,13 @@ export default function CenaPendentes({
   const focoSecao = secoes[foco] ?? secoes[0];
   const focoFatia = focoSecao ? pend?.fatias.find((f) => f.rotulo === focoSecao.id) : undefined;
 
-  const saudePct = totRecebido + totalTon > 0 ? (totRecebido / (totRecebido + totalTon)) * 100 : 0;
-
   return (
     <div className="flex w-full flex-col items-center">
       <div className="flex items-center gap-2">
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Pendências de produção
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Saúde da produção = toneladas recebidas no estoque ÷ (recebidas + pendentes). Toneladas recebidas vêm do recebimento do CD. Crítico = ordens com data final 3 meses ou mais antes do mês atual. No prazo = ordens com até 2 meses de atraso, mês atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
+        <InfoTooltip onOpen={onPausar} texto="Ordens de produção pendentes no sistema. Tonelagem total e média mensal das ordens em aberto. Crítico = ordens com data final 3 meses ou mais antes do mês atual. No prazo = ordens com até 2 meses de atraso, mês atual ou futuro. Fonte: sistema Focco. Dados de 2026." />
       </div>
 
       <div
@@ -102,53 +98,6 @@ export default function CenaPendentes({
             <div className="rounded-lg bg-white/5 px-4 py-1.5 text-center">
               <p className="text-[12px] font-bold text-white">
                 {fmtInt(pend.itens)} ordens em aberto · média mensal {fmtBrMax(pend.mediaTon, 1)} t
-              </p>
-            </div>
-          </div>
-
-          {/* Saúde da produção — toneladas pendentes × recebidas no estoque */}
-          <div
-            className="video-sobe mt-3 flex items-center gap-5 rounded-xl border border-white/10 bg-white/5 p-3.5"
-            style={{ animationDelay: "0.4s" }}
-          >
-            <div className="relative flex shrink-0 items-center justify-center">
-              <svg viewBox="0 0 200 200" className="size-16 sm:size-20">
-                <circle cx="100" cy="100" r="70" fill="none" strokeWidth="18" className="stroke-white/15" />
-                <circle
-                  cx="100" cy="100" r="70" fill="none" strokeWidth="18" strokeLinecap="round"
-                  stroke="white"
-                  transform="rotate(-90 100 100)"
-                  style={{
-                    strokeDasharray: 2 * Math.PI * 70,
-                    strokeDashoffset: anim ? 2 * Math.PI * 70 * (1 - saudePct / 100) : 2 * Math.PI * 70,
-                    transition: "stroke-dashoffset 1.3s cubic-bezier(0.22,1,0.36,1)",
-                    filter: "drop-shadow(0 0 8px rgba(255,255,255,0.35))",
-                  }}
-                />
-              </svg>
-              <div className="absolute text-center">
-                <p className="font-serif text-sm text-white sm:text-base">{fmtBrMax(saudePct, 1)}%</p>
-                <p className="text-[7px] font-bold tracking-widest text-white/55 uppercase">saúde</p>
-              </div>
-            </div>
-            <div className="flex-1 space-y-2">
-              <p className="text-[10px] font-bold tracking-[0.3em] text-white/60 uppercase">Saúde da Produção</p>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-[11px] text-white/70">
-                  <span className="size-2.5 rounded-sm bg-brand-amber" />
-                  Toneladas pendentes
-                </span>
-                <span className="font-mono text-sm font-bold text-brand-amber">{fmtBrMax(totalTon, 1)} t</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 text-[11px] text-white/70">
-                  <span className="size-2.5 rounded-sm bg-white" />
-                  Toneladas recebidas no estoque
-                </span>
-                <span className="font-mono text-sm font-bold text-white">{fmtBrMax(totRecebido, 1)} t</span>
-              </div>
-              <p className="text-[9px] leading-tight text-white/40">
-                Crítico = 3 meses ou mais de atraso · No prazo = até 2 meses, mês atual ou futuro
               </p>
             </div>
           </div>

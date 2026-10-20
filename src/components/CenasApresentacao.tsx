@@ -92,11 +92,6 @@ export default function CenasApresentacao({
   onGerarRelatorio,
   onPausar,
 }: Props) {
-  /* Mostra todos os meses com recebimento ou carregamento — meses sem
-     carregado no Drive (jan–abr) agora têm valores da planilha do usuário. */
-  const listaMes = (mensal ?? []).filter((m) => m.recebido > 0 || m.carregado > 0);
-  const totRecebido = listaMes.reduce((s, m) => s + m.recebido, 0);
-
   /* Filtro por data das pendências (DT FINAL entre "de" e "até") */
   const [pendDe, setPendDe] = useState("");
   const [pendAte, setPendAte] = useState("");
@@ -162,7 +157,6 @@ export default function CenasApresentacao({
           anim={anim}
           cena={cena}
           pend={pend}
-          totRecebido={totRecebido}
           pendDe={pendDe}
           pendAte={pendAte}
           setPendDe={setPendDe}
