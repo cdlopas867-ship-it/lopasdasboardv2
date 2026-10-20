@@ -16,8 +16,6 @@ import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 import CenaPendentes from "@/components/CenaPendentes";
 import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import CenaComparativoCcr from "@/components/CenaComparativoCcr";
-import CenaSaldoComparativo from "@/components/CenaSaldoComparativo";
-import type { SaldoComparativo } from "@/data/saldo-comparativo";
 import type { ResumoViagens } from "@/lib/viagens-store";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
@@ -66,7 +64,6 @@ type Props = {
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   comparativoCcr?: ComparativoCcr | null | undefined;
-  saldoComparativo?: SaldoComparativo | null | undefined;
   sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   viagens?: ResumoViagens | null | undefined;
   onReiniciar: () => void;
@@ -94,7 +91,6 @@ export default function CenasApresentacao({
   producaoSemanal,
   resumo,
   comparativoCcr,
-  saldoComparativo,
   sincronizacao,
   viagens,
   onReiniciar,
@@ -207,25 +203,13 @@ export default function CenasApresentacao({
         <CenaComparativoCcr anim={anim} cena={cena} onPausar={onPausar} comparativoCcr={comparativoCcr} />
       )}
 
-      {/* Cena 10 — Controle de Saldo: Full (estoque 112) × Focco (001) + reservados sob risco */}
+      {/* Cena 10 — Tonelagem do estoque mês a mês com variação % */}
       {cena === 9 && (
-        <CenaSaldoComparativo
-          anim={anim}
-          cena={cena}
-          onPausar={onPausar}
-          saldoComparativo={saldoComparativo}
-          reservados={reservados}
-          sincronizacao={sincronizacao}
-        />
-      )}
-
-      {/* Cena 11 — Tonelagem do estoque mês a mês com variação % */}
-      {cena === 10 && (
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 12 — encerramento */}
-      {cena === 11 && (
+      {/* Cena 11 — encerramento */}
+      {cena === 10 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.

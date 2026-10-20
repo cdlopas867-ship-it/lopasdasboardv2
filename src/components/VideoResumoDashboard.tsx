@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
-import type { SaldoComparativo } from "@/data/saldo-comparativo";
 import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 import type { ResumoViagens } from "@/lib/viagens-store";
@@ -108,15 +107,14 @@ type Props = {
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
-  saldoComparativo?: SaldoComparativo | null;
   comparativoCcr?: ComparativoCcr | null;
   sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   onFechar?: () => void;
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 12;
-const DURACOES = [8000, 5000, 6500, 8000, 9000, 5500, 8000, 7000, 8000, 8000, 7000, 12000];
+const TOTAL_CENAS = 11;
+const DURACOES = [8000, 5000, 6500, 8000, 9000, 5500, 8000, 7000, 8000, 7000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
@@ -132,7 +130,6 @@ export default function VideoResumoDashboard({
   valorFaturado,
   foraDeLinha,
   resumo,
-  saldoComparativo,
   comparativoCcr,
   paletas,
   recebimentoSemanal,
@@ -235,7 +232,6 @@ export default function VideoResumoDashboard({
     recebimentoSemanal,
     producaoSemanal,
     resumo,
-    saldoComparativo,
     comparativoCcr,
     sincronizacao,
   };
@@ -258,7 +254,6 @@ export default function VideoResumoDashboard({
     producaoSemanal,
     resumo,
     comparativoCcr,
-    saldoComparativo,
     sincronizacao,
     viagens,
     onReiniciar: () => setCena(0),
