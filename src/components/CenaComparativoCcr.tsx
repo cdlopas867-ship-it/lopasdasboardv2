@@ -44,7 +44,7 @@ export default function CenaComparativoCcr({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto={`Comparativo de peso entre o ESTOQUE 001 (Focco ERP — posição de estoque do CD) e o ESTOQUE CCR (relatório de volumes do CD). O CCR apresenta ${fmtBrMax(d.diferenca.pesoPct, 1)}% a mais de peso que o Estoque 001 (${fmtTonDec(d.diferenca.pesoTon)} t de diferença). A diferença ocorre porque o CCR inclui volumes em trânsito e outras posições que não aparecem na posição 001. Cruzamento por código de item: ${fmtInt(d.itensEmComum)} itens em comum, ${fmtInt(d.itensSo001)} só no 001, ${fmtInt(d.itensSoCcr)} só no CCR. Data-base: ${d.dataBase}. Clique para alternar.`}
+          texto={`Comparativo de peso entre o ESTOQUE 001 (Focco ERP — posição de estoque do CD) e o ESTOQUE CCR (relatório de volumes do CD). O CCR apresenta ${fmtBrMax(d.diferenca.pesoPct, 1)}% a mais de peso que o Estoque 001 (${fmtTonDec(d.diferenca.pesoTon)} de diferença). A diferença ocorre porque o CCR inclui volumes em trânsito e outras posições que não aparecem na posição 001. Cruzamento por código de item: ${fmtInt(d.itensEmComum)} itens em comum, ${fmtInt(d.itensSo001)} só no 001, ${fmtInt(d.itensSoCcr)} só no CCR. Data-base: ${d.dataBase}. Clique para alternar.`}
         />
       </div>
 
@@ -60,8 +60,8 @@ export default function CenaComparativoCcr({
         delay="0.4s"
         texto={
           foco === 0
-            ? `${fmtTonDec(d.estoque001.pesoTon)} t · ${fmtInt(d.estoque001.itens)} itens · ${fmtBrMax((d.estoque001.pesoTon / total) * 100, 1)}%`
-            : `${fmtTonDec(d.ccr.pesoTon)} t · ${fmtInt(d.ccr.itens)} itens · ${fmtBrMax((d.ccr.pesoTon / total) * 100, 1)}%`
+            ? `${fmtTonDec(d.estoque001.pesoTon)} · ${fmtInt(d.estoque001.itens)} itens · ${fmtBrMax((d.estoque001.pesoTon / total) * 100, 1)}%`
+            : `${fmtTonDec(d.ccr.pesoTon)} · ${fmtInt(d.ccr.itens)} itens · ${fmtBrMax((d.ccr.pesoTon / total) * 100, 1)}%`
         }
       />
 

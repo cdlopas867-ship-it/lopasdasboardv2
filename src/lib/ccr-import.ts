@@ -210,3 +210,85 @@ export function calcularComparativoCcr(
     })),
   };
 }
+
+/* Comparativo quando a pasta do Drive não tem mais o relatório do CCR:
+   o lado do ESTOQUE 001 é calculado ao vivo com a posição atual (mesmas
+   regras de calcularComparativoCcr — só volumes das 3 unidades do CD) e o
+   lado do CCR fica na última base extraída (`base`, COMPARATIVO_CCR).
+   Por unidade compara o peso vivo do 001 com os totais da base do CCR;
+   nas Maiores divergências o peso do 001 de cada item da base é atualizado
+   ao vivo (itens que saíram da posição ficam de fora). */
+export function comparativoMistoCcr(
+  itens001: ItemEstoque[],
+  base: ComparativoCcr,
+  dataBase001: string,
+): ComparativoCcr | null {
+  const pos001 = new Map<string, { saldo: number; pesoKg: number; unidade: string }>();
+  for (const it of itens001) {
+    if (!isVolume(it.desc) || !rotuloUnidade(it.unidade)) continue;
+    const atual = pos001.get(it.item) ?? { saldo: 0, pesoKg: 0, unidade: it.unidade };
+    atual.saldo += it.saldo;
+    atual.pesoKg += it.peso;
+    pos001.set(it.item, atual);
+  }
+  if (pos001.size === 0) return null;
+
+  const arred1 = (v: number) => Math.round(v * 10) / 10;
+
+  let saldo001 = 0;
+  let peso001Kg = 0;
+  const pesoPorUnidade = new Map<string, number>();
+  for (const a of pos001.values()) {
+    saldo001 += a.saldo;
+    peso001Kg += a.pesoKg;
+    const rótulo = rotuloUnidade(a.unidade)!;
+    pesoPorUnidade.set(rótulo, (pesoPorUnidade.get(rótulo) ?? 0) + a.pesoKg);
+  }
+
+  const peso001Ton = peso001Kg / 1000;
+  const difPesoTon = base.ccr.pesoTon - peso001Ton;
+  const difSaldoUn = base.ccr.saldo - saldo001;
+
+  return {
+    dataBase: `001 ${dataBase001} · CCR ${base.dataBase}`,
+    estoque001: { itens: pos001.size, saldo: saldo001, pesoTon: arred1(peso001Ton) },
+    ccr: base.ccr,
+    diferenca: {
+      pesoTon: arred1(difPesoTon),
+      pesoPct: peso001Ton > 0 ? arred1((difPesoTon / peso001Ton) * 100) : 0,
+      saldoUn: difSaldoUn,
+      saldoPct: saldo001 > 0 ? arred1((difSaldoUn / saldo001) * 100) : 0,
+    },
+    porUnidade: base.porUnidade
+      .map((u) => {
+        const peso001 = pesoPorUnidade.get(u.nome) ?? 0;
+        const difKg = u.pesoCcr * 1000 - peso001;
+        return {
+          nome: u.nome,
+          peso001: arred1(peso001 / 1000),
+          pesoCcr: u.pesoCcr,
+          difTon: arred1(difKg / 1000),
+          difPct: peso001 > 0 ? arred1((difKg / peso001) * 100) : 0,
+        };
+      })
+      .sort((a, b) => b.peso001 - a.peso001),
+    /* O cruzamento item a item só existe na extração da base do CCR; os
+       contados aqui são os da base, rotulados na data-base mista. */
+    itensEmComum: base.itensEmComum,
+    itensSo001: base.itensSo001,
+    itensSoCcr: base.itensSoCcr,
+    topDiferencas: base.topDiferencas
+      .map((t) => {
+        const vivo = pos001.get(t.item);
+        if (!vivo) return null;
+        return {
+          item: t.item,
+          desc: t.desc,
+          peso001: arred1(vivo.pesoKg / 1000),
+          pesoCcr: t.pesoCcr,
+          difTon: arred1(vivo.pesoKg / 1000 - t.pesoCcr),
+        };
+      })
+      .filter((t): t is NonNullable<typeof t> => t !== null),
+  };
+}
