@@ -67,6 +67,7 @@ type Props = {
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   comparativoCcr?: ComparativoCcr | null | undefined;
   saldoComparativo?: SaldoComparativo | null | undefined;
+  sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   viagens?: ResumoViagens | null | undefined;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
@@ -94,6 +95,7 @@ export default function CenasApresentacao({
   resumo,
   comparativoCcr,
   saldoComparativo,
+  sincronizacao,
   viagens,
   onReiniciar,
   onGerarRelatorio,
@@ -213,6 +215,7 @@ export default function CenasApresentacao({
           onPausar={onPausar}
           saldoComparativo={saldoComparativo}
           reservados={reservados}
+          sincronizacao={sincronizacao}
         />
       )}
 

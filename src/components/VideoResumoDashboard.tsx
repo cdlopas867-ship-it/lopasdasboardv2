@@ -259,6 +259,7 @@ export default function VideoResumoDashboard({
     resumo,
     comparativoCcr,
     saldoComparativo,
+    sincronizacao,
     viagens,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },

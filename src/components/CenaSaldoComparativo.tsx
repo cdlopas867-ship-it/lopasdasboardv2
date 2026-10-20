@@ -10,7 +10,7 @@ import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import { SALDO_COMPARATIVO, type SaldoComparativo } from "@/data/saldo-comparativo";
 import type { VideoReservados } from "./VideoResumoDashboard";
-import { exportarExcelSaldo } from "@/lib/export-excel-saldo";
+import { exportarPdfSaldo } from "@/lib/export-pdf-saldo";
 
 const COR_EXATO = "#22C55E";
 const COR_DIFERENCA = "#F97316";
@@ -24,12 +24,14 @@ export default function CenaSaldoComparativo({
   onPausar,
   saldoComparativo,
   reservados,
+  sincronizacao,
 }: {
   anim: boolean;
   cena: number;
   onPausar?: (() => void) | undefined;
   saldoComparativo?: SaldoComparativo | null | undefined;
   reservados?: VideoReservados | null | undefined;
+  sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | null | undefined;
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
   const [exportando, setExportando] = useState(false);
@@ -39,9 +41,9 @@ export default function CenaSaldoComparativo({
     onPausar?.();
     setExportando(true);
     try {
-      await exportarExcelSaldo(d);
+      await exportarPdfSaldo(d, sincronizacao ?? undefined);
     } catch (e) {
-      console.error("Erro ao exportar Excel:", e);
+      console.error("Erro ao exportar PDF:", e);
     } finally {
       setExportando(false);
     }
@@ -300,7 +302,7 @@ export default function CenaSaldoComparativo({
           disabled={exportando}
           className="mt-2 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[10px] font-bold tracking-widest text-white/80 uppercase backdrop-blur-sm transition-colors hover:bg-white/10 disabled:opacity-50"
         >
-          {exportando ? "Gerando Excel…" : "⬇ Exportar Excel"}
+          {exportando ? "Gerando PDF…" : "⬇ Exportar PDF"}
         </button>
       </div>
 
