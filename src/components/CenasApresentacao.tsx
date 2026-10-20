@@ -11,6 +11,7 @@ import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
 import CenaReservados from "@/components/CenaReservados";
 import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
+import CenaTarefasCd from "@/components/CenaTarefasCd";
 
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 import CenaPendentes from "@/components/CenaPendentes";
@@ -208,8 +209,13 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 11 — encerramento */}
+      {/* Cena 11 — Tarefas do CD (relatório WF0008, dados estáticos) */}
       {cena === 10 && (
+        <CenaTarefasCd anim={anim} cena={cena} onPausar={onPausar} />
+      )}
+
+      {/* Cena 12 — encerramento */}
+      {cena === 11 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
