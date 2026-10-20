@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import CenasApresentacao, { type VideoForaDeLinha } from "./CenasApresentacao";
 import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
-import type { SaldoComparativo } from "@/data/saldo-comparativo";
 import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
+import type { ResumoViagens } from "@/lib/viagens-store";
 import ResumoBg from "./ResumoBg";
 import RelatorioLopas from "./RelatorioLopas";
 
@@ -107,7 +107,6 @@ type Props = {
   recebimentoSemanal?: RecebimentoSemanalDia[] | undefined;
   producaoSemanal?: ProducaoSemanalDia[] | undefined;
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
-  saldoComparativo?: SaldoComparativo | null;
   comparativoCcr?: ComparativoCcr | null;
   sincronizacao?: { em?: string; planilhas?: { nome: string; modificado?: string }[] } | undefined;
   onFechar?: () => void;
@@ -131,7 +130,6 @@ export default function VideoResumoDashboard({
   valorFaturado,
   foraDeLinha,
   resumo,
-  saldoComparativo,
   comparativoCcr,
   paletas,
   recebimentoSemanal,
@@ -145,7 +143,22 @@ export default function VideoResumoDashboard({
   const [anim, setAnim] = useState(false);
   const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
   const [relatorio, setRelatorio] = useState(false);
+  const [viagens, setViagens] = useState<ResumoViagens | null>(null);
   const cenaAnteriorRef = useRef(0);
+
+  /* Controle de Viagens CD (planilha CDEVIAGENS) — alimenta a cena de turno */
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/viagens")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: ResumoViagens | null) => {
+        if (vivo && d) setViagens(d);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
 
   /* Troca de cena: guarda a cena anterior para o fade de saída e dispara
@@ -219,7 +232,6 @@ export default function VideoResumoDashboard({
     recebimentoSemanal,
     producaoSemanal,
     resumo,
-    saldoComparativo,
     comparativoCcr,
     sincronizacao,
   };
@@ -242,6 +254,8 @@ export default function VideoResumoDashboard({
     producaoSemanal,
     resumo,
     comparativoCcr,
+    sincronizacao,
+    viagens,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
     onPausar: () => setPausado(true),

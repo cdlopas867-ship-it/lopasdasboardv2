@@ -25,7 +25,7 @@
  */
 
 import type { ItemEstoque } from "./base-estoque";
-import type { DiferencaSaldo, ItemSaldoCompleto, SaldoComparativo } from "@/data/saldo-comparativo";
+import type { DiferencaSaldo, ItemSaldoCompleto, MotivoRisco, SaldoComparativo } from "@/data/saldo-comparativo";
 
 const num = (v: unknown) => (typeof v === "number" ? v : Number(v ?? 0) || 0);
 const str = (v: unknown) => (v == null ? "" : String(v).trim());
@@ -47,6 +47,17 @@ function chaveItem(item: string, mascara: string): string {
 }
 
 const LIMITE_DIFERENCAS = 12;
+
+/* Motivo do risco da reserva: o Full (estoque 112) não tem saldo nenhum para
+   o item, ou tem menos que a reserva; ou a reserva é maior que o próprio
+   saldo do Focco (estoque 001). null = a reserva é coberta pelos dois. */
+export function motivoRisco(full: number, focco: number, reservados: number): MotivoRisco | null {
+  if (reservados <= 0) return null;
+  if (full <= 0) return "sem-full";
+  if (reservados > full) return "full-insuficiente";
+  if (reservados > focco) return "focco-insuficiente";
+  return null;
+}
 
 /* Só itens de volume entram na comparação: a posição do CD é em volumes
    (descrição começando por "VOL"), enquanto o relatório do Full traz também
@@ -135,18 +146,30 @@ export function calcularSaldoComparativo(
   itensFull: Map<string, { saldo: number; desc: string; enderecos: string[]; enderecosQtd?: Map<string, number> }>,
   pesosPosicao: Map<string, number>,
   dataBase: string,
-  reservadosItens?: { cod: string; mascara: string; qtdReservada: number }[] | null,
+  reservadosItens?: {
+    cod: string;
+    mascara: string;
+    desc?: string;
+    qtdReservada: number;
+    pesoReservado?: number;
+    saldoAtual?: number;
+    pesoBrt?: number;
+    custoMedio?: number;
+  }[] | null,
 ): SaldoComparativo | null {
   if (!itensFocco.length || itensFull.size === 0) return null;
 
-  /* Mapa de reservados por chave do item (chaveItem) para cruzar com o
-     comparativo e preencher reservados/disponíveis por item. */
+  /* Mapas de reservados por chave do item (chaveItem) para cruzar com o
+     comparativo e preencher reservados/disponíveis por item: as quantidades
+     reservadas e o peso reservado (kg) da planilha COMERCIAL 024. */
   const reservadosMap = new Map<string, number>();
+  const pesoReservadoMap = new Map<string, number>();
   if (reservadosItens) {
     for (const r of reservadosItens) {
       if (r.qtdReservada <= 0) continue;
       const chave = chaveItem(r.cod, r.mascara);
       reservadosMap.set(chave, (reservadosMap.get(chave) ?? 0) + r.qtdReservada);
+      if ((r.pesoReservado ?? 0) > 0) pesoReservadoMap.set(chave, (pesoReservadoMap.get(chave) ?? 0) + (r.pesoReservado ?? 0));
     }
   }
 
@@ -163,6 +186,35 @@ export function calcularSaldoComparativo(
   }
   if (foccoMap.size === 0) return null;
 
+  /* Saldo atual do Focco vindo da planilha de reservas (COMERCIAL 024, do
+     próprio estoque 001): cobre itens que a exportação da posição não lista
+     (ex.: 100336 — saldo 100, 30 reservados — ausente do "estoque 001.xlsx").
+     Só entra item que o relatório do Full também tem, para não trazer para o
+     comparativo peças/componentes que a posição de volumes não lista. */
+  const saldoReservaMap = new Map<string, { saldo: number; pesoBrt: number; custo: number; desc: string }>();
+  if (reservadosItens) {
+    for (const r of reservadosItens) {
+      if ((r.saldoAtual ?? 0) <= 0) continue;
+      saldoReservaMap.set(chaveItem(r.cod, r.mascara), {
+        saldo: r.saldoAtual!,
+        pesoBrt: r.pesoBrt ?? 0,
+        custo: r.custoMedio ?? 0,
+        desc: r.desc ?? "",
+      });
+    }
+  }
+  for (const [chave, fu] of itensFull) {
+    if (foccoMap.has(chave)) continue;
+    const r = saldoReservaMap.get(chave);
+    if (!r) continue;
+    foccoMap.set(chave, {
+      saldo: r.saldo,
+      desc: r.desc || fu.desc,
+      valor: r.saldo * r.custo,
+      peso: (pesosPosicao.get(chave) ?? r.pesoBrt) * r.saldo,
+    });
+  }
+
   let itensEmComum = 0;
   let itensSoFull = 0;
   let itensSoFocco = 0;
@@ -176,8 +228,9 @@ export function calcularSaldoComparativo(
   let pesoFullSoFull = 0;
   const diferencas: DiferencaSaldo[] = [];
 
-  /* Peso do item na posição do Focco — aplicado à quantidade do Full. */
-  const pesoUn = (chave: string) => pesosPosicao.get(chave) ?? 0;
+  /* Peso do item na posição do Focco — aplicado à quantidade do Full. Itens
+     que só aparecem na planilha de reservas usam o peso bruto unitário dela. */
+  const pesoUn = (chave: string) => pesosPosicao.get(chave) ?? saldoReservaMap.get(chave)?.pesoBrt ?? 0;
 
   for (const [chave, f] of foccoMap) {
     const fu = itensFull.get(chave);
@@ -215,6 +268,28 @@ export function calcularSaldoComparativo(
   /* Relação completa de todos os itens para a exportação Excel. */
   const todosItens: ItemSaldoCompleto[] = [];
 
+  /* Endereços do item no relatório do Full (uma linha por endereço lá),
+     ordenados pela quantidade — alimentam a aba "Endereços" do Excel. */
+  const enderecosDoItem = (
+    fu: { enderecosQtd?: Map<string, number> },
+  ): { enderecos?: { endereco: string; qtd: number }[] } => {
+    const qtds = fu.enderecosQtd;
+    if (!qtds || qtds.size === 0) return {};
+    const lista = [...qtds.entries()]
+      .filter(([end]) => !!end)
+      .sort((a, b) => b[1] - a[1])
+      .map(([endereco, qtd]) => ({ endereco, qtd }));
+    return lista.length ? { enderecos: lista } : {};
+  };
+
+  /* Peso (kg) da reserva do item: vem da planilha de reservas (pesoReservado)
+     quando disponível; senão, peso unitário da posição × qtd. reservada. */
+  const tonReservadaDoItem = (chave: string, reserv: number) => {
+    if (reserv <= 0) return 0;
+    const kg = pesoReservadoMap.get(chave) ?? pesoUn(chave) * reserv;
+    return +(kg / 1000).toFixed(1);
+  };
+
   /* Itens em comum (exato + diferença) */
   for (const [chave, f] of foccoMap) {
     const fu = itensFull.get(chave);
@@ -230,6 +305,9 @@ export function calcularSaldoComparativo(
       reservados: reserv,
       disponiveis: f.saldo - reserv,
       situacao: diff === 0 ? "exato" : "diferenca",
+      risco: motivoRisco(fu.saldo, f.saldo, reserv),
+      tonReservada: tonReservadaDoItem(chave, reserv),
+      ...enderecosDoItem(fu),
     });
   }
   /* Só Full */
@@ -245,6 +323,9 @@ export function calcularSaldoComparativo(
       reservados: reserv,
       disponiveis: fu.saldo - reserv,
       situacao: "so-full",
+      risco: motivoRisco(fu.saldo, 0, reserv),
+      tonReservada: tonReservadaDoItem(chave, reserv),
+      ...enderecosDoItem(fu),
     });
   }
   /* Só Focco */
@@ -260,9 +341,19 @@ export function calcularSaldoComparativo(
       reservados: reserv,
       disponiveis: f.saldo - reserv,
       situacao: "so-focco",
+      risco: motivoRisco(0, f.saldo, reserv),
+      tonReservada: tonReservadaDoItem(chave, reserv),
     });
   }
   todosItens.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+
+  /* Itens reservados sob risco — a reserva não é coberta pelo Full (ou pelo
+     Focco). Ordenados pela quantidade reservada (maior risco primeiro). */
+  const itensRisco = todosItens
+    .filter((it) => it.risco && it.reservados > 0)
+    .sort((a, b) => b.reservados - a.reservados);
+  const qtdRisco = itensRisco.reduce((s, it) => s + it.reservados, 0);
+  const tonRisco = itensRisco.reduce((s, it) => s + (it.tonReservada ?? 0), 0);
 
   return {
     dataBase,
@@ -289,5 +380,11 @@ export function calcularSaldoComparativo(
     },
     topDiferencas: diferencas.slice(0, LIMITE_DIFERENCAS),
     todosItens,
+    risco: {
+      itens: itensRisco.length,
+      qtdReservada: qtdRisco,
+      tonReservada: +tonRisco.toFixed(1),
+    },
+    itensRisco,
   };
 }
