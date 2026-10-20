@@ -125,14 +125,22 @@ export function calcularComparativoCcr(
 
   const arred1 = (v: number) => Math.round(v * 10) / 10;
 
+  /* Os totais do lado do ESTOQUE 001 são a posição INTEIRA (a mesma da cena
+     Estoque: todos os itens, com peso e saldo do arquivo) — não só os volumes
+     das 3 unidades que casam com o CCR. */
+  let saldoTotal001 = 0;
+  let pesoTotal001Kg = 0;
+  for (const it of itens001) {
+    saldoTotal001 += it.saldo;
+    pesoTotal001Kg += it.peso;
+  }
+
   let emComum = 0, so001 = 0, soCcr = 0;
-  let saldo001 = 0, peso001Kg = 0, saldoCcr = 0, pesoCcrKg = 0;
+  let saldoCcr = 0, pesoCcrKg = 0;
   const porUnidade = new Map<string, { peso001: number; pesoCcr: number }>();
   const diferencas: ComparativoCcr["topDiferencas"] = [];
 
   for (const [cod, a] of pos001) {
-    saldo001 += a.saldo;
-    peso001Kg += a.pesoKg;
     const b = ccrMap.get(cod);
     if (!b) { so001++; continue; }
     emComum++;
@@ -176,20 +184,20 @@ export function calcularComparativoCcr(
   for (const d of diferencas) d.difTon = d.peso001 - d.pesoCcr;
   diferencas.sort((x, y) => Math.abs(y.difTon) - Math.abs(x.difTon));
 
-  const peso001Ton = peso001Kg / 1000;
+  const peso001Ton = pesoTotal001Kg / 1000;
   const pesoCcrTon = pesoCcrKg / 1000;
   const difPesoTon = pesoCcrTon - peso001Ton;
-  const difSaldoUn = saldoCcr - saldo001;
+  const difSaldoUn = saldoCcr - saldoTotal001;
 
   return {
     dataBase,
-    estoque001: { itens: pos001.size, saldo: saldo001, pesoTon: arred1(peso001Ton) },
+    estoque001: { itens: itens001.length, saldo: saldoTotal001, pesoTon: arred1(peso001Ton) },
     ccr: { itens: ccrMap.size, saldo: saldoCcr, pesoTon: arred1(pesoCcrTon) },
     diferenca: {
       pesoTon: arred1(difPesoTon),
       pesoPct: peso001Ton > 0 ? arred1((difPesoTon / peso001Ton) * 100) : 0,
       saldoUn: difSaldoUn,
-      saldoPct: saldo001 > 0 ? arred1((difSaldoUn / saldo001) * 100) : 0,
+      saldoPct: saldoTotal001 > 0 ? arred1((difSaldoUn / saldoTotal001) * 100) : 0,
     },
     porUnidade: [...porUnidade.entries()]
       .sort((a, b) => b[1].peso001 - a[1].peso001)
@@ -240,29 +248,33 @@ export function comparativoMistoCcr(
 
   const arred1 = (v: number) => Math.round(v * 10) / 10;
 
-  let saldo001 = 0;
-  let peso001Kg = 0;
+  /* Totais do lado do ESTOQUE 001 = a posição inteira (a mesma da cena
+     Estoque), não só os volumes das 3 unidades do CD. */
+  let saldoTotal001 = 0;
+  let pesoTotal001Kg = 0;
+  for (const it of itens001) {
+    saldoTotal001 += it.saldo;
+    pesoTotal001Kg += it.peso;
+  }
   const pesoPorUnidade = new Map<string, number>();
   for (const a of pos001.values()) {
-    saldo001 += a.saldo;
-    peso001Kg += a.pesoKg;
     const rótulo = rotuloUnidade(a.unidade)!;
     pesoPorUnidade.set(rótulo, (pesoPorUnidade.get(rótulo) ?? 0) + a.pesoKg);
   }
 
-  const peso001Ton = peso001Kg / 1000;
+  const peso001Ton = pesoTotal001Kg / 1000;
   const difPesoTon = base.ccr.pesoTon - peso001Ton;
-  const difSaldoUn = base.ccr.saldo - saldo001;
+  const difSaldoUn = base.ccr.saldo - saldoTotal001;
 
   return {
     dataBase: `001 ${dataBase001} · CCR ${base.dataBase}`,
-    estoque001: { itens: pos001.size, saldo: saldo001, pesoTon: arred1(peso001Ton) },
+    estoque001: { itens: itens001.length, saldo: saldoTotal001, pesoTon: arred1(peso001Ton) },
     ccr: base.ccr,
     diferenca: {
       pesoTon: arred1(difPesoTon),
       pesoPct: peso001Ton > 0 ? arred1((difPesoTon / peso001Ton) * 100) : 0,
       saldoUn: difSaldoUn,
-      saldoPct: saldo001 > 0 ? arred1((difSaldoUn / saldo001) * 100) : 0,
+      saldoPct: saldoTotal001 > 0 ? arred1((difSaldoUn / saldoTotal001) * 100) : 0,
     },
     porUnidade: base.porUnidade
       .map((u) => {
