@@ -146,7 +146,16 @@ export function calcularSaldoComparativo(
   itensFull: Map<string, { saldo: number; desc: string; enderecos: string[]; enderecosQtd?: Map<string, number> }>,
   pesosPosicao: Map<string, number>,
   dataBase: string,
-  reservadosItens?: { cod: string; mascara: string; qtdReservada: number; pesoReservado?: number }[] | null,
+  reservadosItens?: {
+    cod: string;
+    mascara: string;
+    desc?: string;
+    qtdReservada: number;
+    pesoReservado?: number;
+    saldoAtual?: number;
+    pesoBrt?: number;
+    custoMedio?: number;
+  }[] | null,
 ): SaldoComparativo | null {
   if (!itensFocco.length || itensFull.size === 0) return null;
 
@@ -160,7 +169,7 @@ export function calcularSaldoComparativo(
       if (r.qtdReservada <= 0) continue;
       const chave = chaveItem(r.cod, r.mascara);
       reservadosMap.set(chave, (reservadosMap.get(chave) ?? 0) + r.qtdReservada);
-      if (r.pesoReservado > 0) pesoReservadoMap.set(chave, (pesoReservadoMap.get(chave) ?? 0) + r.pesoReservado);
+      if ((r.pesoReservado ?? 0) > 0) pesoReservadoMap.set(chave, (pesoReservadoMap.get(chave) ?? 0) + (r.pesoReservado ?? 0));
     }
   }
 
@@ -177,6 +186,35 @@ export function calcularSaldoComparativo(
   }
   if (foccoMap.size === 0) return null;
 
+  /* Saldo atual do Focco vindo da planilha de reservas (COMERCIAL 024, do
+     próprio estoque 001): cobre itens que a exportação da posição não lista
+     (ex.: 100336 — saldo 100, 30 reservados — ausente do "estoque 001.xlsx").
+     Só entra item que o relatório do Full também tem, para não trazer para o
+     comparativo peças/componentes que a posição de volumes não lista. */
+  const saldoReservaMap = new Map<string, { saldo: number; pesoBrt: number; custo: number; desc: string }>();
+  if (reservadosItens) {
+    for (const r of reservadosItens) {
+      if ((r.saldoAtual ?? 0) <= 0) continue;
+      saldoReservaMap.set(chaveItem(r.cod, r.mascara), {
+        saldo: r.saldoAtual!,
+        pesoBrt: r.pesoBrt ?? 0,
+        custo: r.custoMedio ?? 0,
+        desc: r.desc ?? "",
+      });
+    }
+  }
+  for (const [chave, fu] of itensFull) {
+    if (foccoMap.has(chave)) continue;
+    const r = saldoReservaMap.get(chave);
+    if (!r) continue;
+    foccoMap.set(chave, {
+      saldo: r.saldo,
+      desc: r.desc || fu.desc,
+      valor: r.saldo * r.custo,
+      peso: (pesosPosicao.get(chave) ?? r.pesoBrt) * r.saldo,
+    });
+  }
+
   let itensEmComum = 0;
   let itensSoFull = 0;
   let itensSoFocco = 0;
@@ -190,8 +228,9 @@ export function calcularSaldoComparativo(
   let pesoFullSoFull = 0;
   const diferencas: DiferencaSaldo[] = [];
 
-  /* Peso do item na posição do Focco — aplicado à quantidade do Full. */
-  const pesoUn = (chave: string) => pesosPosicao.get(chave) ?? 0;
+  /* Peso do item na posição do Focco — aplicado à quantidade do Full. Itens
+     que só aparecem na planilha de reservas usam o peso bruto unitário dela. */
+  const pesoUn = (chave: string) => pesosPosicao.get(chave) ?? saldoReservaMap.get(chave)?.pesoBrt ?? 0;
 
   for (const [chave, f] of foccoMap) {
     const fu = itensFull.get(chave);

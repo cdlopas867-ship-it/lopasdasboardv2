@@ -1368,8 +1368,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       ? melhorReservados.itens.map((r) => ({
           cod: r.cod,
           mascara: r.mascara,
+          desc: r.desc,
           qtdReservada: r.qtdReservada,
           pesoReservado: r.pesoReservado,
+          saldoAtual: r.saldoAtual,
+          pesoBrt: r.pesoBrt,
+          custoMedio: r.custoMedio,
         }))
       : null;
     saldoComparativo = calcularSaldoComparativo(
