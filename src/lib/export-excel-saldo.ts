@@ -2,6 +2,8 @@
    - Aba Resumo: indicadores gerais
    - Aba Itens: relação COMPLETA de todos os itens com Saldo Full, Focco,
      Diferença, Reservados e Disponíveis
+   - Aba Sob Risco: itens reservados que o Full/Focco não têm saldo para
+     atender (se houver)
    - Aba Reservados: itens reservados (se houver dados)
    Carrega o exceljs só no clique para não pesar o bundle. */
 
@@ -55,6 +57,10 @@ export async function exportarExcelSaldo(
     ["Reservados — tonelagem", reservados?.totalTon ?? "—"],
     ["Reservados — valor (R$)", reservados?.totalValor ?? "—"],
     ["Reservados — % do saldo", reservados?.pctQtd ?? "—"],
+    ["", ""],
+    ["Itens reservados sob risco", comparativo.risco?.itens ?? 0],
+    ["Reservados sob risco — quantidade", comparativo.risco?.qtdReservada ?? 0],
+    ["Reservados sob risco — tonelagem", comparativo.risco?.tonReservada ?? 0],
   ];
   for (const [ind, val] of linhasResumo) {
     resumo.addRow({ ind, val });
@@ -116,7 +122,75 @@ export async function exportarExcelSaldo(
     to: { row: lastRow, column: 8 },
   };
 
-  /* --- Aba 3: Reservados (se houver dados) --- */
+  /* --- Aba 3: Itens sob risco (reservados que o Full/Focco não cobrem) --- */
+  const MOTIVO_RISCO: Record<string, string> = {
+    "sem-full": "Reservado sem saldo no Full",
+    "full-insuficiente": "Full não cobre a reserva",
+    "focco-insuficiente": "Reserva maior que o saldo no Focco",
+  };
+
+  const riscos = (comparativo.itensRisco ?? []).filter((it) => it.risco && it.reservados > 0);
+  if (riscos.length > 0) {
+    const ris = wb.addWorksheet("Sob Risco");
+    ris.columns = [
+      { header: "Item", key: "item", width: 18 },
+      { header: "Descrição", key: "desc", width: 60 },
+      { header: "Motivo do risco", key: "motivo", width: 30 },
+      { header: "Qtd. Reservada", key: "reserv", width: 15 },
+      { header: "Ton. Reservada", key: "ton", width: 15 },
+      { header: "Saldo Focco (001)", key: "focco", width: 17 },
+      { header: "Saldo Full (112)", key: "full", width: 16 },
+      { header: "Disponível Focco", key: "disp", width: 16 },
+    ];
+    ris.getRow(1).font = HEADER_FONT;
+    ris.getRow(1).fill = HEADER_FILL;
+
+    const coresMotivo: Record<string, { font: { color: { argb: string } } }> = {
+      "sem-full": { font: { color: { argb: "FFDC2626" } } },
+      "full-insuficiente": { font: { color: { argb: "FFC2410C" } } },
+      "focco-insuficiente": { font: { color: { argb: "FFB45309" } } },
+    };
+
+    for (const it of riscos) {
+      const row = ris.addRow({
+        item: it.item,
+        desc: it.desc,
+        motivo: MOTIVO_RISCO[it.risco!] ?? it.risco,
+        reserv: it.reservados,
+        ton: it.tonReservada ?? 0,
+        focco: it.focco,
+        full: it.full,
+        disp: it.disponiveis,
+      });
+      /* Motivo em cor própria (risco em vermelho/âmbar) e saldos em vermelho
+         quando o Full não tem nada do item. */
+      row.getCell("motivo").font = coresMotivo[it.risco!] ?? TOTAL_FONT;
+      if (it.full <= 0) {
+        row.getCell("full").font = { bold: true, color: { argb: "FFDC2626" } };
+      }
+    }
+
+    /* Linha de totais com fórmula SUM */
+    const lastRisco = ris.rowCount;
+    ris.addRow({
+      item: "Total",
+      desc: "",
+      motivo: "",
+      reserv: { formula: `SUM(D2:D${lastRisco})` },
+      ton: { formula: `SUM(E2:E${lastRisco})` },
+      focco: { formula: `SUM(F2:F${lastRisco})` },
+      full: { formula: `SUM(G2:G${lastRisco})` },
+      disp: { formula: `SUM(H2:H${lastRisco})` },
+    });
+    ris.getRow(lastRisco + 1).font = TOTAL_FONT;
+
+    ris.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: lastRisco, column: 8 },
+    };
+  }
+
+  /* --- Aba 4: Reservados (se houver dados) --- */
   if (reservados?.topItens?.length) {
     const res = wb.addWorksheet("Reservados");
     res.columns = [

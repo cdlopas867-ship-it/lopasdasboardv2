@@ -32,6 +32,17 @@ export type DiferencaSaldo = {
   diff: number;
 };
 
+/* Motivo pelo qual um item reservado fica "sob risco": a reserva existe no
+   Focco (estoque 001), mas o Full (estoque 112) não tem saldo para atendê-la,
+   ou a reserva é maior que o saldo de um dos sistemas. */
+export type MotivoRisco = "sem-full" | "full-insuficiente" | "focco-insuficiente";
+
+export const MOTIVO_RISCO_LABEL: Record<MotivoRisco, string> = {
+  "sem-full": "Reservado sem saldo no Full",
+  "full-insuficiente": "Full não cobre a reserva",
+  "focco-insuficiente": "Reserva maior que o saldo no Focco",
+};
+
 /* Item individual do comparativo — usado na exportação Excel completa.
    `situacao` classifica o item no cruzamento Full × Focco. */
 export type ItemSaldoCompleto = {
@@ -43,6 +54,11 @@ export type ItemSaldoCompleto = {
   reservados: number;
   disponiveis: number;
   situacao: "exato" | "diferenca" | "so-full" | "so-focco";
+  /* Motivo do risco (quando a reserva não é coberta pelo Full ou pelo
+     Focco) — null/ausente quando a reserva é coberta pelos dois. */
+  risco?: MotivoRisco | null;
+  /* Tonelada da reserva do item (peso unitário × qtd. reservada). */
+  tonReservada?: number;
 };
 
 export type SaldoComparativo = {
@@ -77,6 +93,15 @@ export type SaldoComparativo = {
   /* Relação completa de todos os itens (em comum + só Full + só Focco) para
      a exportação Excel detalhada. */
   todosItens: ItemSaldoCompleto[];
+  /* Itens reservados sob risco: têm reserva, mas o Full não tem saldo (ou tem
+     menos que a reserva) — ou a reserva é maior que o próprio saldo do Focco.
+     `itensRisco` alimenta a exportação Excel detalhada. */
+  risco: {
+    itens: number;
+    qtdReservada: number;
+    tonReservada: number;
+  };
+  itensRisco: ItemSaldoCompleto[];
 };
 
 export const SALDO_COMPARATIVO: SaldoComparativo = {
@@ -110,6 +135,8 @@ export const SALDO_COMPARATIVO: SaldoComparativo = {
     diferencaTotal: 2870
   },
   todosItens: [],
+  risco: { itens: 0, qtdReservada: 0, tonReservada: 0 },
+  itensRisco: [],
   topDiferencas: [
     {
       item: "87470.91617",

@@ -74,6 +74,15 @@ export default function CenaSaldoComparativo({
   const pctFull = saldoTotal > 0 ? (d.full.saldo / saldoTotal) * 100 : 0;
   const pctFocco = saldoTotal > 0 ? (d.focco.saldo / saldoTotal) * 100 : 0;
 
+  /* Itens reservados sob risco — a reserva não é coberta pelo Full (ou pelo Focco). */
+  const risco = d.risco ?? { itens: 0, qtdReservada: 0, tonReservada: 0 };
+  const itensRisco = d.itensRisco ?? [];
+  const contRisco = {
+    semFull: itensRisco.filter((i) => i.risco === "sem-full").length,
+    fullInsuficiente: itensRisco.filter((i) => i.risco === "full-insuficiente").length,
+    foccoInsuficiente: itensRisco.filter((i) => i.risco === "focco-insuficiente").length,
+  };
+
   return (
     <div className="flex w-full flex-col items-center">
       <div className="flex items-center gap-2">
@@ -213,6 +222,52 @@ export default function CenaSaldoComparativo({
           <p className="text-[7px] font-bold tracking-widest text-white/50 uppercase">dif. de saldo</p>
         </div>
       </div>
+
+      {/* Reservados sob risco — a reserva não é coberta pelo Full (ou pelo Focco) */}
+      {risco.itens > 0 && (
+        <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.75s" }}>
+          <p className="mb-1 text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+            Reservados sob risco
+          </p>
+          <div className="rounded-lg border border-red-500/25 bg-red-500/5 px-2.5 py-1.5">
+            <p className="font-mono text-sm font-bold text-red-400">
+              {fmtInt(risco.itens)} itens · {fmtTonDec(risco.tonReservada)} reservadas
+            </p>
+            <p className="text-[8px] text-white/50">
+              {fmtInt(risco.qtdReservada)} un com reserva não coberta pelo Full (estoque 112)
+            </p>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-1">
+            <span className="rounded-md border border-red-500/25 bg-red-500/5 px-1.5 py-0.5 text-[8px] text-red-300">
+              sem saldo no Full {fmtInt(contRisco.semFull)}
+            </span>
+            <span className="rounded-md border border-amber-500/25 bg-amber-500/5 px-1.5 py-0.5 text-[8px] text-amber-300">
+              Full não cobre a reserva {fmtInt(contRisco.fullInsuficiente)}
+            </span>
+            {contRisco.foccoInsuficiente > 0 && (
+              <span className="rounded-md border border-orange-500/25 bg-orange-500/5 px-1.5 py-0.5 text-[8px] text-orange-300">
+                reserva &gt; Focco {fmtInt(contRisco.foccoInsuficiente)}
+              </span>
+            )}
+          </div>
+          <div className="mt-1 space-y-1">
+            {itensRisco.slice(0, 5).map((it, i) => (
+              <div key={`${it.item}-${i}`} className="flex items-center gap-1.5 rounded-md bg-white/[0.04] px-2 py-1">
+                <span className="w-20 shrink-0 truncate font-mono text-[9px] font-bold text-white/70">{it.item}</span>
+                <span className="flex-1 truncate text-[10px] text-white/50">{it.desc}</span>
+                <span className="shrink-0 font-mono text-[10px] font-semibold text-white/80">{fmtInt(it.reservados)} res.</span>
+                <span className="shrink-0 text-[9px] text-white/30">→</span>
+                <span className="shrink-0 font-mono text-[10px] font-semibold text-white/80">{fmtInt(it.full)}</span>
+                <span className="w-14 shrink-0 text-right font-mono text-[10px] font-bold text-red-400">{fmtTonDec(it.tonReservada ?? 0)}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[8px] leading-tight text-white/40">
+            * Itens com reserva na carteira (estoque 001) que o Full não tem saldo para atender — ou a reserva maior que o saldo
+            do Focco. Colunas: quantidade reservada, saldo no Full e tonelada reservada. As demais vão no Excel exportado.
+          </p>
+        </div>
+      )}
 
       {/* Maiores divergências — itens com saldo diferente nos dois sistemas */}
       <div className="video-sobe mt-3 w-full max-w-sm mx-auto" style={{ animationDelay: "0.8s" }}>

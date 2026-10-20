@@ -114,8 +114,8 @@ type Props = {
   onLogout?: () => void;
 };
 
-const TOTAL_CENAS = 11;
-const DURACOES = [8000, 5000, 6500, 8000, 9000, 5500, 8000, 7000, 8000, 7000, 12000];
+const TOTAL_CENAS = 12;
+const DURACOES = [8000, 5000, 6500, 8000, 9000, 5500, 8000, 7000, 8000, 8000, 7000, 12000];
 
 export default function VideoResumoDashboard({
   kpis,
@@ -242,6 +242,7 @@ export default function VideoResumoDashboard({
     producaoSemanal,
     resumo,
     comparativoCcr,
+    saldoComparativo,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
     onPausar: () => setPausado(true),

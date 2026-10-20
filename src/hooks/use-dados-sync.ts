@@ -169,9 +169,10 @@ function dataKey(payload: unknown, incluirSync = true): string {
           tonFullSoFull?: number;
         };
         todosItens?: unknown[];
+        risco?: { itens?: number; qtdReservada?: number };
       } | undefined;
       return sc
-        ? `${sc.full?.saldo ?? 0}|${sc.focco?.saldo ?? 0}|${sc.comparativo?.qtdExata ?? 0}|${sc.comparativo?.qtdDiferenca ?? 0}|${sc.comparativo?.tonExato ?? 0}|${sc.comparativo?.tonDiferenca ?? 0}|${sc.comparativo?.tonSoFocco ?? 0}|${sc.comparativo?.tonFullExato ?? 0}|${sc.comparativo?.tonFullDiferenca ?? 0}|${sc.comparativo?.tonFullSoFull ?? 0}|${sc.todosItens?.length ?? 0}`
+        ? `${sc.full?.saldo ?? 0}|${sc.focco?.saldo ?? 0}|${sc.comparativo?.qtdExata ?? 0}|${sc.comparativo?.qtdDiferenca ?? 0}|${sc.comparativo?.tonExato ?? 0}|${sc.comparativo?.tonDiferenca ?? 0}|${sc.comparativo?.tonSoFocco ?? 0}|${sc.comparativo?.tonFullExato ?? 0}|${sc.comparativo?.tonFullDiferenca ?? 0}|${sc.comparativo?.tonFullSoFull ?? 0}|${sc.todosItens?.length ?? 0}|${sc.risco?.itens ?? 0}|${sc.risco?.qtdReservada ?? 0}`
         : "";
     })(),
     cc: (() => {

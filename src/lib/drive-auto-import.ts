@@ -1362,16 +1362,28 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   /* Comparativo de saldo Full (relatório WF0112, do FullSoft) × Focco (posição de estoque 001). */
   let saldoComparativo: SaldoComparativo | null = null;
   if (melhorItens && itensFull) {
+    /* Reservas da carteira (COMERCIAL 024, estoque 001) cruzadas com os dois
+       saldos: alimenta o bloco de itens reservados sob risco. */
+    const reservadosItens = melhorReservados
+      ? melhorReservados.itens.map((r) => ({
+          cod: r.cod,
+          mascara: r.mascara,
+          qtdReservada: r.qtdReservada,
+          pesoReservado: r.pesoReservado,
+        }))
+      : null;
     saldoComparativo = calcularSaldoComparativo(
       melhorItens,
       itensFull,
       pesosPosicao ?? new Map<string, number>(),
       melhorResumo.data || new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+      reservadosItens,
     );
     if (saldoComparativo) {
       console.info(
         `[auto-import] saldo Full × Focco: ${fmtInt(saldoComparativo.full.itens)} × ${fmtInt(saldoComparativo.focco.itens)} itens · ` +
-          `acuracidade ${saldoComparativo.comparativo.pctAcuracia}% · só Full ${fmtInt(saldoComparativo.alertas.soFull)}`,
+          `acuracidade ${saldoComparativo.comparativo.pctAcuracia}% · só Full ${fmtInt(saldoComparativo.alertas.soFull)}` +
+          (saldoComparativo.risco.itens > 0 ? ` · sob risco ${fmtInt(saldoComparativo.risco.itens)}` : ""),
       );
     }
   }
