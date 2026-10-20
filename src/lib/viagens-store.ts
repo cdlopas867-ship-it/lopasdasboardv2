@@ -89,14 +89,19 @@ export function parseSheet(wb: XLSX.WorkBook): Viagem[] {
   const colTurno = findCol([/^TURNO/]);
   const colTotal = findCol([/TOTAL.*VIAGENS/, /^TOTAL/, /VIAGENS/]);
 
+  /* Assinatura do controle de viagens: DATA + INÍCIO + FIM + TURNO + TOTAL.
+     Sem essas colunas, não é a planilha CDEVIAGENS — evita que relatórios com
+     colunas parecidas (DIA/NOME/TURNO da produtividade) sejam lidos como viagens. */
+  if (colData < 0 || colInicio < 0 || colFim < 0 || colTurno < 0 || colTotal < 0) return [];
+
   const viagens: Viagem[] = [];
   for (const r of dataRows) {
-    const data = fmtData(r[colData >= 0 ? colData : 0]);
+    const data = fmtData(r[colData]);
     if (!data || data === "undefined" || /CONTROLE|VIAGENS/i.test(data)) continue;
-    const inicio = fmtHora(r[colInicio >= 0 ? colInicio : 1]);
-    const fim = fmtHora(r[colFim >= 0 ? colFim : 2]);
-    const turno = str(r[colTurno >= 0 ? colTurno : 3]).toUpperCase().trim();
-    const totalViagens = num(r[colTotal >= 0 ? colTotal : 4]);
+    const inicio = fmtHora(r[colInicio]);
+    const fim = fmtHora(r[colFim]);
+    const turno = str(r[colTurno]).toUpperCase().trim();
+    const totalViagens = num(r[colTotal]);
     if (!totalViagens && !inicio) continue;
     viagens.push({
       data,

@@ -18,6 +18,7 @@ import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import CenaComparativoCcr from "@/components/CenaComparativoCcr";
 import CenaSaldoComparativo from "@/components/CenaSaldoComparativo";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
+import type { ResumoViagens } from "@/lib/viagens-store";
 
 import { POSICAO_FORA_DE_LINHA, POSICAO_TOTAL, type ItemForaDeLinha, type PosicaoEstoque } from "@/data/fora-de-linha";
 
@@ -66,6 +67,7 @@ type Props = {
   resumo?: { valor: number; previsto: number; ton: number; saldo: number; itens: number } | null;
   comparativoCcr?: ComparativoCcr | null | undefined;
   saldoComparativo?: SaldoComparativo | null | undefined;
+  viagens?: ResumoViagens | null | undefined;
   onReiniciar: () => void;
   onGerarRelatorio?: (() => void) | undefined;
   onPausar?: (() => void) | undefined;
@@ -92,6 +94,7 @@ export default function CenasApresentacao({
   resumo,
   comparativoCcr,
   saldoComparativo,
+  viagens,
   onReiniciar,
   onGerarRelatorio,
   onPausar,
@@ -140,9 +143,9 @@ export default function CenasApresentacao({
         <CenaOcupacao anim={anim} ocupacao={ocupacao} cena={cena} onPausar={onPausar} />
       )}
 
-      {/* Cena 3 — recebimento por turno (donut interativo) */}
+      {/* Cena 3 — recebimento por turno (donut interativo + viagens CD) */}
       {cena === 2 && (
-        <CenaRecebimentoTurno anim={anim} turnos={turnos} cena={cena} onPausar={onPausar} />
+        <CenaRecebimentoTurno anim={anim} turnos={turnos} cena={cena} viagens={viagens} onPausar={onPausar} />
       )}
 
       {/* Cena 4 — Produção da Semana (donut interativo com toggle Entregue/Pendente) */}

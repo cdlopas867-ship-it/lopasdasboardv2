@@ -1,10 +1,11 @@
 /* Cena Recebimento por turno — donut interativo com toggle entre turnos. */
 
 import { cn } from "@/lib/utils";
-import { fmtBrMax, fmtInt, fmtTonDec } from "@/lib/format";
+import { fmtBrMax, fmtDecMax, fmtInt, fmtTonDec } from "@/lib/format";
 import InfoTooltip from "@/components/InfoTooltip";
 import { DonutInterativo, ToggleSecoes, BannerResumo, useFocoCena, type SecaoDonut } from "@/components/cena-interativa";
 import type { VideoTurno } from "./VideoResumoDashboard";
+import type { ResumoViagens } from "@/lib/viagens-store";
 
 const CORES_TURNO = ["#00FFCC", "#FFA500", "#A78BFA"];
 
@@ -12,11 +13,13 @@ export default function CenaRecebimentoTurno({
   anim,
   turnos,
   cena,
+  viagens,
   onPausar,
 }: {
   anim: boolean;
   turnos: VideoTurno[];
   cena: number;
+  viagens?: ResumoViagens | null;
   onPausar?: () => void;
 }) {
   const [foco, setFoco] = useFocoCena<number>(cena, 0);
@@ -96,6 +99,35 @@ export default function CenaRecebimentoTurno({
       </div>
 
       <BannerResumo texto={`${fmtTonDec(turnos[Math.min(foco, turnos.length - 1)]?.ton ?? 0)} recebidas · ${fmtBrMax(turnos[Math.min(foco, turnos.length - 1)]?.pct ?? 0, 1)}%`} />
+
+      {/* Viagens CD — média de caminhões recebidos por dia e por turno (planilha CDEVIAGENS) */}
+      {viagens && viagens.totalViagens > 0 && (() => {
+        const mediaDia = viagens.totalDias > 0 ? viagens.totalViagens / viagens.totalDias : 0;
+        const porTurno = viagens.mediaPorTurno.filter((t) => t.turno && t.turno !== "—");
+        if (mediaDia <= 0 && porTurno.length === 0) return null;
+        return (
+          <div className="video-sobe mt-3 w-full max-w-xs mx-auto rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md" style={{ animationDelay: "0.55s" }}>
+            <p className="text-[9px] font-bold tracking-[0.3em] text-white/60 uppercase">
+              Viagens CD · Caminhões recebidos
+            </p>
+            <div className="mt-2 flex items-center justify-center gap-5 text-center">
+              <div>
+                <p className="text-[9px] text-white/50 uppercase">Média/dia</p>
+                <p className="font-serif text-2xl leading-7 text-white">{fmtDecMax(mediaDia, 1)}</p>
+              </div>
+              {porTurno.map((t) => (
+                <div key={t.turno}>
+                  <p className="text-[9px] text-white/50 uppercase">Turno {t.turno.toLowerCase()}</p>
+                  <p className="font-serif text-2xl leading-7 text-white">{fmtDecMax(t.media, 1)}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[8px] leading-tight text-white/40">
+              Média de caminhões por dia e por turno · Fonte: planilha CDEVIAGENS.
+            </p>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 import type { SaldoComparativo } from "@/data/saldo-comparativo";
 import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
+import type { ResumoViagens } from "@/lib/viagens-store";
 import ResumoBg from "./ResumoBg";
 import RelatorioLopas from "./RelatorioLopas";
 
@@ -145,7 +146,22 @@ export default function VideoResumoDashboard({
   const [anim, setAnim] = useState(false);
   const [cenaSaindo, setCenaSaindo] = useState<number | null>(null);
   const [relatorio, setRelatorio] = useState(false);
+  const [viagens, setViagens] = useState<ResumoViagens | null>(null);
   const cenaAnteriorRef = useRef(0);
+
+  /* Controle de Viagens CD (planilha CDEVIAGENS) — alimenta a cena de turno */
+  useEffect(() => {
+    let vivo = true;
+    fetch("/api/viagens")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: ResumoViagens | null) => {
+        if (vivo && d) setViagens(d);
+      })
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
 
   /* Troca de cena: guarda a cena anterior para o fade de saída e dispara
@@ -243,6 +259,7 @@ export default function VideoResumoDashboard({
     resumo,
     comparativoCcr,
     saldoComparativo,
+    viagens,
     onReiniciar: () => setCena(0),
     onGerarRelatorio: () => { setPausado(true); setRelatorio(true); },
     onPausar: () => setPausado(true),
