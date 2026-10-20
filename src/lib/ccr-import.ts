@@ -154,14 +154,17 @@ export function calcularComparativoCcr(
     });
   }
 
-  /* Itens só no CCR entram nos totais quando a unidade é reconhecida. */
+  /* Itens só no CCR entram nos totais sempre — o relatório do CCR é todo de
+     volumes do CD, mesmo quando a classificação não é uma das 3 unidades do
+     estoque 001 (ex.: "EMBALAGEM JOGO DE PES", "VIDRO/ESPELHO"). Sem isso o
+     peso do lado do CCR ficava menor que a soma real do arquivo. */
   for (const [cod, b] of ccrMap) {
     if (pos001.has(cod)) continue;
     soCcr++;
-    if (rotuloUnidade(b.unidade)) {
-      saldoCcr += b.saldo;
-      pesoCcrKg += b.pesoKg;
-      const rótulo = rotuloUnidade(b.unidade)!;
+    saldoCcr += b.saldo;
+    pesoCcrKg += b.pesoKg;
+    const rótulo = rotuloUnidade(b.unidade);
+    if (rótulo) {
       const u = porUnidade.get(rótulo) ?? { peso001: 0, pesoCcr: 0 };
       u.pesoCcr += b.pesoKg;
       porUnidade.set(rótulo, u);
