@@ -59,7 +59,7 @@ export function lerItensCcr(nomeAba: string, rows: unknown[][]): Map<string, Ite
   const hi = rows.findIndex((r) => {
     const h = (r ?? []).map(norm);
     return (
-      (h.includes("ITEM") || h.includes("COD") || h.some((x) => x.includes("COD ALMOX"))) &&
+      (h.some((x) => x === "ITEM" || x.startsWith("COD") || x.includes("ITEM") || x.includes("COD ALMOX"))) &&
       h.some((x) => x.startsWith("DESC")) &&
       (h.some((x) => x.includes("SALDO")) || h.some((x) => x.includes("QTD")))
     );
@@ -77,9 +77,11 @@ export function lerItensCcr(nomeAba: string, rows: unknown[][]): Map<string, Ite
       : findCol((x) => x.startsWith("COD") || x.includes("ITEM"));
   const cDesc = findCol((x) => x.startsWith("DESC"));
   const cSaldo = findCol((x) => x.includes("SALDO") || x.includes("QTD"));
-  const cPesoTotal = findCol((x) => x.includes("PESO LIQ TOTAL") || x.includes("PESO TOTAL"));
+  const cPesoTotal = findCol((x) => x.includes("PESO LIQ TOTAL") || x.includes("PESO TOTAL") || x.includes("PESO EST KG"));
   const cPesoUn = findCol((x) => x.includes("PESO LIQ UN") || x.includes("PESO UN"));
-  const cUnidade = findCol((x) => x.includes("CLASSIFICACAO N1") || x.includes("UNIDADE") || x.includes("GRUPO"));
+  const cUnidade = findCol(
+    (x) => x.includes("CLASSIFICACAO N1") || x.startsWith("CLASSIFICACAO") || x.includes("UNIDADE") || x.includes("GRUPO"),
+  );
   if (cItem < 0 || cDesc < 0 || cSaldo < 0) return null;
 
   const mapa = new Map<string, ItemCcr>();
