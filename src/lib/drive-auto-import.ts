@@ -18,7 +18,7 @@ import { lerAvarias, mesclarAvarias } from "./avarias";
 import { calcularAvariasResumo } from "./avarias-resumo";
 import { buscarCarregamentoMensal, lerCarregadoMensal, lerUltimaDataCarregado, CARREGADO_SEM_DRIVE } from "./carregamento";
 import { calcularRecebimento } from "./recebimento";
-import { calcularProducaoSemanal, calcularRecebidoPorDia, type ProducaoSemanalDia } from "./producao-semanal";
+import { calcularProducaoSemanal, calcularRecebidoPorDia, calcularRecebidoGerenciamento, type ProducaoSemanalDia } from "./producao-semanal";
 import { lerItensEstoque } from "./base-estoque";
 import { lerPaletes, calcularResumoPaletes } from "./paletes";
 import { faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado";
@@ -920,6 +920,9 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   let melhorPaletes: ReturnType<typeof lerPaletes> | null = null;
   let wbProducao: XLSX.WorkBook | null = null;
   let melhorRecebidoPorDia: Map<string, { qtd: number; peso: number }> | null = null;
+  /* Recebido por dia da planilha "Gerenciamento dos recebimentos" (WF0072) —
+     fonte preferida do comparativo recebimento × produção. */
+  let melhorRecebidoGerenciamento: Map<string, { qtd: number; peso: number }> | null = null;
   /* Base do CCR (relatório de volumes do CD) — aba com "CCR" no nome. */
   let melhorCcr: Map<string, { desc: string; saldo: number; pesoKg: number; unidade: string }> | null = null;
   let melhorCcrMod: Date | undefined;
@@ -993,6 +996,13 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const recebidoPorDia = calcularRecebidoPorDia(wb);
       if (recebidoPorDia && recebidoPorDia.size > (melhorRecebidoPorDia?.size ?? 0)) {
         melhorRecebidoPorDia = recebidoPorDia;
+      }
+
+      /* Detecta a planilha "Gerenciamento dos recebimentos" (WF0072) — peso
+         recebido por dia; tem prioridade sobre o PESO RECEBIDO POR PERÍODO. */
+      const recebidoGer = calcularRecebidoGerenciamento(wb);
+      if (recebidoGer && recebidoGer.size > (melhorRecebidoGerenciamento?.size ?? 0)) {
+        melhorRecebidoGerenciamento = recebidoGer;
       }
 
       /* Extrai a base de itens de estoque (Top Produtos, Curva ABC, fichas) */
@@ -1131,7 +1141,11 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
      O Drive continua sendo a fonte principal e atualizada — estas cópias
      garantem que a cena "Produção da Semana" não fique vazia se um arquivo
      do Drive falhar ao baixar (já acontece, ex.: sextawer.xlsx). */
-  for (const localPath of ["public/planilhas/producao.xlsx", "public/planilhas/peso-recebido.xlsx"]) {
+  for (const localPath of [
+    "public/planilhas/producao.xlsx",
+    "public/planilhas/peso-recebido.xlsx",
+    "public/planilhas/recebimentos.xlsx",
+  ]) {
     try {
       if (!existsSync(localPath)) continue;
       const wb = XLSX.read(readFileSync(localPath), { type: "buffer" });
@@ -1142,6 +1156,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       if (!melhorRecebidoPorDia) {
         const rec = calcularRecebidoPorDia(wb);
         if (rec && rec.size > 0) melhorRecebidoPorDia = rec;
+      }
+      if (!melhorRecebidoGerenciamento) {
+        const rec = calcularRecebidoGerenciamento(wb);
+        if (rec && rec.size > 0) melhorRecebidoGerenciamento = rec;
       }
     } catch (e) {
       console.error(`[auto-import] planilha local ${localPath} ignorada:`, (e as Error).message);
@@ -1180,7 +1198,13 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   /* Processa a produção da semana agora que os itens de estoque estão disponíveis */
   let melhorProducao: ProducaoSemanalDia[] | null = null;
   if (wbProducao && melhorItens) {
-    melhorProducao = calcularProducaoSemanal(wbProducao, melhorItens, melhorRecebidoPorDia);
+    /* O "recebido" vem da planilha de recebimentos (WF0072) quando existe;
+       sem ela, cai no PESO RECEBIDO POR PERÍODO. */
+    melhorProducao = calcularProducaoSemanal(
+      wbProducao,
+      melhorItens,
+      melhorRecebidoGerenciamento ?? melhorRecebidoPorDia,
+    );
   }
 
   /* Mescla as avarias de todas as planilhas (base histórica + lançamentos novos).

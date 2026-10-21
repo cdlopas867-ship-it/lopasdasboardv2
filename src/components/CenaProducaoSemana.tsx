@@ -86,7 +86,7 @@ export default function CenaProducaoSemana({
         <p className="video-sobe text-xs font-bold tracking-[0.35em] text-white/80 uppercase">
           Produção da Semana
         </p>
-        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Recebido = o que já chegou ao estoque (planilha PESO RECEBIDO POR PERÍODO). Diferença = o que falta receber (peso previsto da semana − recebido). Os % são sobre o peso previsto da semana (PESO PREVISTO). Peso em toneladas. Fonte: sistema Focco." />
+        <InfoTooltip onOpen={onPausar} texto="Ordens de produção da semana atual (seg–dom). Recebido = o que já chegou ao estoque (planilha Gerenciamento dos recebimentos - WF0072, pelo peso de cada autorização). Diferença = o que falta receber (peso previsto da semana − recebido). Os % são sobre o peso previsto da semana (PESO PREVISTO). Peso em toneladas. Fonte: sistema Focco." />
       </div>
 
       <DonutInterativo
@@ -176,7 +176,7 @@ export default function CenaProducaoSemana({
           </tfoot>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Recebido: já chegou ao estoque. Diferença: o que falta receber (peso previsto da semana − recebido). % sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.
+          * Recebido: já chegou ao estoque (Gerenciamento dos recebimentos · WF0072). Diferença: o que falta receber (peso previsto da semana − recebido). % sobre o peso previsto da semana. Tonelagem em toneladas (t). Fonte: sistema Focco.
         </p>
       </div>
 
@@ -326,7 +326,7 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque. Meta = {META_DIARIA} t/dia (% do recebido vs meta · ✓ = meta batida). Média = tonelagem prevista do dia ÷ nº de ordens de produção do dia. ▲/▼ = variação em % da tonelagem vs dia anterior.
+          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque (Gerenciamento dos recebimentos · WF0072). Meta = {META_DIARIA} t/dia (% do recebido vs meta · ✓ = meta batida). Média = tonelagem prevista do dia ÷ nº de ordens de produção do dia. ▲/▼ = variação em % da tonelagem vs dia anterior.
         </p>
       </div>
 

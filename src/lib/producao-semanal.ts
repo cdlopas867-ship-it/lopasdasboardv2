@@ -39,9 +39,10 @@ function normalizeHeader(value: unknown): string {
   return String(value ?? "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    /* Remove espaços e underlines: a planilha PESO RECEBIDO usa
-       "DT_INICIO"/"PESO_RECEBIDO" enquanto a de produção usa espaços. */
-    .replace(/[_\s]+/g, "")
+    /* Remove espaços, underlines e pontos: a planilha PESO RECEBIDO usa
+       "DT_INICIO"/"PESO_RECEBIDO", a de produção usa espaços e a de
+       recebimentos (WF0072) usa "Dt. autorização"/"Qtd. Itens". */
+    .replace(/[._\s]+/g, "")
     .toUpperCase();
 }
 
@@ -140,10 +141,64 @@ export function calcularRecebidoPorDia(
   return null;
 }
 
+/* Calcula o total recebido por dia a partir da planilha
+ * "Gerenciamento dos recebimentos" (relatório WF0072 do WMS: Autorização,
+ * Placa, Box, Dt. autorização, Situação, Fornecedor, Nro. doc., Almoxarifado,
+ * Itens, Qtd. Itens, Qtd. Embs., Peso, Cubagem…). Agrupa pela data da
+ * autorização e soma o Peso (kg) e a Qtd. Itens — a cena usa toneladas.
+ * É a fonte preferida do "recebido" no comparativo recebimento × produção. */
+export function calcularRecebidoGerenciamento(
+  wb: XLSX.WorkBook,
+): Map<string, { qtd: number; peso: number }> | null {
+  for (const name of wb.SheetNames) {
+    const ws = wb.Sheets[name];
+    if (!ws) continue;
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: null });
+    if (!rows.length) continue;
+
+    /* Cabeçalho: Autorização + Dt. autorização + Peso */
+    const headerIdx = rows.findIndex((r) => {
+      if (!r) return false;
+      const up = r.map((c) => normalizeHeader(c));
+      return (
+        up.includes("AUTORIZACAO") &&
+        up.includes("DTAUTORIZACAO") &&
+        up.includes("PESO")
+      );
+    });
+    if (headerIdx < 0) continue;
+
+    const headers = rows[headerIdx]!.map((c) => normalizeHeader(c));
+    const colData = headers.indexOf("DTAUTORIZACAO");
+    const colPeso = headers.indexOf("PESO");
+    const colQtd = headers.indexOf("QTDITENS");
+    if (colData < 0 || colPeso < 0) continue;
+
+    const porDia = new Map<string, { qtd: number; peso: number }>();
+    for (const r of rows.slice(headerIdx + 1)) {
+      if (!r) continue;
+      const iso = serialToIso(r[colData]);
+      if (!iso) continue;
+      const peso = Number(r[colPeso] ?? 0) || 0;
+      const qtd = colQtd >= 0 ? Number(r[colQtd] ?? 0) || 0 : 0;
+      const atual = porDia.get(iso) ?? { qtd: 0, peso: 0 };
+      atual.qtd += qtd;
+      atual.peso += peso;
+      porDia.set(iso, atual);
+    }
+
+    if (porDia.size === 0) continue;
+    return porDia;
+  }
+
+  return null;
+}
+
 /* Lê a planilha de produção e retorna os dias com métricas.
  * Detecta a aba pelos cabeçalhos NUM ORDEM + DT INICIAL + PENDENTE.
  * `produzido` = QTDE ENTREGUE da produção; `entregue` (recebido) vem da
- * planilha PESO RECEBIDO POR PERÍODO quando fornecida (senão assume o
+ * planilha de recebimentos (Gerenciamento dos recebimentos · WF0072 ou, na
+ * falta dela, PESO RECEBIDO POR PERÍODO) quando fornecida (senão assume o
  * produzido). O PENDENTE (a produzir) = PREVISTO − PRODUZIDO. */
 export function calcularProducaoSemanal(
   wb: XLSX.WorkBook,
