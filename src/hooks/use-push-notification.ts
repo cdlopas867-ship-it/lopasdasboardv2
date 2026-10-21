@@ -3,7 +3,7 @@ import { pedirPermissaoNotificacao } from "@/lib/notificacao-desktop";
 
 /* Hook que registra o service worker de push e assina notificações push.
  *
- * - Registra `/sw-push.js` como service worker.
+ * - Registra o service worker unificado `/sw.js` (cache + push + update).
  * - Assina push com a chave pública VAPID do servidor **quando a permissão
  *   de notificação já foi concedida**.
  * - A permissão NÃO é pedida automaticamente na carga: o navegador só abre o
@@ -29,7 +29,10 @@ async function assinarPush(): Promise<void> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
   if (Notification.permission !== "granted") return;
 
-  const sw = await navigator.serviceWorker.register("/sw-push.js", { scope: "/" });
+  /* Usa o SW unificado (/sw.js) que cuida de cache + push + update.
+     Antes registrava /sw-push.js separado, que substituía o /sw.js e
+     quebrava o cache da PWA instalada. */
+  const sw = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
   await navigator.serviceWorker.ready;
 
   const res = await fetch("/api/push/public-key");

@@ -9,8 +9,10 @@ import type { ComparativoCcr } from "@/data/comparativo-ccr";
 
 import LoadingApresentacao from "@/components/LoadingApresentacao";
 import { NotificacaoAtualizacao } from "@/components/NotificacaoAtualizacao";
+import { NotificacaoAppUpdate } from "@/components/NotificacaoAppUpdate";
 import IntroHomenagemLopas from "@/components/IntroHomenagemLopas";
 import { usePushNotification } from "@/hooks/use-push-notification";
+import { useAppUpdate } from "@/hooks/use-app-update";
 import { notificarAtualizacao } from "@/lib/notificacao-desktop";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
@@ -30,6 +32,7 @@ function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();
   const { dados, loaded, notificacao, dispensarNotificacao } = useDadosSync<Painel>(initialSyncData as Painel);
   const { ativarNotificacoes } = usePushNotification();
+  const { updateDisponivel, atualizarAgora, dispensar: dispensarUpdate } = useAppUpdate();
   /* Notificação na área de trabalho: quando o painel recebe dados novos,
      além do banner interno, avisa pelo sistema (precisa da permissão). */
   useEffect(() => {
@@ -96,6 +99,7 @@ function DashboardHome() {
     : dados.atualizadoEm;
   return (<>
     <NotificacaoAtualizacao notificacao={notificacao} onDispensar={dispensarNotificacao} onAtivarNotificacoes={ativarNotificacoes} />
+    <NotificacaoAppUpdate visivel={updateDisponivel} onAtualizar={atualizarAgora} onDispensar={dispensarUpdate} />
     {introAberta && (
       <IntroHomenagemLopas onConcluir={() => setIntroAberta(false)} />
     )}

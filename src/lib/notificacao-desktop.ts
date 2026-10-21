@@ -1,11 +1,11 @@
 /* Notificação na área de trabalho (notificação do sistema) quando o painel
  * recebe dados novos da planilha.
  *
- * - Usa o service worker já registrado (/sw-push.js) para exibir a
+ * - Usa o service worker unificado (/sw.js) para exibir a
  *   notificação do sistema; sem service worker, cai para a Notification API.
  * - O navegador só aceita pedir a permissão a partir de um clique do usuário,
  *   por isso `pedirPermissaoNotificacao` é chamada no botão do banner.
- * - A `tag` é a mesma usada pelo push do servidor (sw-push.js): assim a
+ * - A `tag` é a mesma usada pelo push do servidor (sw.js): assim a
  *   notificação local substitui a do push em vez de duplicar.
  */
 
