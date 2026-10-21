@@ -98,7 +98,7 @@ export function ToggleSecoes({
   onChange: (i: number) => void;
 }) {
   return (
-    <div className="mt-2 flex items-center justify-center gap-2">
+    <div className="mt-2 flex max-w-xl flex-wrap items-center justify-center gap-2">
       {secoes.map((s, i) => (
         <button
           key={s.id}

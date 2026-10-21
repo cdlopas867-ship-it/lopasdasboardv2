@@ -11,7 +11,6 @@ import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
 import CenaReservados from "@/components/CenaReservados";
 import CenaEstoquePrevisto from "@/components/CenaEstoquePrevisto";
-
 import CenaProducaoSemana from "@/components/CenaProducaoSemana";
 import CenaPendentes from "@/components/CenaPendentes";
 import type { ComparativoCcr } from "@/data/comparativo-ccr";
