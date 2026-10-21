@@ -6,7 +6,7 @@
  * presença em mais de 40 países, a fé como valor da família Lopes e os
  * eventos de 2026 (Lopas Conecta, VEX e FEMUR).
  *
- * - Toca uma vez por sessão (controlado em `src/routes/index.tsx`).
+ * - Toca a cada abertura do app (controlado em `src/routes/index.tsx`).
  * - Avança sozinha e pode ser pulada no botão "Pular intro" ou com Esc.
  */
 
