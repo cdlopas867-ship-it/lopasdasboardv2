@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
 import { iniciarSinoFavicon, pararSinoFavicon } from "@/lib/favicon-sino";
+import { permissaoNotificacao } from "@/lib/notificacao-desktop";
 
 /* Banner de notificação de atualização — estilo WhatsApp Web.
  *
@@ -16,11 +17,23 @@ const TITULO_BASE = "Painel de Estoque · Lopas 2026";
 export function NotificacaoAtualizacao({
   notificacao,
   onDispensar,
+  onAtivarNotificacoes,
 }: {
   notificacao: { visivel: boolean; horario: number } | null;
   onDispensar: () => void;
+  /* Pede a permissão da notificação do sistema (o navegador exige um clique). */
+  onAtivarNotificacoes?: () => Promise<unknown>;
 }) {
   const [mostrar, setMostrar] = useState(false);
+  const [permissao, setPermissao] = useState(() => permissaoNotificacao());
+
+  useEffect(() => setPermissao(permissaoNotificacao()), [notificacao]);
+
+  const ativar = async () => {
+    if (!onAtivarNotificacoes) return;
+    await onAtivarNotificacoes();
+    setPermissao(permissaoNotificacao());
+  };
 
   useEffect(() => {
     if (notificacao?.visivel) {
@@ -88,6 +101,21 @@ export function NotificacaoAtualizacao({
           <p className="text-xs text-emerald-700 dark:text-emerald-300">
             Novos dados recebidos da planilha · {horarioFormatado}
           </p>
+          {permissao === "default" && (
+            <button
+              type="button"
+              onClick={ativar}
+              className="mt-1.5 inline-flex items-start gap-1 rounded-md bg-emerald-600 px-2 py-1 text-left text-[11px] font-semibold leading-tight text-white transition-colors hover:bg-emerald-700"
+            >
+              <Bell className="mt-0.5 h-3 w-3 shrink-0" />
+              Ativar notificação na área de trabalho
+            </button>
+          )}
+          {permissao === "denied" && (
+            <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-300">
+              Notificações bloqueadas — libere nas permissões do site.
+            </p>
+          )}
         </div>
         <button
           onClick={onDispensar}

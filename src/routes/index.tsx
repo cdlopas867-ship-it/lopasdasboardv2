@@ -10,6 +10,7 @@ import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import LoadingApresentacao from "@/components/LoadingApresentacao";
 import { NotificacaoAtualizacao } from "@/components/NotificacaoAtualizacao";
 import { usePushNotification } from "@/hooks/use-push-notification";
+import { notificarAtualizacao } from "@/lib/notificacao-desktop";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
 import { normalizarDiasExibicao } from "@/lib/recebimento";
@@ -24,7 +25,12 @@ type Painel = typeof initialSyncData & Record<string, unknown>;
 function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();
   const { dados, loaded, notificacao, dispensarNotificacao } = useDadosSync<Painel>(initialSyncData as Painel);
-  usePushNotification();
+  const { ativarNotificacoes } = usePushNotification();
+  /* Notificação na área de trabalho: quando o painel recebe dados novos,
+     além do banner interno, avisa pelo sistema (precisa da permissão). */
+  useEffect(() => {
+    if (notificacao?.visivel) void notificarAtualizacao(notificacao.horario);
+  }, [notificacao]);
   const [valorFaturado, setValorFaturado] = useState<number>();
   useEffect(() => { if (pronto && !autenticado) navigate({ to: "/login", replace: true }); }, [pronto, autenticado, navigate]);
   useEffect(() => { if (autenticado) fetch("/api/valor-faturado").then(r => r.json()).then(d => setValorFaturado(d.valor)).catch(() => {}); }, [autenticado]);
@@ -76,7 +82,7 @@ function DashboardHome() {
     ? new Date(presentation.sincronizacao.em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" })
     : dados.atualizadoEm;
   return (<>
-    <NotificacaoAtualizacao notificacao={notificacao} onDispensar={dispensarNotificacao} />
+    <NotificacaoAtualizacao notificacao={notificacao} onDispensar={dispensarNotificacao} onAtivarNotificacoes={ativarNotificacoes} />
     <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />
   </>);
 }
