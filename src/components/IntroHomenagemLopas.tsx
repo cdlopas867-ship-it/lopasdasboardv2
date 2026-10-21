@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import CenaBoasVindas from "@/components/CenaBoasVindas";
 
-const DURACAO_CENA_MS = 4200;
+const DURACAO_CENA_MS = 6000;
 /* Tempo do fade-out (igual ao da animação `.intro-homem-saindo`). */
 const DURACAO_SAIDA_MS = 900;
 
@@ -33,50 +33,6 @@ const CENAS: Cena[] = [
     titulo: "",
     linhas: [],
     especial: "boas-vindas",
-  },
-  {
-    imagem: "/fundo-intro.jpg",
-    eyebrow: "Homenagem",
-    titulo: "Lopas 2026",
-    linhas: ["41 anos de história", "Movidos pela fé"],
-    rodape: "Uma homenagem do CD Lopas",
-  },
-  {
-    imagem: "/fundo-satelite-real.jpg",
-    eyebrow: "Outubro de 1985 · Rodeiro, Minas Gerais",
-    titulo: "Nasce a Móveis Lopas",
-    linhas: ["Do sonho do fundador Augusto Lopes,", "no coração do polo moveleiro mineiro"],
-  },
-  {
-    imagem: "/fundo-apresentacao.jpg",
-    eyebrow: "Quatro décadas",
-    titulo: "Carinho, harmonia e conforto",
-    linhas: ["Móveis feitos para os lares", "de todo o Brasil"],
-  },
-  {
-    imagem: "/bg-recebimento.jpg",
-    eyebrow: "Além das fronteiras",
-    titulo: "Mais de 40 países",
-    linhas: ["A Lopas leva o móvel brasileiro", "para o mundo — e cresce com ele"],
-  },
-  {
-    imagem: "/fundo-satelite.jpg",
-    eyebrow: "Uma empresa familiar",
-    titulo: "Fé que sustenta",
-    linhas: ["Valores firmes, gratidão a Deus", "e gente que faz acontecer todos os dias"],
-  },
-  {
-    imagem: "/fundo-lopas-final.webp",
-    eyebrow: "2026",
-    titulo: "Nas feiras e na estrada",
-    linhas: ["Lopas Conecta · VEX · FEMUR", "e o Centro de Distribuição em ritmo de crescimento"],
-  },
-  {
-    imagem: "/fundo-apresentacao.png",
-    eyebrow: "Centro de Distribuição",
-    titulo: "Cada palete, cada entrega",
-    linhas: ["É a história de 41 anos", "chegando inteira ao cliente"],
-    rodape: "Fontes: moveislopas.com.br · eMóbile · redes oficiais da Lopas",
   },
 ];
 
