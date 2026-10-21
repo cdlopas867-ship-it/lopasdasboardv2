@@ -69,9 +69,9 @@ export default function CenaBoasVindas() {
           }}
         />
 
-        {/* "4" e "1" em serifada elegante, sobrepostos, horizontais */}
+        {/* "4" à esquerda e "1" à direita, sem sobreposição entre os números. */}
         <div
-          className="relative flex items-center"
+          className="relative flex items-center gap-1"
           style={{ overflow: "visible" }}
         >
           <span
@@ -82,7 +82,7 @@ export default function CenaBoasVindas() {
               color: "#ffffff",
               fontFamily: FONTE_NUMEROS,
               lineHeight: 0.85,
-              letterSpacing: "-0.04em",
+              letterSpacing: "0",
               textShadow:
                 "0 2px 4px rgba(0,0,0,0.25), 0 4px 12px rgba(141,198,63,0.15)",
             }}
@@ -97,8 +97,7 @@ export default function CenaBoasVindas() {
               color: "#ffffff",
               fontFamily: FONTE_NUMEROS,
               lineHeight: 0.85,
-              letterSpacing: "-0.04em",
-              marginLeft: "-0.35em",
+              letterSpacing: "0",
               textShadow:
                 "0 2px 4px rgba(0,0,0,0.25), 0 4px 12px rgba(141,198,63,0.15)",
             }}
