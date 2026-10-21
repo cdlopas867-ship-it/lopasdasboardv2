@@ -2,8 +2,8 @@
  * Cena de boas-vindas — badge "41 anos" igual à imagem de referência.
  *
  * Losango verde (quadrado rotacionado 45°), "4" e "1" em branco sobrepostos
- * (o "1" estende para fora do losango), "anos" em preto na vertical junto à
- * borda direita do "1". "Há" acima, "inovando para transformar o jeito de
+ * (o "1" estende para fora do losango), "anos" em preto na vertical dentro
+ * da haste do "1". "Há" acima, "inovando para transformar o jeito de
  * viver" embaixo, com "viver" em destaque.
  */
 
@@ -51,6 +51,7 @@ export default function CenaBoasVindas() {
             4
           </span>
           <span
+            className="relative"
             style={{
               fontSize: "7.5rem",
               fontWeight: 900,
@@ -62,28 +63,28 @@ export default function CenaBoasVindas() {
             }}
           >
             1
+            {/* Texto ancorado à haste do próprio número, não ao badge. */}
+            <span
+              className="absolute"
+              style={{
+                left: "55%",
+                top: "51%",
+                transform: "translate(-50%, -50%)",
+                color: "#1a1a1a",
+                fontFamily: FONTE,
+                fontWeight: 700,
+                fontSize: "0.75rem",
+                lineHeight: 1,
+                writingMode: "vertical-rl",
+                textOrientation: "mixed",
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+              }}
+            >
+              anos
+            </span>
           </span>
         </div>
-
-        {/* "anos" em preto, vertical, junto à borda direita do "1" */}
-        <span
-          className="absolute"
-          style={{
-            right: "1rem",
-            top: "50%",
-            transform: "translateY(-50%)",
-            color: "#1a1a1a",
-            fontFamily: FONTE,
-            fontWeight: 700,
-            fontSize: "1.1rem",
-            writingMode: "vertical-rl",
-            textOrientation: "mixed",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-          }}
-        >
-          anos
-        </span>
       </div>
 
       {/* Texto inferior — 3 linhas, "viver" em destaque */}
