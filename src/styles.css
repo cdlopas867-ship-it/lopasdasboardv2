@@ -1038,18 +1038,28 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
     filter: blur(0);
   }
 }
-/* Flutuação suave do badge após surgir — leve e contínua */
+/* Efeito de movimento — flutuação com leve balanço 3D, contínuo */
 @keyframes boas-vindas-cena-flutua {
-  0%, 100% {
-    transform: translateY(0);
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-10px) rotate(-1.5deg) scale(1.02);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-4px) rotate(0deg) scale(1);
+  }
+  75% {
+    transform: translateY(-12px) rotate(1.5deg) scale(1.02);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg) scale(1);
   }
 }
 .boas-vindas-cena-badge {
   animation: boas-vindas-cena-badge 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both,
-    boas-vindas-cena-flutua 5s ease-in-out 2s infinite;
+    boas-vindas-cena-flutua 4s ease-in-out 2s infinite;
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.45));
 }
 
 
