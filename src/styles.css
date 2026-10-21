@@ -960,6 +960,48 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
   animation: boas-vindas-texto 2.8s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
 }
 
+/* Intro de homenagem (abertura do app) — cena com Ken Burns + texto surgindo */
+@keyframes intro-homem-entrada {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes intro-homem-saida {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes intro-homem-zoom {
+  0% { transform: scale(1.02); }
+  100% { transform: scale(1.16); }
+}
+@keyframes intro-homem-texto {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.intro-homem {
+  animation: intro-homem-entrada 0.6s ease-out both;
+}
+.intro-homem-saindo {
+  animation: intro-homem-saida 0.7s ease-in both;
+  pointer-events: none;
+}
+.intro-homem-fundo {
+  animation: intro-homem-zoom 5s ease-out both;
+}
+.intro-homem-texto {
+  animation: intro-homem-texto 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.intro-homem-texto-2 {
+  animation: intro-homem-texto 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+
 
 .tonelagem-card {
   box-sizing: border-box;
