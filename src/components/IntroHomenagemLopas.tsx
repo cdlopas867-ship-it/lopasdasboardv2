@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import CenaBoasVindas from "@/components/CenaBoasVindas";
 
 const DURACAO_CENA_MS = 4200;
 /* Tempo do fade-out (igual ao da animação `.intro-homem-saindo`). */
@@ -22,9 +23,17 @@ type Cena = {
   titulo: string;
   linhas: string[];
   rodape?: string;
+  especial?: "boas-vindas";
 };
 
 const CENAS: Cena[] = [
+  {
+    imagem: "/fundo-satelite-real.jpg",
+    eyebrow: "",
+    titulo: "",
+    linhas: [],
+    especial: "boas-vindas",
+  },
   {
     imagem: "/fundo-intro.jpg",
     eyebrow: "Homenagem",
@@ -127,6 +136,9 @@ export default function IntroHomenagemLopas({ onConcluir }: { onConcluir: () => 
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/40 to-black/85" />
 
+        {cena.especial === "boas-vindas" ? (
+          <CenaBoasVindas />
+        ) : (
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
           <p className="intro-homem-texto text-[10px] font-bold uppercase tracking-[0.35em] text-[#c9e39a] sm:text-xs sm:tracking-[0.45em]">
             {cena.eyebrow}
@@ -147,6 +159,7 @@ export default function IntroHomenagemLopas({ onConcluir }: { onConcluir: () => 
             </p>
           )}
         </div>
+        )}
       </div>
 
       {/* Progresso das cenas */}
