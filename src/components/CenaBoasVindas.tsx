@@ -1,5 +1,5 @@
 /**
- * Cena de boas-vindas — badge "41 anos" grande e centralizado.
+ * Cena de boas-vindas — badge "41 anos" igual à imagem de referência.
  *
  * Fundo com os caminhões da Lopas, badge verde arredondado com "4" (branco)
  * + "1" (escuro) sobrepostos e "anos" vertical, "Há" acima, e "inovando para
@@ -7,7 +7,8 @@
  */
 
 const VERDE = "#8CC63F";
-const ESCURO = "#333333";
+const ESCURO = "#2D2D2D";
+const FONTE = "'Arial Black', 'Helvetica Neue', Impact, Arial, system-ui, sans-serif";
 
 export default function CenaBoasVindas() {
   return (
@@ -30,29 +31,29 @@ export default function CenaBoasVindas() {
         >
           {/* "4" em branco grande */}
           <span
-            className="text-[8.5rem] font-extrabold leading-none text-white sm:text-[11rem]"
-            style={{ fontFamily: "ui-rounded, 'Nunito', system-ui, sans-serif", letterSpacing: "-0.06em" }}
+            className="text-[8.5rem] font-black leading-none text-white sm:text-[11rem]"
+            style={{ fontFamily: FONTE, letterSpacing: "-0.06em" }}
           >
             4
           </span>
           {/* "1" sobreposto em escuro, deslocado à direita */}
           <span
-            className="text-[8.5rem] font-extrabold leading-none sm:text-[11rem]"
+            className="text-[8.5rem] font-black leading-none sm:text-[11rem]"
             style={{
               color: ESCURO,
-              fontFamily: "ui-rounded, 'Nunito', system-ui, sans-serif",
+              fontFamily: FONTE,
               letterSpacing: "-0.06em",
-              marginLeft: "-0.45em",
+              marginLeft: "-0.38em",
             }}
           >
             1
           </span>
           {/* "anos" vertical à direita */}
           <span
-            className="ml-2 text-lg font-bold uppercase tracking-wide sm:text-2xl"
+            className="ml-2 text-lg font-black uppercase tracking-wide sm:text-2xl"
             style={{
               color: ESCURO,
-              fontFamily: "ui-rounded, 'Nunito', system-ui, sans-serif",
+              fontFamily: FONTE,
               writingMode: "vertical-rl",
               textOrientation: "mixed",
             }}
