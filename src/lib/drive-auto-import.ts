@@ -81,11 +81,12 @@ function gatewayHeaders(): HeadersInit | null {
   };
 }
 
-/* Se true, autoriza o fallback público ao tentar ler a pasta do Drive.
-   Por padrão, esse fallback é DESABILITADO em produção — defina
-   ALLOW_PUBLIC_DRIVE_FALLBACK=true em ambientes onde a pasta é pública
-   e não há gateway configurado. */
-const ALLOW_PUBLIC_DRIVE_FALLBACK = String(process.env["ALLOW_PUBLIC_DRIVE_FALLBACK"] ?? "false").toLowerCase() === "true";
+/* Autoriza o fallback público ao tentar ler a pasta do Drive. HABILITADO por
+   padrão — a pasta do CD é pública e é a única fonte dos dados do painel, e
+   ambientes publicados sem gateway configurado (p.ex. Lovable) ficavam sem
+   atualizar nada com o fallback desligado. Para desligar em um ambiente
+   específico, defina ALLOW_PUBLIC_DRIVE_FALLBACK=false. */
+const ALLOW_PUBLIC_DRIVE_FALLBACK = String(process.env["ALLOW_PUBLIC_DRIVE_FALLBACK"] ?? "true").toLowerCase() !== "false";
 
 function hasGatewayAccess(): boolean {
   return gatewayHeaders() !== null;
