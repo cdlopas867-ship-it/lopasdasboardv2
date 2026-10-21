@@ -179,13 +179,14 @@ function dataKey(payload: unknown, incluirSync = true): string {
     })(),
     cc: (() => {
       const cc = p["comparativoCcr"] as {
+        dataBase?: string;
         estoque001?: { itens?: number; saldo?: number; pesoTon?: number };
         ccr?: { itens?: number; saldo?: number; pesoTon?: number };
         porUnidade?: unknown[];
         topDiferencas?: unknown[];
       } | undefined;
       return cc
-        ? `${cc.estoque001?.itens ?? 0}|${cc.estoque001?.saldo ?? 0}|${cc.estoque001?.pesoTon ?? 0}|${cc.ccr?.itens ?? 0}|${cc.ccr?.saldo ?? 0}|${cc.ccr?.pesoTon ?? 0}|${cc.porUnidade?.length ?? 0}|${cc.topDiferencas?.length ?? 0}`
+        ? `${cc.dataBase ?? ""}|${cc.estoque001?.itens ?? 0}|${cc.estoque001?.saldo ?? 0}|${cc.estoque001?.pesoTon ?? 0}|${cc.ccr?.itens ?? 0}|${cc.ccr?.saldo ?? 0}|${cc.ccr?.pesoTon ?? 0}|${cc.porUnidade?.length ?? 0}|${cc.topDiferencas?.length ?? 0}`
         : "";
     })(),
     fl: (() => {

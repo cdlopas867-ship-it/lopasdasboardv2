@@ -54,7 +54,15 @@ export type ItemCcr = { desc: string; saldo: number; pesoKg: number; unidade: st
    SALDO/QTD (+ PESO quando o relatório traz peso). Retorna o mapa por
    código, ou null quando a aba não é a base do CCR. */
 export function lerItensCcr(nomeAba: string, rows: unknown[][]): Map<string, ItemCcr> | null {
-  if (!/CCR/i.test(nomeAba)) return null;
+  /* Detecta o relatório do CCR pelo nome da aba OU pelo título nas primeiras
+     linhas — a planilha ccr.xlsx pode ter a aba renomeada (ex.: "retyui")
+     mas o título da linha 1 sempre traz "CCR - RELATORIO ...". Sem isso o
+     parser rejeita a aba e o painel cai no fallback estático (misto). */
+  const temCcrNoNome = /CCR/i.test(nomeAba);
+  const temCcrNoTitulo = !temCcrNoNome && rows.slice(0, 5).some((r) =>
+    (r ?? []).some((c) => /CCR/i.test(str(c))),
+  );
+  if (!temCcrNoNome && !temCcrNoTitulo) return null;
 
   const hi = rows.findIndex((r) => {
     const h = (r ?? []).map(norm);
