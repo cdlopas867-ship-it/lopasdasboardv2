@@ -1016,63 +1016,6 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
 
 /* ===== Cena de boas-vindas — badge 41 anos (surgir/sumir suave + elegante) ===== */
 
-/* Halo luminoso — cresce e dissolve suavemente atrás do badge */
-@keyframes boas-vindas-cena-halo {
-  0% {
-    opacity: 0;
-    transform: scale(0.4);
-    filter: blur(30px);
-  }
-  60% {
-    opacity: 0.7;
-    filter: blur(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-    filter: blur(20px);
-  }
-}
-.boas-vindas-cena-halo {
-  animation: boas-vindas-cena-halo 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
-}
-
-/* Anel decorativo — expande do centro com leve rotação */
-@keyframes boas-vindas-cena-anel {
-  0% {
-    opacity: 0;
-    transform: scale(0.2) rotate(-30deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-}
-.boas-vindas-cena-anel {
-  animation: boas-vindas-cena-anel 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
-}
-
-/* Losango verde — gira e cresce suavemente */
-@keyframes boas-vindas-cena-losango {
-  0% {
-    opacity: 0;
-    transform: rotate(45deg) scale(0.2);
-    filter: blur(8px);
-  }
-  50% {
-    opacity: 0.6;
-    filter: blur(3px);
-  }
-  100% {
-    opacity: 1;
-    transform: rotate(45deg) scale(1);
-    filter: blur(0);
-  }
-}
-.boas-vindas-cena-losango {
-  animation: boas-vindas-cena-losango 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
-}
-
 /* Badge completo — surge suave (scale + blur + fade), sem overshoot brusco */
 @keyframes boas-vindas-cena-badge {
   0% {
@@ -1098,21 +1041,24 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
 .boas-vindas-cena-badge {
   animation: boas-vindas-cena-badge 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
+
+/* Placa verde — quadrado arredondado inclinado anti-horário */
+.boas-vindas-cena-placa {
+  transform: rotate(-7deg);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* Flutuação suave do badge após surgir — leve e contínua */
 @keyframes boas-vindas-cena-flutua {
   0%, 100% {
-    transform: translateY(0) rotate(0deg);
+    transform: translateY(0) rotate(-7deg);
   }
   50% {
-    transform: translateY(-5px) rotate(-0.5deg);
+    transform: translateY(-4px) rotate(-7deg);
   }
 }
-.boas-vindas-cena-badge::after {
-  content: "";
-  position: absolute;
-  inset: 0;
+.boas-vindas-cena-badge .boas-vindas-cena-placa {
   animation: boas-vindas-cena-flutua 5s ease-in-out 2s infinite;
-  pointer-events: none;
 }
 
 /* Números "4" e "1" — surgem com elegância (scale suave + brilho crescente) */
@@ -1159,22 +1105,6 @@ html[data-b44-comment-cursor][data-b44-comment-cursor] button {
   animation: boas-vindas-cena-anos 0.9s cubic-bezier(0.16, 1, 0.3, 1) 1.1s both;
 }
 
-/* "Há" surge antes do badge — suave e sereno */
-@keyframes boas-vindas-cena-ha {
-  0% {
-    opacity: 0;
-    transform: translateY(-15px);
-    filter: blur(8px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-.boas-vindas-cena-ha {
-  animation: boas-vindas-cena-ha 1s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
-}
 /* Linhas de texto entram em cascata — suave e encadeado */
 .boas-vindas-cena-linha {
   animation: intro-homem-texto 1s cubic-bezier(0.16, 1, 0.3, 1) 1.4s both;
