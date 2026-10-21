@@ -171,7 +171,8 @@ export default function CenaRecebimentoSemanal({
       </div>
 
       <p className="video-sobe mt-3 text-[8px] leading-tight text-white/40" style={{ animationDelay: "0.6s" }}>
-        * Tonelagem e paletes por dia da Base Recebimento cruzada com a configuração de pallet (ENGENHARIA 014).
+        * Tonelagem e paletes por dia da planilha PESO RECEBIDO POR PERÍODO (Google Drive),
+        cruzada com a configuração de pallet (ENGENHARIA 014).
         Meta diária = 330 t. QTD = volumes recebidos. Paletes = ⌈QTD ÷ und/pallet⌉.
       </p>
     </div>

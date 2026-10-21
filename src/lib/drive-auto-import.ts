@@ -18,7 +18,7 @@ import { lerAvarias, mesclarAvarias } from "./avarias";
 import { calcularAvariasResumo } from "./avarias-resumo";
 import { buscarCarregamentoMensal, lerCarregadoMensal, lerUltimaDataCarregado, CARREGADO_SEM_DRIVE } from "./carregamento";
 import { calcularRecebimento } from "./recebimento";
-import { calcularProducaoSemanal, calcularRecebidoPorDia, calcularRecebidoGerenciamento, type ProducaoSemanalDia } from "./producao-semanal";
+import { calcularProducaoSemanal, calcularRecebidoPorDia, calcularRecebidoGerenciamento, calcularRecebidoPeriodoItens, type ProducaoSemanalDia, type RecebidoPeriodoDia } from "./producao-semanal";
 import { lerItensEstoque } from "./base-estoque";
 import { lerPaletes, calcularResumoPaletes } from "./paletes";
 import { faturadoPorUnidade, VALOR_FATURADO_MEDIO } from "@/data/valor-faturado";
@@ -923,6 +923,9 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
   /* Recebido por dia da planilha "Gerenciamento dos recebimentos" (WF0072) —
      fonte preferida do comparativo recebimento × produção. */
   let melhorRecebidoGerenciamento: Map<string, { qtd: number; peso: number }> | null = null;
+  /* Recebido por dia e por item da planilha "PESO RECEBIDO POR PERÍODO" —
+     fonte dos paletes do recebimento (cruzada com a configuração de pallet). */
+  let melhorRecebidoPeriodo: RecebidoPeriodoDia[] | null = null;
   /* Base do CCR (relatório de volumes do CD) — aba com "CCR" no nome. */
   let melhorCcr: Map<string, { desc: string; saldo: number; pesoKg: number; unidade: string }> | null = null;
   let melhorCcrMod: Date | undefined;
@@ -1003,6 +1006,13 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       const recebidoGer = calcularRecebidoGerenciamento(wb);
       if (recebidoGer && recebidoGer.size > (melhorRecebidoGerenciamento?.size ?? 0)) {
         melhorRecebidoGerenciamento = recebidoGer;
+      }
+
+      /* Detecta a planilha PESO RECEBIDO POR PERÍODO com os itens de cada
+         dia — alimenta os paletes do recebimento (QTD × und/pallet). */
+      const recebidoPeriodo = calcularRecebidoPeriodoItens(wb);
+      if (recebidoPeriodo && recebidoPeriodo.length > (melhorRecebidoPeriodo?.length ?? 0)) {
+        melhorRecebidoPeriodo = recebidoPeriodo;
       }
 
       /* Extrai a base de itens de estoque (Top Produtos, Curva ABC, fichas) */
@@ -1157,6 +1167,10 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
         const rec = calcularRecebidoPorDia(wb);
         if (rec && rec.size > 0) melhorRecebidoPorDia = rec;
       }
+      if (!melhorRecebidoPeriodo) {
+        const rec = calcularRecebidoPeriodoItens(wb);
+        if (rec && rec.length > 0) melhorRecebidoPeriodo = rec;
+      }
       if (!melhorRecebidoGerenciamento) {
         const rec = calcularRecebidoGerenciamento(wb);
         if (rec && rec.size > 0) melhorRecebidoGerenciamento = rec;
@@ -1239,18 +1253,36 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
       `[auto-import] paletes: ${resumoPaletes.totalPaletes} paletes (${resumoPaletes.porTamanho.map((t) => `${t.tamanho}: ${t.paletes}`).join(", ")})`,
     );
     resumoPaletesFinal = { ...resumoPaletes };
-    /* Paletes recebidos por tamanho — cruza QTD_RECEBIDA da Base Recebimento
-       com a configuração de pallet de cada item. */
-    if (melhorRecebimento?.recebimentoQtd?.length) {
+    /* Paletes recebidos por tamanho — cruza a QTD recebida de cada item da
+       planilha PESO RECEBIDO POR PERÍODO com a configuração de pallet. */
+    if (melhorRecebidoPeriodo?.length) {
+      const porItem = new Map<string, number>();
+      for (const d of melhorRecebidoPeriodo) {
+        for (const i of d.porItem) porItem.set(i.item, (porItem.get(i.item) ?? 0) + i.qtd);
+      }
+      if (porItem.size > 0) {
+        resumoPaletesFinal.recebimento = calcularResumoPaletes(
+          [...porItem.entries()].map(([item, saldo]) => ({ item, saldo })),
+          melhorPaletes,
+        );
+        resumoPaletesFinal.diasRecebidos = melhorRecebidoPeriodo.length;
+        console.info(
+          `[auto-import] paletes recebidos (PESO RECEBIDO POR PERÍODO): ${fmtInt(resumoPaletesFinal.recebimento.totalPaletes)} paletes · ${melhorRecebidoPeriodo.length} dias · ${fmtInt(porItem.size)} itens`,
+        );
+      }
+    }
+    /* Base Recebimento é o fallback quando o PESO RECEBIDO POR PERÍODO não
+       estiver disponível. */
+    if (!resumoPaletesFinal.recebimento && melhorRecebimento?.recebimentoQtd?.length) {
       resumoPaletesFinal.recebimento = calcularResumoPaletes(melhorRecebimento.recebimentoQtd, melhorPaletes);
       resumoPaletesFinal.diasRecebidos = melhorRecebimento.diasRecebidos;
-      /* QTD (volumes) recebida por dia e por mês — para o relatório
-         Recebido × Estoque na seção de Paletes. */
-      if (melhorRecebimento.diasQtd?.length) {
-        resumoPaletesFinal.diasQtd = melhorRecebimento.diasQtd;
-        resumoPaletesFinal.mensalQtd = melhorRecebimento.mensalQtd;
-        resumoPaletesFinal.totalQtdRecebido = melhorRecebimento.totalQtdRecebido;
-      }
+    }
+    /* QTD (volumes) recebida por dia e por mês — para o relatório
+       Recebido × Estoque na seção de Paletes (Base Recebimento). */
+    if (melhorRecebimento?.diasQtd?.length) {
+      resumoPaletesFinal.diasQtd = melhorRecebimento.diasQtd;
+      resumoPaletesFinal.mensalQtd = melhorRecebimento.mensalQtd;
+      resumoPaletesFinal.totalQtdRecebido = melhorRecebimento.totalQtdRecebido;
     }
   }
 
@@ -1481,21 +1513,48 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
     ...(melhorItens ? { itens: melhorItens } : {}),
     ...(resumoPaletes ? { paletas: resumoPaletesFinal } : {}),
     ...((() => {
-      if (!melhorRecebimento?.diasItemQtd?.length || !melhorPaletes || melhorPaletes.size === 0) return {};
+      const paletes = melhorPaletes;
+      if (!paletes || paletes.size === 0) return {};
       const nomes = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-      const recebimentoSemanal = melhorRecebimento.diasItemQtd.map((d) => {
+      /* Paletes do recebimento: a planilha PESO RECEBIDO POR PERÍODO é a
+         fonte (itens e quantidades de cada dia); a Base Recebimento só entra
+         quando ela não está disponível. */
+      type DiaRecebido = {
+        iso: string;
+        porItem: { item: string; qtd: number }[];
+        ton: number;
+        qtd?: number;
+      };
+      let dias: DiaRecebido[];
+      if (melhorRecebidoPeriodo?.length) {
+        dias = melhorRecebidoPeriodo.map((d) => ({
+          iso: d.iso,
+          porItem: d.porItem,
+          ton: +(d.peso / 1000).toFixed(2),
+          qtd: d.qtd,
+        }));
+      } else if (melhorRecebimento?.diasItemQtd?.length) {
+        dias = melhorRecebimento.diasItemQtd.map((d) => ({
+          iso: d.iso,
+          porItem: d.porItem,
+          ton: melhorRecebimento?.dias.find((x) => x.iso === d.iso)?.ton ?? 0,
+        }));
+      } else {
+        return {};
+      }
+      const recebimentoSemanal = dias.map((d) => {
         const itensEstoque = d.porItem.map(({ item, qtd }) => ({ item, saldo: qtd }));
-        const resumo = calcularResumoPaletes(itensEstoque, melhorPaletes);
-        const dia = melhorRecebimento.dias.find((x) => x.iso === d.iso);
+        const resumo = calcularResumoPaletes(itensEstoque, paletes);
+        const dia = melhorRecebimento?.dias.find((x) => x.iso === d.iso);
         return {
           iso: d.iso,
           dia: dia?.dia ?? nomes[new Date(`${d.iso}T12:00:00Z`).getUTCDay()]!,
           data: dia?.data ?? `${d.iso.slice(8, 10)}/${d.iso.slice(5, 7)}/${d.iso.slice(2, 4)}`,
-          ton: dia?.ton ?? 0,
+          ton: d.ton,
           meta: 330,
-          pctMeta: dia ? (dia.ton / 330) * 100 : 0,
+          pctMeta: (d.ton / 330) * 100,
           porTamanho: resumo.porTamanho,
-          totalQtd: resumo.porTamanho.reduce((s, t) => s + t.und, 0),
+          totalQtd: d.qtd ?? resumo.porTamanho.reduce((s, t) => s + t.und, 0),
           totalPaletes: resumo.totalPaletes,
         };
       });

@@ -82,7 +82,7 @@ export default function CenaVolumePesoSemanal({
         </p>
         <InfoTooltip
           onOpen={onPausar}
-          texto="Relação entre o volume (unidades) e o peso (toneladas) do recebimento do CD, por dia. O índice = peso ÷ volume × 100 mostra a densidade em toneladas por 100 unidades — quanto maior, mais pesado é o mix recebido no dia. Fonte: Base Recebimento do Google Drive."
+          texto="Relação entre o volume (unidades) e o peso (toneladas) do recebimento do CD, por dia. O índice = peso ÷ volume × 100 mostra a densidade em toneladas por 100 unidades — quanto maior, mais pesado é o mix recebido no dia. Fonte: planilha PESO RECEBIDO POR PERÍODO do Google Drive."
         />
       </div>
 

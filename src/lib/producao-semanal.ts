@@ -91,13 +91,23 @@ function mapaPesoUnitario(itens: ItemEstoque[] | undefined): Map<string, number>
 
 const NOMES_DIA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-/* Calcula o total recebido no estoque por dia a partir da planilha
- * "PESO RECEBIDO POR PERÍODO" (DT_INICIO, DT_FIM, ITEM, QTD_RECEBIDA,
- * PESO_RECEBIDO). Retorna um mapa ISO → { qtd, peso } para cruzar
- * com as datas de produção (DT FINAL). */
-export function calcularRecebidoPorDia(
+/* Um dia da planilha "PESO RECEBIDO POR PERÍODO", com a quantidade
+ * recebida de cada item — é o que os paletes do recebimento precisam
+ * para cruzar com a configuração de pallet (ENGENHARIA 014). */
+export type RecebidoPeriodoDia = {
+  iso: string;
+  qtd: number;
+  peso: number; // kg
+  porItem: { item: string; qtd: number }[];
+};
+
+/* Calcula o recebido por dia e por item da planilha "PESO RECEBIDO POR
+ * PERÍODO" (DT_INICIO, DT_FIM, ITEM, QTD_RECEBIDA, PESO_RECEBIDO).
+ * Agrupa pela data de DT_FIM (fim do recebimento) e mantém a quantidade
+ * de cada item. */
+export function calcularRecebidoPeriodoItens(
   wb: XLSX.WorkBook,
-): Map<string, { qtd: number; peso: number }> | null {
+): RecebidoPeriodoDia[] | null {
   for (const name of wb.SheetNames) {
     const ws = wb.Sheets[name];
     if (!ws) continue;
@@ -112,13 +122,14 @@ export function calcularRecebidoPorDia(
     const headers = rows[headerIdx]!.map((c) => normalizeHeader(c));
     const colFim = headers.findIndex((h) => h.includes("DTFIM"));
     const colInicio = headers.findIndex((h) => h.includes("DTINICIO"));
+    const colItem = headers.findIndex((h) => h === "ITEM" || h.includes("CODITEM"));
     const colQtd = headers.findIndex((h) => h.includes("QTDRECEBIDA"));
     const colPeso = headers.findIndex((h) => h.includes("PESORECEBIDO"));
 
     /* Precisa de pelo menos data e peso para ser a planilha certa */
     if ((colFim < 0 && colInicio < 0) || colPeso < 0) continue;
 
-    const porDia = new Map<string, { qtd: number; peso: number }>();
+    const porDia = new Map<string, { qtd: number; peso: number; itens: Map<string, number> }>();
 
     for (const r of rows.slice(headerIdx + 1)) {
       if (!r) continue;
@@ -128,17 +139,38 @@ export function calcularRecebidoPorDia(
       const qtd = colQtd >= 0 ? (Number(r[colQtd] ?? 0) || 0) : 0;
       const peso = Number(r[colPeso] ?? 0) || 0;
 
-      const atual = porDia.get(iso) ?? { qtd: 0, peso: 0 };
+      const atual = porDia.get(iso) ?? { qtd: 0, peso: 0, itens: new Map<string, number>() };
       atual.qtd += qtd;
       atual.peso += peso;
+      const item = colItem >= 0 ? String(r[colItem] ?? "").trim() : "";
+      if (item && qtd > 0) atual.itens.set(item, (atual.itens.get(item) ?? 0) + qtd);
       porDia.set(iso, atual);
     }
 
     if (porDia.size === 0) continue;
-    return porDia;
+    return [...porDia.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([iso, d]) => ({
+        iso,
+        qtd: d.qtd,
+        peso: d.peso,
+        porItem: [...d.itens.entries()].map(([item, qtd]) => ({ item, qtd })),
+      }));
   }
 
   return null;
+}
+
+/* Calcula o total recebido no estoque por dia a partir da planilha
+ * "PESO RECEBIDO POR PERÍODO" (DT_INICIO, DT_FIM, ITEM, QTD_RECEBIDA,
+ * PESO_RECEBIDO). Retorna um mapa ISO → { qtd, peso } para cruzar
+ * com as datas de produção (DT FINAL). */
+export function calcularRecebidoPorDia(
+  wb: XLSX.WorkBook,
+): Map<string, { qtd: number; peso: number }> | null {
+  const dias = calcularRecebidoPeriodoItens(wb);
+  if (!dias) return null;
+  return new Map(dias.map((d) => [d.iso, { qtd: d.qtd, peso: d.peso }]));
 }
 
 /* Calcula o total recebido por dia a partir da planilha

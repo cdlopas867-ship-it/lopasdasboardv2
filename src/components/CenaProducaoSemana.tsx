@@ -326,7 +326,7 @@ export default function CenaProducaoSemana({
           </tbody>
         </table>
         <p className="mt-1.5 text-[8px] leading-tight text-white/40">
-          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque (Gerenciamento dos recebimentos · WF0072). Meta = {META_DIARIA} t/dia (% do recebido vs meta · ✓ = meta batida). Média = tonelagem prevista do dia ÷ nº de ordens de produção do dia. ▲/▼ = variação em % da tonelagem vs dia anterior.
+          * Tonelagem (t) e unidades por dia (data final). Produzido = peso previsto (PESO PREVISTO); Recebido = já chegou ao estoque (Gerenciamento dos recebimentos · WF0072). Tipos de paletes recebidos = planilha PESO RECEBIDO POR PERÍODO × configuração de pallet. Meta = {META_DIARIA} t/dia (% do recebido vs meta · ✓ = meta batida). Média = tonelagem prevista do dia ÷ nº de ordens de produção do dia. ▲/▼ = variação em % da tonelagem vs dia anterior.
         </p>
       </div>
 
