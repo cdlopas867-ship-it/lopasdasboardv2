@@ -8,7 +8,7 @@
  */
 
 const VERDE = "#8DC63F";
-const FONTE = "'Arial Black', 'Helvetica Neue', Impact, Arial, system-ui, sans-serif";
+const FONTE = "'Nunito', 'Quicksand', 'VAG Rounded', 'Segoe UI Rounded', 'Arial Rounded MT Bold', system-ui, sans-serif";
 
 export default function CenaBoasVindas() {
   return (
@@ -42,11 +42,11 @@ export default function CenaBoasVindas() {
             className="boas-vindas-cena-numero boas-vindas-cena-numero-4"
             style={{
               fontSize: "7.5rem",
-              fontWeight: 900,
+              fontWeight: 800,
               color: "#ffffff",
               fontFamily: FONTE,
               lineHeight: 0.85,
-              letterSpacing: "-0.06em",
+              letterSpacing: "-0.12em",
             }}
           >
             4
@@ -55,12 +55,12 @@ export default function CenaBoasVindas() {
             className="relative boas-vindas-cena-numero boas-vindas-cena-numero-1"
             style={{
               fontSize: "7.5rem",
-              fontWeight: 900,
+              fontWeight: 800,
               color: "#ffffff",
               fontFamily: FONTE,
               lineHeight: 0.85,
-              letterSpacing: "-0.06em",
-              marginLeft: "0",
+              letterSpacing: "-0.12em",
+              marginLeft: "-0.5rem",
             }}
           >
             1
