@@ -6,6 +6,7 @@ import { calcularPendentesResumo } from "@/lib/pendentes-resumo";
 import type { PendenteProducao } from "@/lib/pendentes";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
+import CenaAlmoxarifados from "@/components/CenaAlmoxarifados";
 import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
 import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
@@ -207,8 +208,11 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 11 — encerramento */}
-      {cena === 10 && (
+      {/* Cena 11 — Controle de almoxarifados (REST0330) */}
+      {cena === 10 && <CenaAlmoxarifados anim={anim} onPausar={onPausar} />}
+
+      {/* Cena 12 — encerramento */}
+      {cena === 11 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
