@@ -35,13 +35,15 @@ function DashboardHome() {
   useEffect(() => {
     if (notificacao?.visivel) void notificarAtualizacao(notificacao.horario);
   }, [notificacao]);
-  /* Intro de homenagem — toca ao abrir o app. */
+  /* Intro de homenagem — toca ao abrir o app, quando o painel está pronto.
+     Só marca como exibida ao abrir de fato: se o app estiver na tela de
+     login, a homenagem continua pendente para depois de entrar. */
   const [introAberta, setIntroAberta] = useState(false);
   useEffect(() => {
-    if (introJaExibida) return;
+    if (!pronto || !autenticado || !loaded || introJaExibida) return;
     introJaExibida = true;
     setIntroAberta(true);
-  }, []);
+  }, [pronto, autenticado, loaded]);
   const [valorFaturado, setValorFaturado] = useState<number>();
   useEffect(() => { if (pronto && !autenticado) navigate({ to: "/login", replace: true }); }, [pronto, autenticado, navigate]);
   useEffect(() => { if (autenticado) fetch("/api/valor-faturado").then(r => r.json()).then(d => setValorFaturado(d.valor)).catch(() => {}); }, [autenticado]);
