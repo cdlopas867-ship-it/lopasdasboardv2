@@ -153,7 +153,7 @@ export default function CenasApresentacao({
 
       {/* Cena 5 — avarias unificada (total, gráfico mensal, tipos com imagens, motivo) */}
       {cena === 4 && (
-        <CenaAvariasUnificada anim={anim} avarias={avarias} onPausar={onPausar} />
+        <CenaAvariasUnificada anim={anim} cena={cena} avarias={avarias} onPausar={onPausar} />
       )}
 
       {/* Cena 6 — pendências de produção (padrão cena-interativa: donut + toggle + legenda) */}
