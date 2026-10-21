@@ -13,6 +13,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const DURACAO_CENA_MS = 4200;
+/* Tempo do fade-out (igual ao da animação `.intro-homem-saindo`). */
+const DURACAO_SAIDA_MS = 900;
 
 type Cena = {
   imagem: string;
@@ -73,13 +75,23 @@ export default function IntroHomenagemLopas({ onConcluir }: { onConcluir: () => 
   const [indice, setIndice] = useState(0);
   const [saindo, setSaindo] = useState(false);
   const concluido = useRef(false);
+  const saida = useRef<number | null>(null);
 
+  /* Inicia o fade-out; só avisa a conclusão quando a animação termina. */
   const finalizar = useCallback(() => {
     if (concluido.current) return;
     concluido.current = true;
     setSaindo(true);
-    window.setTimeout(onConcluir, 700);
+    saida.current = window.setTimeout(onConcluir, DURACAO_SAIDA_MS);
   }, [onConcluir]);
+
+  /* Não deixa o timer do fade disparar depois de desmontar. */
+  useEffect(
+    () => () => {
+      if (saida.current !== null) window.clearTimeout(saida.current);
+    },
+    [],
+  );
 
   /* Avanço automático das cenas. */
   useEffect(() => {
