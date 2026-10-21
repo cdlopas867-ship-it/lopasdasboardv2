@@ -36,9 +36,10 @@ export default function CenaBoasVindas() {
           }}
         />
 
-        {/* "4" e "1" em branco, sobrepostos, horizontais */}
+        {/* "4" e "1" em branco, sobrepostos, horizontais — com brilho e surgir escalonado */}
         <div className="relative flex items-center" style={{ overflow: "visible" }}>
           <span
+            className="boas-vindas-cena-numero boas-vindas-cena-numero-4"
             style={{
               fontSize: "7.5rem",
               fontWeight: 900,
@@ -51,7 +52,7 @@ export default function CenaBoasVindas() {
             4
           </span>
           <span
-            className="relative"
+            className="relative boas-vindas-cena-numero boas-vindas-cena-numero-1"
             style={{
               fontSize: "7.5rem",
               fontWeight: 900,
