@@ -1,13 +1,13 @@
 /**
  * Cena de boas-vindas — badge "41 anos" igual à imagem de referência.
  *
- * Fundo com os caminhões da Lopas, badge verde arredondado com "4" (branco)
- * + "1" (escuro) sobrepostos e "anos" vertical, "Há" acima, e "inovando para
- * transformar o jeito de viver" embaixo, com "viver" em destaque.
+ * Losango verde (quadrado rotacionado 45°), "4" e "1" em branco sobrepostos
+ * (o "1" estende para fora do losango), "anos" em preto na vertical junto à
+ * borda direita do "1". "Há" acima, "inovando para transformar o jeito de
+ * viver" embaixo, com "viver" em destaque.
  */
 
-const VERDE = "#8CC63F";
-const ESCURO = "#2D2D2D";
+const VERDE = "#8DC63F";
 const FONTE = "'Arial Black', 'Helvetica Neue', Impact, Arial, system-ui, sans-serif";
 
 export default function CenaBoasVindas() {
@@ -18,49 +18,72 @@ export default function CenaBoasVindas() {
         Há
       </p>
 
-      {/* Badge verde arredondado com 41 anos — maior e centralizado */}
-      <div className="boas-vindas-cena-badge relative my-3 flex items-center justify-center">
+      {/* Badge losango verde + 41 branco + anos preto vertical */}
+      <div
+        className="boas-vindas-cena-badge relative my-3 flex items-center justify-center"
+        style={{ width: "13rem", height: "13rem" }}
+      >
+        {/* Losango verde (quadrado rotacionado 45°) */}
         <div
-          className="relative flex items-center justify-center shadow-2xl"
+          className="absolute"
           style={{
+            width: "8rem",
+            height: "8rem",
             backgroundColor: VERDE,
-            borderRadius: "2rem",
-            width: "13rem",
-            height: "13rem",
+            borderRadius: "1.25rem",
+            transform: "rotate(45deg)",
+            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.6)",
           }}
-        >
-          {/* "4" em branco grande */}
+        />
+
+        {/* "4" e "1" em branco, sobrepostos, horizontais */}
+        <div className="relative flex items-center" style={{ overflow: "visible" }}>
           <span
-            className="text-[8.5rem] font-black leading-none text-white sm:text-[11rem]"
-            style={{ fontFamily: FONTE, letterSpacing: "-0.06em" }}
+            style={{
+              fontSize: "7.5rem",
+              fontWeight: 900,
+              color: "#ffffff",
+              fontFamily: FONTE,
+              lineHeight: 0.85,
+              letterSpacing: "-0.06em",
+            }}
           >
             4
           </span>
-          {/* "1" sobreposto em escuro, deslocado à direita */}
           <span
-            className="text-[8.5rem] font-black leading-none sm:text-[11rem]"
             style={{
-              color: ESCURO,
+              fontSize: "7.5rem",
+              fontWeight: 900,
+              color: "#ffffff",
               fontFamily: FONTE,
+              lineHeight: 0.85,
               letterSpacing: "-0.06em",
-              marginLeft: "-0.38em",
+              marginLeft: "0",
             }}
           >
             1
           </span>
-          {/* "anos" vertical à direita */}
-          <span
-            className="ml-2 text-lg font-black uppercase tracking-wide sm:text-2xl"
-            style={{
-              color: ESCURO,
-              fontFamily: FONTE,
-              writingMode: "vertical-rl",
-              textOrientation: "mixed",
-            }}
-          >
-            anos
-          </span>
         </div>
+
+        {/* "anos" em preto, vertical, junto à borda direita do "1" */}
+        <span
+          className="absolute"
+          style={{
+            right: "1rem",
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "#1a1a1a",
+            fontFamily: FONTE,
+            fontWeight: 700,
+            fontSize: "1.1rem",
+            writingMode: "vertical-rl",
+            textOrientation: "mixed",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
+        >
+          anos
+        </span>
       </div>
 
       {/* Texto inferior — 3 linhas, "viver" em destaque */}
