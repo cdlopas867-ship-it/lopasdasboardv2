@@ -209,7 +209,7 @@ export default function CenasApresentacao({
       )}
 
       {/* Cena 11 — Controle de almoxarifados (REST0330) */}
-      {cena === 10 && <CenaAlmoxarifados anim={anim} onPausar={onPausar} />}
+      {cena === 10 && <CenaAlmoxarifados anim={anim} cena={cena} onPausar={onPausar} />}
 
       {/* Cena 12 — encerramento */}
       {cena === 11 && (
