@@ -28,7 +28,7 @@ type Cena = {
 
 const CENAS: Cena[] = [
   {
-    imagem: "/fundo-satelite-real.jpg",
+    imagem: "/fundo-boas-vindas.webp",
     eyebrow: "",
     titulo: "",
     linhas: [],
