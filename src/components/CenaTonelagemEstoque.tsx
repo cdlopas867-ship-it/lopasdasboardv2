@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { fmtBrMax, fmtInt } from "@/lib/format";
-import { TONELAGEM_ESTOQUE_MENSAL } from "@/data/tonelagem-estoque";
+import { TONELAGEM_ESTOQUE_MENSAL, type TonelagemMes } from "@/data/tonelagem-estoque";
+import { useSerieTonelagem } from "@/lib/tonelagem-serie";
 
 /* Cena — Tonelagem do estoque mês a mês (gráfico de área minimalista).
  * Linha suave com gradiente verde translúcido sob a curva, pontos por mês
@@ -11,14 +12,43 @@ type Props = {
   tonAtual?: number | undefined;
 };
 
+const MESES_CURTOS = [
+  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+  "Jul", "Ago", "Set", "Out", "Nov", "Dez",
+];
+
+/* Ordem cronológica de um rótulo "Mmm/AA" (ex.: "Out/26"). */
+function chaveMes(mes: string): number {
+  const [nome, ano] = mes.split("/");
+  const numero = MESES_CURTOS.indexOf(nome ?? "");
+  return (2000 + Number(ano ?? 0)) * 12 + (numero < 0 ? 0 : numero);
+}
+
+/* Junta a série que o Drive já registrou com a base histórica do arquivo: o mês
+   lido substitui o valor fixo e meses novos entram no fim do gráfico. */
+function juntarSeries(base: TonelagemMes[], serie: TonelagemMes[]): TonelagemMes[] {
+  const doDrive = new Map(serie.map((p) => [p.mes, p.ton]));
+  const juntos = base.map((d) => {
+    const ton = doDrive.get(d.mes);
+    return ton === undefined ? d : { mes: d.mes, ton: Math.round(ton) };
+  });
+  for (const p of serie) {
+    if (!base.some((d) => d.mes === p.mes)) juntos.push({ mes: p.mes, ton: Math.round(p.ton) });
+  }
+  return juntos.sort((a, b) => chaveMes(a.mes) - chaveMes(b.mes));
+}
+
 export default function CenaTonelagemEstoque({ anim, tonAtual }: Props) {
-  /* Outubro reflete sempre o último peso do estoque (atualização ao vivo),
-     não um valor fixo — atualiza conforme a sincronização até o fim do mês. */
-  const dados = TONELAGEM_ESTOQUE_MENSAL.map((d, i) =>
-    i === TONELAGEM_ESTOQUE_MENSAL.length - 1 && tonAtual && tonAtual > 0
-      ? { ...d, ton: Math.round(tonAtual) }
-      : d,
-  );
+  /* A série mensal do peso do estoque vem das leituras do Drive; sem ela, o
+     último mês do arquivo assume o peso ao vivo da sincronização. */
+  const serie = useSerieTonelagem();
+  const dados = serie?.length
+    ? juntarSeries(TONELAGEM_ESTOQUE_MENSAL, serie)
+    : TONELAGEM_ESTOQUE_MENSAL.map((d, i) =>
+        i === TONELAGEM_ESTOQUE_MENSAL.length - 1 && tonAtual && tonAtual > 0
+          ? { ...d, ton: Math.round(tonAtual) }
+          : d,
+      );
   const ultimo = dados[dados.length - 1]!;
   const anterior = dados[dados.length - 2]!;
   const deltaUltimo = ((ultimo.ton - anterior.ton) / anterior.ton) * 100;

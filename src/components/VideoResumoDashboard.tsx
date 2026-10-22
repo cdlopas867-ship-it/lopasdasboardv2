@@ -6,6 +6,7 @@ import { TODAS_IMAGENS_AVARIA } from "@/data/avarias-imagens";
 import type { ResumoViagens } from "@/lib/viagens-store";
 import ResumoBg from "./ResumoBg";
 import RelatorioLopas from "./RelatorioLopas";
+import { SinoNotificacoes } from "./SinoNotificacoes";
 
 /* Vídeo-resumo do dashboard — cenas animadas com gráficos e o mínimo de texto,
    sobre o fundo da marca Móveis Lopas, tocando automaticamente ao iniciar o app.
@@ -300,6 +301,8 @@ export default function VideoResumoDashboard({
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         {/* Topo — última sincronização + controle de saída */}
         <div className="flex items-center justify-end gap-3 px-5 pt-3 sm:px-8">
+          {/* Sino de notificações (estilo Facebook) — novidades recebidas do Drive */}
+          <SinoNotificacoes />
 
           {onLogout && (
             <button

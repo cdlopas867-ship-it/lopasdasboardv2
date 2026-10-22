@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useDadosSync } from "@/hooks/use-dados-sync";
 import { initialSyncData } from "@/lib/initial-sync-data";
@@ -10,6 +10,10 @@ import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import LoadingApresentacao from "@/components/LoadingApresentacao";
 import { NotificacaoAtualizacao } from "@/components/NotificacaoAtualizacao";
 import { usePushNotification } from "@/hooks/use-push-notification";
+import { adicionarNotificacao } from "@/lib/notificacoes";
+import { mostrarAvisoNavegador } from "@/lib/aviso-navegador";
+import { definirSerieTonelagem } from "@/lib/tonelagem-serie";
+import type { TonelagemMes } from "@/data/tonelagem-estoque";
 import { calcularAvariasResumo } from "@/lib/avarias-resumo";
 import { aplicarReferenciaMotivos } from "@/lib/avarias-referencia";
 import { normalizarDiasExibicao } from "@/lib/recebimento";
@@ -25,6 +29,31 @@ function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();
   const { dados, loaded, notificacao, dispensarNotificacao } = useDadosSync<Painel>(initialSyncData as Painel);
   usePushNotification();
+
+  /* Publica a série mensal do peso do estoque vinda do Drive para a cena das
+     toneladas (evita repassá-la por toda a cadeia de props do vídeo-resumo). */
+  useEffect(() => {
+    definirSerieTonelagem((dados as unknown as Record<string, unknown>)["tonelagemMensal"] as TonelagemMes[] | undefined);
+  }, [dados]);
+
+  /* Cada atualização do Drive entra na lista do sino (estilo Facebook) e, se o
+     navegador tiver permissão, também vira aviso do próprio navegador. */
+  const ultimoAviso = useRef(0);
+  useEffect(() => {
+    if (!notificacao?.visivel || ultimoAviso.current === notificacao.horario) return;
+    ultimoAviso.current = notificacao.horario;
+    const resumo = (dados as unknown as Record<string, unknown>)["resumo"] as
+      | { ton?: number; itens?: number }
+      | undefined;
+    const partes: string[] = [];
+    if (typeof resumo?.ton === "number" && resumo.ton > 0) {
+      partes.push(`Estoque ${resumo.ton.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} t`);
+    }
+    if (typeof resumo?.itens === "number" && resumo.itens > 0) partes.push(`${resumo.itens} itens`);
+    const detalhe = partes.length ? partes.join(" · ") : "Novos dados recebidos da pasta do Drive";
+    adicionarNotificacao({ titulo: "Painel atualizado", detalhe, horario: notificacao.horario });
+    void mostrarAvisoNavegador("Lopas CD · Painel atualizado", detalhe);
+  }, [notificacao, dados]);
   const [valorFaturado, setValorFaturado] = useState<number>();
   useEffect(() => { if (pronto && !autenticado) navigate({ to: "/login", replace: true }); }, [pronto, autenticado, navigate]);
   useEffect(() => { if (autenticado) fetch("/api/valor-faturado").then(r => r.json()).then(d => setValorFaturado(d.valor)).catch(() => {}); }, [autenticado]);

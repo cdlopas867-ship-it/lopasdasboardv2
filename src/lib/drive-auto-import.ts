@@ -15,6 +15,7 @@ import { lerReservados, calcularReservados, resumirReservados, calcularPrevisaoR
 import { lerPendentes } from "./pendentes";
 import { calcularPendentesResumo } from "./pendentes-resumo";
 import { lerAvarias, mesclarAvarias } from "./avarias";
+import { serieTonelagemMensal } from "./tonelagem-mensal";
 import { calcularAvariasResumo } from "./avarias-resumo";
 import { buscarCarregamentoMensal, lerCarregadoMensal, lerUltimaDataCarregado, CARREGADO_SEM_DRIVE } from "./carregamento";
 import { calcularRecebimento } from "./recebimento";
@@ -1518,6 +1519,12 @@ export async function importarDoDriveServidor(lista?: ArquivoDrive[]): Promise<b
      Compara os campos principais — se nada mudou, não cria registro duplicado. */
   const historico = await getHistorico();
   const ultimo = historico[historico.length - 1];
+  /* Série mensal do peso do estoque a partir das leituras do Drive: o mês
+     corrente usa o peso ao vivo e os meses anteriores, a última leitura de cada
+     mês registrada no histórico. Meses sem leitura continuam na base estática
+     de src/data/tonelagem-estoque.ts. */
+  const serieTonelagem = serieTonelagemMensal(historico, melhorResumo?.ton);
+  if (serieTonelagem.length) extras["tonelagemMensal"] = serieTonelagem;
   /* Compara apenas os valores centrais do estoque — reservadoTon/Valor
      podem flutuar conforme o parse da planilha encontra ou não a aba de
      reservas, e não devem gerar registros duplicados no histórico. */

@@ -154,6 +154,10 @@ function dataKey(payload: unknown, incluirSync = true): string {
     me: (p["mensal"] as unknown[])?.length,
     rs2: recSig(p["recebimentoSemanal"] as unknown[] | undefined),
     ps: prodSig(p["producaoSemanal"] as unknown[] | undefined),
+    tm: (() => {
+      const t = p["tonelagemMensal"] as { mes?: string; ton?: number }[] | undefined;
+      return t?.length ? t.map((x) => `${x.mes ?? ""}=${x.ton ?? 0}`).join(",") : "";
+    })(),
     sc: (() => {
       const sc = p["saldoComparativo"] as {
         full?: { saldo?: number };
