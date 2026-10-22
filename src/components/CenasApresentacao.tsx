@@ -7,6 +7,7 @@ import type { PendenteProducao } from "@/lib/pendentes";
 import CenaForaDeLinha from "@/components/CenaForaDeLinha";
 import CenaTonelagemEstoque from "@/components/CenaTonelagemEstoque";
 import CenaAlmoxarifados from "@/components/CenaAlmoxarifados";
+import CenaPesoDiarioEstoque from "@/components/CenaPesoDiarioEstoque";
 import CenaAvariasUnificada from "@/components/CenaAvariasUnificada";
 import CenaOcupacao from "@/components/CenaOcupacao";
 import CenaRecebimentoTurno from "@/components/CenaRecebimentoTurno";
@@ -208,11 +209,16 @@ export default function CenasApresentacao({
         <CenaTonelagemEstoque anim={anim} tonAtual={resumo?.ton} />
       )}
 
-      {/* Cena 11 — Controle de almoxarifados (REST0330) */}
-      {cena === 10 && <CenaAlmoxarifados anim={anim} cena={cena} onPausar={onPausar} />}
+      {/* Cena 11 — Peso Diário do Estoque (último peso do Google Drive) */}
+      {cena === 10 && (
+        <CenaPesoDiarioEstoque anim={anim} tonAtual={resumo?.ton} sincronizacao={sincronizacao} resumo={resumo} />
+      )}
 
-      {/* Cena 12 — encerramento */}
-      {cena === 11 && (
+      {/* Cena 12 — Controle de almoxarifados (REST0330) */}
+      {cena === 11 && <CenaAlmoxarifados anim={anim} cena={cena} onPausar={onPausar} />}
+
+      {/* Cena 13 — encerramento */}
+      {cena === 12 && (
         <div className="flex flex-col items-center py-4 text-center">
           <p className="video-sobe font-serif text-4xl tracking-tight text-white sm:text-5xl" style={{ animationDelay: "0.1s" }}>
             Fim do <span className="italic text-brand-amber">resumo</span>.
