@@ -10,8 +10,9 @@ export default function LoadingApresentacao() {
         className="loading-apresentacao-bg absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/fundo-boas-vindas-novo.webp')" }}
       />
-      {/* Gradiente para legibilidade */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
+      {/* Gradiente para legibilidade + vinheta radial */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/85" />
+      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)" }} />
 
       {/* Conteúdo central */}
       <div className="relative z-10 flex flex-col items-center">
