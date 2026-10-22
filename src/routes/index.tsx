@@ -10,7 +10,6 @@ import type { ComparativoCcr } from "@/data/comparativo-ccr";
 import LoadingApresentacao from "@/components/LoadingApresentacao";
 import { NotificacaoAtualizacao } from "@/components/NotificacaoAtualizacao";
 import { NotificacaoAppUpdate } from "@/components/NotificacaoAppUpdate";
-import IntroHomenagemLopas from "@/components/IntroHomenagemLopas";
 import { usePushNotification } from "@/hooks/use-push-notification";
 import { useAppUpdate } from "@/hooks/use-app-update";
 import { notificarAtualizacao } from "@/lib/notificacao-desktop";
@@ -25,9 +24,6 @@ import type { ProducaoSemanalDia } from "@/lib/producao-semanal";
 
 export const Route = createFileRoute("/")({ head: () => ({ meta: [{ title: "Painel de Estoque · Lopas 2026" }, { name: "description", content: "Indicadores de estoque, ocupação e recebimento do Centro de Distribuição Lopas." }, { property: "og:title", content: "Painel de Estoque · Lopas 2026" }, { property: "og:description", content: "Indicadores do Centro de Distribuição Lopas em uma apresentação interativa." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }), component: DashboardHome });
 type Painel = typeof initialSyncData & Record<string, unknown>;
-/* A homenagem toca uma vez a cada abertura do app (carga da página),
-   sem repetir ao navegar entre telas na mesma carga. */
-let introJaExibida = false;
 function DashboardHome() {
   const { autenticado, pronto, logout } = useAuth(); const navigate = useNavigate();
   const { dados, loaded, notificacao, dispensarNotificacao } = useDadosSync<Painel>(initialSyncData as Painel);
@@ -38,15 +34,6 @@ function DashboardHome() {
   useEffect(() => {
     if (notificacao?.visivel) void notificarAtualizacao(notificacao.horario);
   }, [notificacao]);
-  /* Intro de homenagem — toca ao abrir o app, quando o painel está pronto.
-     Só marca como exibida ao abrir de fato: se o app estiver na tela de
-     login, a homenagem continua pendente para depois de entrar. */
-  const [introAberta, setIntroAberta] = useState(false);
-  useEffect(() => {
-    if (!pronto || !autenticado || !loaded || introJaExibida) return;
-    introJaExibida = true;
-    setIntroAberta(true);
-  }, [pronto, autenticado, loaded]);
   const [valorFaturado, setValorFaturado] = useState<number>();
   useEffect(() => { if (pronto && !autenticado) navigate({ to: "/login", replace: true }); }, [pronto, autenticado, navigate]);
   useEffect(() => { if (autenticado) fetch("/api/valor-faturado").then(r => r.json()).then(d => setValorFaturado(d.valor)).catch(() => {}); }, [autenticado]);
@@ -100,9 +87,6 @@ function DashboardHome() {
   return (<>
     <NotificacaoAtualizacao notificacao={notificacao} onDispensar={dispensarNotificacao} onAtivarNotificacoes={ativarNotificacoes} />
     <NotificacaoAppUpdate visivel={updateDisponivel} onAtualizar={atualizarAgora} onDispensar={dispensarUpdate} />
-    {introAberta && (
-      <IntroHomenagemLopas onConcluir={() => setIntroAberta(false)} />
-    )}
     <VideoResumoDashboard {...presentation} {...(valorFaturado !== undefined ? { valorFaturado } : {})} onLogout={async () => { await logout(); navigate({ to: "/login", replace: true }); }} />
   </>);
 }
