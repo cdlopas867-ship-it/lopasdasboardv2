@@ -66,6 +66,7 @@ const MESES_ABAS = [
   { mes: "Jul", aba: "Julho" },
   { mes: "Ago", aba: "Agosto" },
   { mes: "Set", aba: "Setembro" },
+  { mes: "Out", aba: "Outubro" },
 ];
 
 export async function buscarCarregamentoMensal(): Promise<{
