@@ -20,7 +20,7 @@ export default function LoadingApresentacao() {
           className="loading-apresentacao-titulo font-serif text-4xl font-light tracking-wide text-white drop-shadow-2xl sm:text-5xl"
           style={{ fontFamily: "'Instrument Serif', Georgia, serif" }}
         >
-          Lopas 2026
+          CD Lopas 2026
         </h1>
         <p className="loading-apresentacao-tagline mt-2 text-[11px] font-semibold uppercase tracking-[0.4em] text-[#c9e39a] sm:text-xs">
           Movidos pela fé
